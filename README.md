@@ -93,6 +93,21 @@ NEXT_PUBLIC_USE_MOCK_DATA=true npm run dev   # or flip the LIVE / MOCK switch in
 
 ---
 
+## Pre-Created Team Branches (6 Teammates / 3 Squads)
+
+| Squad | Squad Branch | Teammate Track A Branch | Teammate Track B Branch |
+|---|---|---|---|
+| **Squad 1 (`data_ml/`)** | `squad1/data-ml` | `squad1-a/ingestion-extraction` | `squad1-b/physics-models-ranking` |
+| **Squad 2 (`backend/`)** | `squad2/backend-rag` | `squad2-a/rag-reranker-eval` | `squad2-b/api-compliance-brief` |
+| **Squad 3 (`frontend/`)** | `squad3/frontend-ui` | `squad3-a/cabin-ranking-charts` | `squad3-b/twin-copilot-ux` |
+
+```bash
+git fetch origin
+git switch <your-branch-name>
+```
+
+---
+
 ## Documentation
 - [docs/ARCHITECTURE.md](file:///Users/dulnithliyanage/Academics/PyroTensor/EMBER/docs/ARCHITECTURE.md) — Data & RAG architecture diagram, node-by-node mapping, and contract rules.
 - [docs/ONBOARDING.md](file:///Users/dulnithliyanage/Academics/PyroTensor/EMBER/docs/ONBOARDING.md) — Setup guide and Git workflow for our 6-person team.

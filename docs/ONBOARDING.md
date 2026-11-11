@@ -1,6 +1,6 @@
-# 6-Person Team Onboarding Guide
+# 6-Person Team Onboarding & Branching Guide
 
-Welcome to **EMBER**! Our 6-person team is organized into **3 squads of 2**, with strict contract boundaries in `contracts/` so nobody blocks another squad.
+Welcome to **EMBER**! Our 6-person team is organized into **3 squads of 2**, with strict contract boundaries in `contracts/` and non-overlapping file ownership so all 6 teammates can work in parallel without merge conflicts.
 
 ---
 
@@ -21,27 +21,39 @@ make test
 
 ---
 
-## 3. Squad Ownership & Branching Rules
+## 3. Pre-Created Remote Branches (Zero-Conflict Ownership)
 
-| Squad | Directory | Teammate Track A | Teammate Track B |
-|---|---|---|---|
-| **Squad 1 (Data & ML)** | `data_ml/` | **S1-A**: Ingestion adapters, PDF/Docling parsing, Gemini structured extraction | **S1-B**: Combustion physics calibration, 2D phase grid, surrogate risk & ranker |
-| **Squad 2 (Backend & RAG)** | `backend/` | **S2-A**: LangGraph nodes, cross-encoder reranker, text-to-SQL guardrails, 30-Q RAGAS eval | **S2-B**: FastAPI endpoints, NASA-STD-6001B Compliance Brief generator, caching |
-| **Squad 3 (Frontend UI)** | `frontend/` | **S3-A**: Module 1 (Cabin Configurator + Plotly Phase Diagram) & Module 3 (Ranking + 3-Panel Telemetry) | **S3-B**: Module 2 (1G vs 0G Flame Digital Twin Canvas) & Module 4 (SI Co-Pilot UX + Brief Export) |
+All squad integration branches and individual teammate branches are already created on `origin`. Check out your assigned branch after cloning:
 
-### Git Workflow
-1. Create a feature branch prefixed by your squad track:
+### Individual Teammate Branches (6 Tracks)
+| Teammate | Remote Branch | Owned Files (Conflict-Free Scope) |
+|---|---|---|
+| **Squad 1 — Track A** (Ingestion & Extraction) | `squad1-a/ingestion-extraction` | `data_ml/ember_data/ingestion/` (`fetch_cache.py`, `parse.py`, `normalize.py`, `llm_extract.py`, `adapters/column_map.yaml`) |
+| **Squad 1 — Track B** (Physics, Risk & Ranking) | `squad1-b/physics-models-ranking` | `data_ml/ember_data/physics/combustion.py`, `data_ml/ember_data/models/risk.py`, `data_ml/ember_data/ranking/scenario_ranker.py` |
+| **Squad 2 — Track A** (LangGraph RAG & Eval) | `squad2-a/rag-reranker-eval` | `backend/app/rag/` (`nodes/*`, `graph.py`), `backend/app/llm/provider.py`, `backend/eval/` |
+| **Squad 2 — Track B** (FastAPI & Compliance Brief) | `squad2-b/api-compliance-brief` | `backend/app/api/` (`routes_cabin.py`, `routes_copilot.py`, `routes_experiments.py`, `routes_health.py`), `backend/app/db/` |
+| **Squad 3 — Track A** (Modules 1 & 3 Charts) | `squad3-a/cabin-ranking-charts` | `frontend/src/app/cabin/page.tsx`, `frontend/src/app/ranking/page.tsx` |
+| **Squad 3 — Track B** (Modules 2 & 4 Twin/Co-Pilot) | `squad3-b/twin-copilot-ux` | `frontend/src/app/twin/page.tsx`, `frontend/src/app/copilot/page.tsx` |
+
+### Squad Integration Branches (3 Squads)
+- `squad1/data-ml` — Integration branch for `squad1-a/*` and `squad1-b/*`
+- `squad2/backend-rag` — Integration branch for `squad2-a/*` and `squad2-b/*`
+- `squad3/frontend-ui` — Integration branch for `squad3-a/*` and `squad3-b/*`
+
+---
+
+## 4. Git Workflow
+1. Switch to your pre-created remote branch:
    ```bash
-   git checkout -b squad1-a/pdf-docling-parser
-   git checkout -b squad2-a/cross-encoder-reranker
-   git checkout -b squad3-b/flame-digital-twin-canvas
+   git fetch origin
+   git switch squad1-a/ingestion-extraction   # replace with your assigned branch from the table above
    ```
 2. **Never modify `contracts/schema_v1.json` or `contracts/openapi_v1.yaml` without announcing in the team channel** and running:
    ```bash
    make test
    cd frontend && npm run sync-mocks && npm run build
    ```
-3. Before opening a PR into `main`, ensure:
+3. Before opening a PR into your squad branch or `main`, ensure:
    - `make test` passes (`10/10` unit & integration tests)
    - `make eval` passes (`8/8` golden-set questions)
    - `cd frontend && npm run build` passes
