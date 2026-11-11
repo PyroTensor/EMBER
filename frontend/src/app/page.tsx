@@ -55,7 +55,7 @@ export default function MissionOverviewPage() {
     <div className="space-y-10">
       <section className="space-y-2 border-b border-zinc-900 pb-6">
         <p className="font-mono text-xs text-zinc-500">
-          EXPLORATION MICROGRAVITY BURN EVALUATION &amp; RANKING
+          EMBER – EXPLORATION OF MICROGRAVITY BURNING THROUGH EXPERIMENTAL RESEARCH
         </p>
         <h1 className="text-2xl font-semibold tracking-tight text-white">
           Microgravity Fire Safety Console

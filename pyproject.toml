@@ -1,7 +1,7 @@
 [project]
 name = "ember-workspace"
 version = "0.1.0"
-description = "EMBER - Exploration Microgravity Burn Evaluation & Ranking (NASA Space Apps 2026)"
+description = "EMBER – Exploration of Microgravity Burning through Experimental Research (NASA Space Apps 2026)"
 requires-python = ">=3.11"
 dependencies = ["ember-data", "ember-backend"]
 

@@ -12,7 +12,7 @@ from app.api.routes_health import router as health_router
 app = FastAPI(
     title="EMBER API",
     version="0.1.0",
-    description="Exploration Microgravity Burn Evaluation & Ranking - NASA Space Apps 2026",
+    description="EMBER – Exploration of Microgravity Burning through Experimental Research (NASA Space Apps 2026)",
 )
 
 app.add_middleware(

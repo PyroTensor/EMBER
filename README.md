@@ -1,4 +1,4 @@
-# EMBER — Exploration Microgravity Burn Evaluation & Ranking
+# EMBER – Exploration of Microgravity Burning through Experimental Research
 **2026 NASA Space Apps Challenge: *"Flame in Freefall: SI-Powered Fire Safety Insights from Microgravity Combustion Data"***
 
 EMBER is a 3-squad monorepo built by a 6-person team to evaluate spacecraft material flammability, rank microgravity combustion experiments (`BASS-II`, `SoFIE`, `FLEX`, `ACME`), and synthesize citation-checked fire-safety insights using a hybrid **Postgres + pgvector + LangGraph** RAG pipeline.
