@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/PyroTensor/EMBER/contracts/schema_v1.json",
+  "title": "EMBER Internal Standard Schema v1 - Microgravity Combustion Test Run",
+  "description": "One row = one combustion test run. Every adapter (proxy data today, official NASA data on Nov 14) MUST emit records that validate against this schema. Unknown source columns go into extra_telemetry - never drop them, never add new top-level fields without bumping the schema version.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "experiment_id", "program", "fuel_material", "fuel_geometry",
+    "gravity_g", "oxygen_pct", "pressure_kpa", "flow_velocity_cm_s", "diluent_gas",
+    "combustion_regime", "extra_telemetry"
+  ],
+  "properties": {
+    "experiment_id": {
+      "type": "string",
+      "description": "Unique test run id. Proxy data uses EXP-0001..; official ids are kept verbatim.",
+      "minLength": 1
+    },
+    "program": {
+      "type": "string",
+      "description": "Parent NASA investigation.",
+      "enum": ["BASS-II", "SoFIE", "FLEX", "ACME"]
+    },
+    "fuel_material": {
+      "type": "string",
+      "enum": ["PMMA", "Cotton-Fiberglass", "Nomex", "Heptane", "Methanol"]
+    },
+    "fuel_geometry": {
+      "type": "string",
+      "enum": ["Flat Sheet", "Rod", "Droplet", "Gaseous"]
+    },
+
+    "gravity_g": {
+      "type": "number", "minimum": 0.0, "maximum": 1.0,
+      "description": "Gravity level in Earth g. Canonical values: 0.0 (microgravity), 0.16 (Lunar), 0.38 (Mars), 1.0 (Earth)."
+    },
+    "oxygen_pct": {
+      "type": "number", "minimum": 15.0, "maximum": 40.0,
+      "description": "Ambient O2 mole fraction in percent."
+    },
+    "pressure_kpa": {
+      "type": "number", "minimum": 40.0, "maximum": 101.3,
+      "description": "Ambient absolute pressure in kPa."
+    },
+    "flow_velocity_cm_s": {
+      "type": "number", "minimum": 0.0, "maximum": 50.0,
+      "description": "Imposed (forced) flow velocity in cm/s - stands in for cabin HVAC ventilation."
+    },
+    "diluent_gas": {
+      "type": "string",
+      "enum": ["N2", "CO2", "He", "Ar"]
+    },
+
+    "combustion_regime": {
+      "type": "string",
+      "enum": ["Sustained Burn", "Self-Extinguished", "Cool Flame", "No Ignition"]
+    },
+    "spread_or_burn_rate": {
+      "type": ["number", "null"], "minimum": 0,
+      "description": "Flame spread rate in mm/s for solids; d^2-law burning-rate constant K in mm^2/s for droplets/gaseous."
+    },
+    "peak_radiative_flux_kw_m2": {
+      "type": ["number", "null"], "minimum": 0,
+      "description": "Peak radiometer heat flux in kW/m^2."
+    },
+    "limiting_oxygen_index_pct": {
+      "type": ["number", "null"], "minimum": 0, "maximum": 100,
+      "description": "Minimum O2 % that supports burning at this condition."
+    },
+    "burn_duration_s": {
+      "type": ["number", "null"], "minimum": 0
+    },
+
+    "source_doc_id": {
+      "type": ["string", "null"],
+      "description": "Provenance: document the values were extracted from (diagram: 'source doc + page per field')."
+    },
+    "source_page": {
+      "type": ["integer", "null"], "minimum": 1
+    },
+
+    "extra_telemetry": {
+      "type": "object",
+      "description": "Escape hatch. Any column not mapped to a field above lands here and is rendered generically in the UI.",
+      "additionalProperties": true
+    }
+  }
+}

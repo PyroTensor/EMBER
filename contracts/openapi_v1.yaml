@@ -1,0 +1,225 @@
+openapi: 3.1.0
+info:
+  title: EMBER API
+  version: 0.1.0
+  description: |
+    Contract between Squad 2 (backend/) and Squad 3 (frontend/).
+    The frontend mock layer (NEXT_PUBLIC_USE_MOCK_DATA=true) MUST return the same shapes.
+servers:
+  - url: http://localhost:8000
+paths:
+  /api/health:
+    get:
+      summary: Service + data status
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Health" }
+  /api/presets:
+    get:
+      summary: Mission cabin presets
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Preset" }
+  /api/evaluate-cabin:
+    post:
+      summary: Baseline risk index + per-factor contributions for a cabin configuration
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CabinConfig" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CabinEvaluation" }
+  /api/experiments:
+    get:
+      summary: All test runs (schema_v1 records)
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "schema_v1.json" }
+  /api/experiments/rank:
+    post:
+      summary: Scenario ranker - score test runs against a habitat configuration
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RankRequest" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RankResponse" }
+  /api/telemetry/{experiment_id}:
+    get:
+      summary: Time-series curves for one run
+      parameters:
+        - { name: experiment_id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Telemetry" }
+        "404": { description: Unknown experiment }
+  /api/copilot/ask:
+    post:
+      summary: Grounded RAG question answering (LangGraph)
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AskRequest" }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AskResponse" }
+
+components:
+  schemas:
+    Health:
+      type: object
+      properties:
+        status: { type: string, enum: [ok, degraded] }
+        db: { type: boolean }
+        test_runs: { type: integer }
+        chunks: { type: integer }
+        llm_provider: { type: string }
+        schema_version: { type: string, example: v1 }
+        extra_telemetry_keys: { type: array, items: { type: string } }
+
+    CabinConfig:
+      type: object
+      required: [oxygen_pct, pressure_kpa, flow_velocity_cm_s, gravity_g, fuel_material, diluent_gas]
+      properties:
+        oxygen_pct: { type: number }
+        pressure_kpa: { type: number }
+        flow_velocity_cm_s: { type: number }
+        gravity_g: { type: number }
+        fuel_material: { type: string }
+        diluent_gas: { type: string }
+
+    Preset:
+      allOf:
+        - $ref: "#/components/schemas/CabinConfig"
+        - type: object
+          properties:
+            id: { type: string }
+            name: { type: string }
+            description: { type: string }
+
+    Contribution:
+      type: object
+      properties:
+        feature: { type: string }
+        label: { type: string }
+        value: { type: number, description: "Signed risk points; contributions sum to risk_index - baseline_risk" }
+
+    CabinEvaluation:
+      type: object
+      properties:
+        risk_index: { type: number, minimum: 0, maximum: 100 }
+        risk_band: { type: string, enum: [LOW, ELEVATED, HIGH, CRITICAL] }
+        baseline_risk: { type: number }
+        predicted_regime: { type: string }
+        estimated_loi_pct: { type: number }
+        oxygen_margin_pct: { type: number, description: "oxygen_pct - estimated_loi_pct" }
+        contributions:
+          type: array
+          items: { $ref: "#/components/schemas/Contribution" }
+
+    RankWeights:
+      type: object
+      properties:
+        similarity: { type: number, default: 0.5 }
+        completeness: { type: number, default: 0.2 }
+        criticality: { type: number, default: 0.3 }
+
+    RankRequest:
+      type: object
+      required: [config]
+      properties:
+        config: { $ref: "#/components/schemas/CabinConfig" }
+        weights: { $ref: "#/components/schemas/RankWeights" }
+        limit: { type: integer, default: 10 }
+
+    RankedExperiment:
+      type: object
+      properties:
+        rank: { type: integer }
+        experiment_id: { type: string }
+        total_score: { type: number }
+        similarity: { type: number }
+        completeness: { type: number }
+        criticality: { type: number }
+        record: { $ref: "schema_v1.json" }
+
+    RankResponse:
+      type: object
+      properties:
+        weights: { $ref: "#/components/schemas/RankWeights" }
+        results:
+          type: array
+          items: { $ref: "#/components/schemas/RankedExperiment" }
+
+    Telemetry:
+      type: object
+      properties:
+        experiment_id: { type: string }
+        time_s: { type: array, items: { type: number } }
+        flame_radius_mm: { type: array, items: { type: number } }
+        d_squared_mm2:
+          type: ["array", "null"]
+          items: { type: number }
+        radiative_heat_flux_kw_m2: { type: array, items: { type: number } }
+        flame_temp_k: { type: array, items: { type: number } }
+
+    AskRequest:
+      type: object
+      required: [question]
+      properties:
+        question: { type: string }
+        scenario: { $ref: "#/components/schemas/CabinConfig" }
+
+    Citation:
+      type: object
+      properties:
+        id: { type: string, description: "Label used inline in the answer, e.g. '[DOC-02 p.3]' or '[EXP-0012]'" }
+        kind: { type: string, enum: [doc, experiment] }
+        doc_id: { type: ["string", "null"] }
+        page: { type: ["integer", "null"] }
+        experiment_id: { type: ["string", "null"] }
+        snippet: { type: string }
+
+    Evidence:
+      type: object
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [chunk, test_run, ranked_run] }
+        source: { type: string, description: "Node that produced it: sql_tool | hybrid_retriever | scenario_ranker" }
+        score: { type: number }
+        text: { type: string }
+        doc_id: { type: ["string", "null"] }
+        page: { type: ["integer", "null"] }
+        experiment_id: { type: ["string", "null"] }
+
+    AskResponse:
+      type: object
+      properties:
+        answer: { type: string }
+        route: { type: string, enum: [facts, search, compare, out_of_scope] }
+        supported: { type: boolean, description: "false when the graph answered 'no data'" }
+        rewrites: { type: integer }
+        citations: { type: array, items: { $ref: "#/components/schemas/Citation" } }
+        evidence: { type: array, items: { $ref: "#/components/schemas/Evidence" } }
+        dropped_claims: { type: array, items: { type: string }, description: "Sentences removed by citation_check" }
+        trace_id: { type: string }

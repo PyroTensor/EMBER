@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Data / caches
+data_ml/.cache/
+data_ml/review_queue.csv
+*.duckdb
+eval_results*.json
+
+# Env
+.env
+.env.local
+
+# Node / Next
+node_modules/
+frontend/.next/
+frontend/out/
+frontend/next-env.d.ts
+*.tsbuildinfo
+
+# OS / IDE
+.DS_Store
+.idea/
+.vscode/

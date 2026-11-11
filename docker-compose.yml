@@ -1,0 +1,21 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: ember-db
+    environment:
+      POSTGRES_USER: ember
+      POSTGRES_PASSWORD: ember
+      POSTGRES_DB: ember
+    ports:
+      - "5432:5432"
+    volumes:
+      - ember_pgdata:/var/lib/postgresql/data
+      - ./backend/app/db/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ember -d ember"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  ember_pgdata:

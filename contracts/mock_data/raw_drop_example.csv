@@ -1,0 +1,13 @@
+Run ID,Investigation,Sample,Config,g_level,O2 (frac),Pressure (psia),Flow (ft/min),Diluent,Outcome,Spread/Burn rate,Peak Rad Flux (W/cm2),Duration [s],Camera_FPS,Crew_Notes
+NASA-BASS-II-0001,BASS-II,Cotton-Fiberglass,Flat Sheet,ug,0.24,14.692,0.0,N2,sustained,0.658,0.493,50.7,30,camera glare
+NASA-BASS-II-0002,BASS-II,Nomex,Rod,ug,0.21,14.692,1.97,N2,no ign,0.0,,0.0,60,nominal
+NASA-BASS-II-0003,BASS-II,Nomex,Flat Sheet,ug,0.17,14.692,3.94,N2,no ign,0.0,0.0,0.0,30,
+NASA-BASS-II-0004,BASS-II,Nomex,Rod,ug,0.19,14.692,5.91,N2,NI,0.0,,0.0,120,nominal
+NASA-BASS-II-0005,BASS-II,Cotton-Fiberglass,Flat Sheet,ug,0.21,14.692,9.84,N2,sustained,0.969,,48.3,30,nominal
+NASA-BASS-II-0006,BASS-II,Cotton-Fiberglass,Flat Sheet,ug,0.21,14.692,9.84,N2,sustained,0.966,0.562,58.8,30,nominal
+NASA-BASS-II-0007,BASS-II,PMMA,Flat Sheet,ug,0.18,14.692,13.78,N2,burned,0.781,0.451,60.9,60,nominal
+NASA-BASS-II-0008,BASS-II,Nomex,Flat Sheet,ug,0.19,14.692,15.75,N2,no ign,0.0,0.0,0.0,60,nominal
+NASA-BASS-II-0009,BASS-II,PMMA,Flat Sheet,ug,0.19,14.692,19.69,N2,sustained,0.976,0.428,44.8,120,
+NASA-BASS-II-0010,BASS-II,PMMA,Rod,ug,0.19,14.692,23.62,N2,burned,0.621,,34.1,60,nominal
+NASA-BASS-II-0011,BASS-II,PMMA,Flat Sheet,ug,0.17,14.692,29.53,N2,EXT,0.006,0.158,4.1,30,nominal
+NASA-BASS-II-0012,BASS-II,PMMA,Flat Sheet,ug,0.21,14.692,39.37,N2,BURN,0.767,,69.4,120,camera glare

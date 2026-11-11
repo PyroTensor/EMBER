@@ -1,0 +1,26 @@
+[project]
+name = "ember-data"
+version = "0.1.0"
+description = "EMBER Squad 1 - ingestion pipeline, physics, ranking, risk models"
+requires-python = ">=3.11"
+dependencies = [
+  "pydantic>=2.7",
+  "pyyaml>=6.0",
+  "jsonschema>=4.22",
+  "numpy>=1.26",
+  "psycopg[binary]>=3.2",
+  "pgvector>=0.3",
+  "sentence-transformers>=3.0",
+  "python-dotenv>=1.0",
+]
+
+[project.optional-dependencies]
+# TODO(squad1): enable when real NTRS PDFs arrive
+pdf = ["pymupdf>=1.24"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["ember_data"]
