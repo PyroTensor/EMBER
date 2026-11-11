@@ -93,17 +93,19 @@ NEXT_PUBLIC_USE_MOCK_DATA=true npm run dev   # or flip the LIVE / MOCK switch in
 
 ---
 
-## Pre-Created Team Branches (6 Teammates / 3 Squads)
+## Team Branches
 
-| Squad | Squad Branch | Teammate Track A Branch | Teammate Track B Branch |
-|---|---|---|---|
-| **Squad 1 (`data_ml/`)** | `squad1/data-ml` | `squad1-a/ingestion-extraction` | `squad1-b/physics-models-ranking` |
-| **Squad 2 (`backend/`)** | `squad2/backend-rag` | `squad2-a/rag-reranker-eval` | `squad2-b/api-compliance-brief` |
-| **Squad 3 (`frontend/`)** | `squad3/frontend-ui` | `squad3-a/cabin-ranking-charts` | `squad3-b/twin-copilot-ux` |
+| Branch | Scope |
+|---|---|
+| `main` | Stable integration branch |
+| `data-ml` | Ingestion pipeline, physics calculators, risk model & scenario ranker (`data_ml/`) |
+| `backend` | FastAPI routes, database schema/session & compliance brief (`backend/app/api/`, `backend/app/db/`) |
+| `ai-agent` | LangGraph RAG workflow, LLM providers, reranker & evaluation (`backend/app/rag/`, `backend/app/llm/`, `backend/eval/`) |
+| `frontend` | Next.js dashboard & interactive visualizers (`frontend/`) |
 
 ```bash
 git fetch origin
-git switch <your-branch-name>
+git switch <branch-name>   # data-ml | backend | ai-agent | frontend
 ```
 
 ---

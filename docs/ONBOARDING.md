@@ -1,6 +1,6 @@
-# 6-Person Team Onboarding & Branching Guide
+# Team Onboarding & Branching Guide
 
-Welcome to **EMBER**! Our 6-person team is organized into **3 squads of 2**, with strict contract boundaries in `contracts/` and non-overlapping file ownership so all 6 teammates can work in parallel without merge conflicts.
+Welcome to **EMBER**! Our repository is organized around shared contracts in `contracts/` and four focused working branches (`data-ml`, `backend`, `ai-agent`, and `frontend`) alongside `main`.
 
 ---
 
@@ -21,39 +21,32 @@ make test
 
 ---
 
-## 3. Pre-Created Remote Branches (Zero-Conflict Ownership)
+## 3. Repository Branches
 
-All squad integration branches and individual teammate branches are already created on `origin`. Check out your assigned branch after cloning:
+All working branches are pre-created on `origin`:
 
-### Individual Teammate Branches (6 Tracks)
-| Teammate | Remote Branch | Owned Files (Conflict-Free Scope) |
+| Branch | Directory / Scope | Responsibilities |
 |---|---|---|
-| **Squad 1 — Track A** (Ingestion & Extraction) | `squad1-a/ingestion-extraction` | `data_ml/ember_data/ingestion/` (`fetch_cache.py`, `parse.py`, `normalize.py`, `llm_extract.py`, `adapters/column_map.yaml`) |
-| **Squad 1 — Track B** (Physics, Risk & Ranking) | `squad1-b/physics-models-ranking` | `data_ml/ember_data/physics/combustion.py`, `data_ml/ember_data/models/risk.py`, `data_ml/ember_data/ranking/scenario_ranker.py` |
-| **Squad 2 — Track A** (LangGraph RAG & Eval) | `squad2-a/rag-reranker-eval` | `backend/app/rag/` (`nodes/*`, `graph.py`), `backend/app/llm/provider.py`, `backend/eval/` |
-| **Squad 2 — Track B** (FastAPI & Compliance Brief) | `squad2-b/api-compliance-brief` | `backend/app/api/` (`routes_cabin.py`, `routes_copilot.py`, `routes_experiments.py`, `routes_health.py`), `backend/app/db/` |
-| **Squad 3 — Track A** (Modules 1 & 3 Charts) | `squad3-a/cabin-ranking-charts` | `frontend/src/app/cabin/page.tsx`, `frontend/src/app/ranking/page.tsx` |
-| **Squad 3 — Track B** (Modules 2 & 4 Twin/Co-Pilot) | `squad3-b/twin-copilot-ux` | `frontend/src/app/twin/page.tsx`, `frontend/src/app/copilot/page.tsx` |
-
-### Squad Integration Branches (3 Squads)
-- `squad1/data-ml` — Integration branch for `squad1-a/*` and `squad1-b/*`
-- `squad2/backend-rag` — Integration branch for `squad2-a/*` and `squad2-b/*`
-- `squad3/frontend-ui` — Integration branch for `squad3-a/*` and `squad3-b/*`
+| `main` | Full monorepo | Stable integration branch |
+| `data-ml` | `data_ml/` | 7-stage ingestion pipeline, unit normalization, physics calculators, Shapley risk model, and scenario ranker |
+| `backend` | `backend/app/api/`, `backend/app/db/` | FastAPI REST endpoints, Postgres + `pgvector` database layer, and compliance brief generation |
+| `ai-agent` | `backend/app/rag/`, `backend/app/llm/`, `backend/eval/` | LangGraph RAG nodes (`router`, `sql_tool`, `hybrid_retriever`, `evidence_grader`, `citation_check`), LLM providers, and golden-set evaluation |
+| `frontend` | `frontend/` | Next.js dark-mode console (`/cabin`, `/twin`, `/ranking`, `/copilot`) and mock-mode fallback |
 
 ---
 
 ## 4. Git Workflow
-1. Switch to your pre-created remote branch:
+1. Switch to your branch:
    ```bash
    git fetch origin
-   git switch squad1-a/ingestion-extraction   # replace with your assigned branch from the table above
+   git switch data-ml    # or: backend | ai-agent | frontend
    ```
 2. **Never modify `contracts/schema_v1.json` or `contracts/openapi_v1.yaml` without announcing in the team channel** and running:
    ```bash
    make test
    cd frontend && npm run sync-mocks && npm run build
    ```
-3. Before opening a PR into your squad branch or `main`, ensure:
+3. Before opening a PR into `main`, ensure:
    - `make test` passes (`10/10` unit & integration tests)
    - `make eval` passes (`8/8` golden-set questions)
    - `cd frontend && npm run build` passes
