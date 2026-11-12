@@ -3,6 +3,7 @@ import { cabinHandlers } from "./cabin";
 import { experimentHandlers } from "./experiments";
 import { healthHandlers } from "./health";
 import { presetHandlers } from "./presets";
+import { telemetryHandlers } from "./telemetry";
 
 /** All mock API handlers. */
 export const handlers: HttpHandler[] = [
@@ -10,4 +11,5 @@ export const handlers: HttpHandler[] = [
   ...presetHandlers,
   ...cabinHandlers,
   ...experimentHandlers,
+  ...telemetryHandlers,
 ];

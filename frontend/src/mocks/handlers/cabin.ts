@@ -12,36 +12,47 @@ const BOUNDS = {
   gravity_g: [0, 1],
 } as const satisfies Partial<Record<keyof CabinConfig, readonly [number, number]>>;
 
-interface FieldError {
+export interface FieldError {
   loc: string[];
   msg: string;
   type: string;
 }
 
-/** Backend-shaped validation (422 envelope with a pydantic-style details list). */
-function validate(body: unknown): { cfg: CabinConfig } | { errors: FieldError[] } {
+/** 422 envelope shaped like the backend's (pydantic-style `details` list). */
+export function validationErrorResponse(errors: FieldError[]) {
+  return HttpResponse.json(
+    { error: { code: "VALIDATION_ERROR", message: "Request validation failed", details: errors } },
+    { status: 422 },
+  );
+}
+
+/** Backend-shaped CabinConfig validation. `loc` is the path prefix of the config inside the body. */
+export function validateCabinConfig(
+  body: unknown,
+  loc: string[] = ["body"],
+): { cfg: CabinConfig } | { errors: FieldError[] } {
   if (typeof body !== "object" || body === null) {
-    return { errors: [{ loc: ["body"], msg: "Input should be a valid object", type: "model_type" }] };
+    return { errors: [{ loc, msg: "Input should be a valid object", type: "model_type" }] };
   }
   const cfg = body as Record<string, unknown>;
   const errors: FieldError[] = [];
   for (const [field, [min, max]] of Object.entries(BOUNDS)) {
     const v = cfg[field];
     if (typeof v !== "number" || !Number.isFinite(v)) {
-      errors.push({ loc: ["body", field], msg: "Input should be a valid number", type: "float_type" });
+      errors.push({ loc: [...loc, field], msg: "Input should be a valid number", type: "float_type" });
     } else if (v < min || v > max) {
       errors.push({
-        loc: ["body", field],
+        loc: [...loc, field],
         msg: `Input should be between ${min} and ${max}`,
         type: v < min ? "greater_than_equal" : "less_than_equal",
       });
     }
   }
   if (typeof cfg.fuel_material !== "string" || !(cfg.fuel_material in MATERIAL_BASE_LOI)) {
-    errors.push({ loc: ["body", "fuel_material"], msg: "Unknown fuel material", type: "enum" });
+    errors.push({ loc: [...loc, "fuel_material"], msg: "Unknown fuel material", type: "enum" });
   }
   if (typeof cfg.diluent_gas !== "string") {
-    errors.push({ loc: ["body", "diluent_gas"], msg: "Input should be a valid string", type: "string_type" });
+    errors.push({ loc: [...loc, "diluent_gas"], msg: "Input should be a valid string", type: "string_type" });
   }
   return errors.length ? { errors } : { cfg: cfg as unknown as CabinConfig };
 }
@@ -50,13 +61,8 @@ export const cabinHandlers = [
   // POST /api/evaluate-cabin: computed by the TS engine (same math as the backend), not a static blob.
   http.post("*/api/evaluate-cabin", async ({ request }) => {
     const body: unknown = await request.json().catch(() => null);
-    const result = validate(body);
-    if ("errors" in result) {
-      return HttpResponse.json(
-        { error: { code: "VALIDATION_ERROR", message: "Request validation failed", details: result.errors } },
-        { status: 422 },
-      );
-    }
+    const result = validateCabinConfig(body);
+    if ("errors" in result) return validationErrorResponse(result.errors);
     return respond<CabinEvaluation>(() => evaluateCabinMock(result.cfg), undefined, request);
   }),
 ];

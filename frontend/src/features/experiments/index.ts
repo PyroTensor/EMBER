@@ -1,2 +1,2 @@
-export { getExperiments } from "./api";
-export { useExperiments } from "./hooks";
+export { getExperiments, getTelemetry, rankExperiments } from "./api";
+export { useExperiments, useRanking, useTelemetry } from "./hooks";
