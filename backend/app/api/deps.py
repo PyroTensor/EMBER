@@ -14,10 +14,10 @@ import anyio.to_thread
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.config import get_settings
 from app.db.availability import DbAvailability
 from app.db.engine import Database
 from app.db.session import get_db, get_readonly_session, get_session
+from app.llm.factory import get_llm_provider
 from app.repositories.chunk_repo import PgChunkRepository
 from app.repositories.interfaces import (
     ChunkSearcher,
@@ -99,11 +99,10 @@ ChunkSearcherDep = Annotated[ChunkSearcher, Depends(get_chunk_searcher)]
 
 
 async def get_health_service(availability: AvailabilityDep, stats: StatsReaderDep) -> HealthService:
-    # llm_name comes from settings until the LLM provider singleton exists (B8).
     return HealthService(
         stats=stats,
         db_up=await availability.is_up(),
-        llm_name=get_settings().LLM_PROVIDER.value,
+        llm_name=get_llm_provider().name,
     )
 
 

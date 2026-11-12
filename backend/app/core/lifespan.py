@@ -1,4 +1,4 @@
-"""Application lifespan: build the Database on startup, dispose it on shutdown (warmups come later)."""
+"""Application lifespan: build the Database, pick the LLM provider, warm the embedder; dispose on shutdown."""
 
 from __future__ import annotations
 
@@ -10,6 +10,8 @@ from fastapi import FastAPI
 
 from app.core.config import get_settings
 from app.db.engine import Database
+from app.embeddings.factory import get_embedder, warm
+from app.llm.factory import get_llm_provider
 
 logger = logging.getLogger(__name__)
 
@@ -28,6 +30,12 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             db.availability.mode,
             settings.SAFE_DATABASE_URL,
         )
+        logger.info("llm provider: %s", get_llm_provider().name)
+        embedder = get_embedder()
+        if settings.EMBED_WARMUP:
+            await warm(embedder)
+        else:
+            logger.info("embedder=%s dim=%d (warm-up disabled)", embedder.name, embedder.dim)
         yield
     finally:
         await db.dispose()
