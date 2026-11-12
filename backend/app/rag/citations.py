@@ -3,7 +3,9 @@
 Tags: ``[DOC-XX p.Y]`` for document pages, ``[EXP-XXXX]`` for experiments (regexes from legacy
 ``citation_check``). ``split_sentences`` understands LLM-style output: it splits on ``. ! ?`` + whitespace
 and on newlines, strips bullet markers (``- ``, ``* ``, ``1. ``), never splits inside a ``[ ... ]`` tag, and
-keeps tags that follow the full stop (``Claim. [DOC-01 p.3]``) with the sentence they belong to.
+keeps tags that follow the full stop (``Claim. [DOC-01 p.3]``) with the sentence they belong to. Closing
+emphasis, quotes or brackets right after the terminator stay with the sentence (``**Do X.** Then Y.`` is two
+sentences, so an uncited bold heading can't hide inside the next, cited one).
 """
 
 from __future__ import annotations
@@ -15,6 +17,8 @@ DOC_CITE: Final = re.compile(r"\[([A-Za-z0-9_-]+)\s+p\.(\d+)\]")
 EXP_CITE: Final = re.compile(r"\[(EXP-\d{4})\]")
 
 _TERMINATORS: Final = ".!?"
+# Markdown emphasis, closing quotes and brackets that may sit between a terminator and the next sentence.
+_CLOSERS: Final = "*_\"')”’"
 _BULLET: Final = re.compile(r"[ \t]*(?:[-*•][ \t]+|\d{1,3}[.)][ \t]+)")
 # A citation tag right after a full stop, optionally separated by spaces, commas or semicolons.
 _TRAILING_TAG: Final = re.compile(r"[ \t,;]*\[(?:[A-Za-z0-9_-]+\s+p\.\d+|EXP-\d{4})\]")
@@ -74,12 +78,16 @@ def split_sentences(text: str) -> list[str]:
             line_start = True
             i += 1
             continue
-        elif depth == 0 and ch in _TERMINATORS and _ends_sentence(text, i + 1):
-            end = _absorb_trailing_tags(text, i + 1)
-            buf.append(text[i:end])
-            flush()
-            i = end
-            continue
+        elif depth == 0 and ch in _TERMINATORS:
+            after = i + 1
+            while after < n and text[after] in _CLOSERS:  # ``Claim.**`` / ``"Claim."`` / ``(Claim.)``
+                after += 1
+            if _ends_sentence(text, after):
+                end = _absorb_trailing_tags(text, after)
+                buf.append(text[i:end])
+                flush()
+                i = end
+                continue
         buf.append(ch)
         i += 1
     flush()
