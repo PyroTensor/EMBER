@@ -1,0 +1,2399 @@
+{
+  "runs": [
+    {
+      "experiment_id": "EXP-0001",
+      "program": "BASS-II",
+      "fuel_material": "Cotton-Fiberglass",
+      "fuel_geometry": "Flat Sheet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 24.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 0,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 0.658,
+      "peak_radiative_flux_kw_m2": 4.93,
+      "limiting_oxygen_index_pct": 21.36,
+      "burn_duration_s": 50.7,
+      "source_doc_id": "DOC-01",
+      "source_page": 3,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-BASS-II-725",
+        "igniter_power_w": 37.8,
+        "missing_channels_count": 0,
+        "sample_thickness_mm": 0.08,
+        "soot_volume_fraction_ppm": 1.44,
+        "co_co2_molar_ratio": 0.155
+      }
+    },
+    {
+      "experiment_id": "EXP-0002",
+      "program": "BASS-II",
+      "fuel_material": "Nomex",
+      "fuel_geometry": "Rod",
+      "gravity_g": 0.0,
+      "oxygen_pct": 21.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 1,
+      "diluent_gas": "N2",
+      "combustion_regime": "No Ignition",
+      "spread_or_burn_rate": 0.0,
+      "peak_radiative_flux_kw_m2": null,
+      "limiting_oxygen_index_pct": 29.67,
+      "burn_duration_s": 0.0,
+      "source_doc_id": "DOC-01",
+      "source_page": 1,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-BASS-II-599",
+        "igniter_power_w": 43.9,
+        "missing_channels_count": 1,
+        "sample_thickness_mm": 0.08,
+        "soot_volume_fraction_ppm": 1.89,
+        "co_co2_molar_ratio": 0.049
+      }
+    },
+    {
+      "experiment_id": "EXP-0003",
+      "program": "BASS-II",
+      "fuel_material": "Nomex",
+      "fuel_geometry": "Flat Sheet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 17.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 2,
+      "diluent_gas": "N2",
+      "combustion_regime": "No Ignition",
+      "spread_or_burn_rate": 0.0,
+      "peak_radiative_flux_kw_m2": 0.0,
+      "limiting_oxygen_index_pct": 27.99,
+      "burn_duration_s": 0.0,
+      "source_doc_id": "DOC-01",
+      "source_page": 3,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-BASS-II-575",
+        "igniter_power_w": 35.3,
+        "missing_channels_count": 0,
+        "sample_thickness_mm": 0.08,
+        "soot_volume_fraction_ppm": 1.01,
+        "co_co2_molar_ratio": 0.102
+      }
+    },
+    {
+      "experiment_id": "EXP-0004",
+      "program": "BASS-II",
+      "fuel_material": "Nomex",
+      "fuel_geometry": "Rod",
+      "gravity_g": 0.0,
+      "oxygen_pct": 19.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 3,
+      "diluent_gas": "N2",
+      "combustion_regime": "No Ignition",
+      "spread_or_burn_rate": 0.0,
+      "peak_radiative_flux_kw_m2": null,
+      "limiting_oxygen_index_pct": 27.51,
+      "burn_duration_s": 0.0,
+      "source_doc_id": "DOC-01",
+      "source_page": 2,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-BASS-II-109",
+        "igniter_power_w": 40.1,
+        "missing_channels_count": 1,
+        "sample_thickness_mm": 1.0,
+        "soot_volume_fraction_ppm": 1.75,
+        "co_co2_molar_ratio": 0.002
+      }
+    },
+    {
+      "experiment_id": "EXP-0005",
+      "program": "BASS-II",
+      "fuel_material": "Cotton-Fiberglass",
+      "fuel_geometry": "Flat Sheet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 21.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 5,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 0.969,
+      "peak_radiative_flux_kw_m2": null,
+      "limiting_oxygen_index_pct": null,
+      "burn_duration_s": 48.3,
+      "source_doc_id": "DOC-01",
+      "source_page": 3,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-BASS-II-572",
+        "igniter_power_w": 28.8,
+        "missing_channels_count": 2,
+        "sample_thickness_mm": 1.0,
+        "soot_volume_fraction_ppm": 1.58,
+        "co_co2_molar_ratio": 0.084
+      }
+    },
+    {
+      "experiment_id": "EXP-0006",
+      "program": "BASS-II",
+      "fuel_material": "Cotton-Fiberglass",
+      "fuel_geometry": "Flat Sheet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 21.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 5,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 0.966,
+      "peak_radiative_flux_kw_m2": 5.62,
+      "limiting_oxygen_index_pct": 17.99,
+      "burn_duration_s": 58.8,
+      "source_doc_id": "DOC-01",
+      "source_page": 1,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-BASS-II-189",
+        "igniter_power_w": 35.2,
+        "missing_channels_count": 0,
+        "sample_thickness_mm": 3.0,
+        "soot_volume_fraction_ppm": 0.92,
+        "co_co2_molar_ratio": 0.007
+      }
+    },
+    {
+      "experiment_id": "EXP-0007",
+      "program": "BASS-II",
+      "fuel_material": "PMMA",
+      "fuel_geometry": "Flat Sheet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 18.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 7,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 0.781,
+      "peak_radiative_flux_kw_m2": 4.51,
+      "limiting_oxygen_index_pct": 15.88,
+      "burn_duration_s": 60.9,
+      "source_doc_id": "DOC-01",
+      "source_page": 2,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-BASS-II-544",
+        "igniter_power_w": 28.6,
+        "missing_channels_count": 0,
+        "sample_thickness_mm": 0.18,
+        "soot_volume_fraction_ppm": 0.86,
+        "co_co2_molar_ratio": 0.044
+      }
+    },
+    {
+      "experiment_id": "EXP-0008",
+      "program": "BASS-II",
+      "fuel_material": "Nomex",
+      "fuel_geometry": "Flat Sheet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 19.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 8,
+      "diluent_gas": "N2",
+      "combustion_regime": "No Ignition",
+      "spread_or_burn_rate": 0.0,
+      "peak_radiative_flux_kw_m2": 0.0,
+      "limiting_oxygen_index_pct": 25.02,
+      "burn_duration_s": 0.0,
+      "source_doc_id": "DOC-01",
+      "source_page": 3,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-BASS-II-565",
+        "igniter_power_w": 25.9,
+        "missing_channels_count": 0,
+        "sample_thickness_mm": 1.0,
+        "soot_volume_fraction_ppm": 2.33,
+        "co_co2_molar_ratio": 0.072
+      }
+    },
+    {
+      "experiment_id": "EXP-0009",
+      "program": "BASS-II",
+      "fuel_material": "PMMA",
+      "fuel_geometry": "Flat Sheet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 19.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 10,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 0.976,
+      "peak_radiative_flux_kw_m2": 4.28,
+      "limiting_oxygen_index_pct": 15.91,
+      "burn_duration_s": 44.8,
+      "source_doc_id": "DOC-01",
+      "source_page": 3,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-BASS-II-381",
+        "igniter_power_w": 41.0,
+        "missing_channels_count": 0,
+        "sample_thickness_mm": 0.18,
+        "soot_volume_fraction_ppm": 2.39,
+        "co_co2_molar_ratio": 0.054
+      }
+    },
+    {
+      "experiment_id": "EXP-0010",
+      "program": "BASS-II",
+      "fuel_material": "PMMA",
+      "fuel_geometry": "Rod",
+      "gravity_g": 0.0,
+      "oxygen_pct": 19.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 12,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 0.621,
+      "peak_radiative_flux_kw_m2": null,
+      "limiting_oxygen_index_pct": null,
+      "burn_duration_s": 34.1,
+      "source_doc_id": "DOC-01",
+      "source_page": 1,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-BASS-II-669",
+        "igniter_power_w": 27.7,
+        "missing_channels_count": 2,
+        "sample_thickness_mm": 1.0,
+        "soot_volume_fraction_ppm": 2.56,
+        "co_co2_molar_ratio": 0.081
+      }
+    },
+    {
+      "experiment_id": "EXP-0011",
+      "program": "BASS-II",
+      "fuel_material": "PMMA",
+      "fuel_geometry": "Flat Sheet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 17.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 15,
+      "diluent_gas": "N2",
+      "combustion_regime": "Self-Extinguished",
+      "spread_or_burn_rate": 0.006,
+      "peak_radiative_flux_kw_m2": 1.58,
+      "limiting_oxygen_index_pct": 17.82,
+      "burn_duration_s": 4.1,
+      "source_doc_id": "DOC-01",
+      "source_page": 3,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-BASS-II-458",
+        "igniter_power_w": 27.8,
+        "missing_channels_count": 0,
+        "sample_thickness_mm": 0.08,
+        "soot_volume_fraction_ppm": 1.0,
+        "co_co2_molar_ratio": 0.049
+      }
+    },
+    {
+      "experiment_id": "EXP-0012",
+      "program": "BASS-II",
+      "fuel_material": "PMMA",
+      "fuel_geometry": "Flat Sheet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 21.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 20,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 0.767,
+      "peak_radiative_flux_kw_m2": null,
+      "limiting_oxygen_index_pct": null,
+      "burn_duration_s": 69.4,
+      "source_doc_id": "DOC-01",
+      "source_page": 2,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-BASS-II-961",
+        "igniter_power_w": 17.7,
+        "missing_channels_count": 2,
+        "sample_thickness_mm": 3.0,
+        "soot_volume_fraction_ppm": 0.96,
+        "co_co2_molar_ratio": 0.091
+      }
+    },
+    {
+      "experiment_id": "EXP-0013",
+      "program": "BASS-II",
+      "fuel_material": "Cotton-Fiberglass",
+      "fuel_geometry": "Flat Sheet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 18.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 25,
+      "diluent_gas": "N2",
+      "combustion_regime": "Self-Extinguished",
+      "spread_or_burn_rate": 0.006,
+      "peak_radiative_flux_kw_m2": null,
+      "limiting_oxygen_index_pct": 19.03,
+      "burn_duration_s": 5.8,
+      "source_doc_id": "DOC-01",
+      "source_page": 2,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-BASS-II-289",
+        "igniter_power_w": 27.8,
+        "missing_channels_count": 1,
+        "sample_thickness_mm": 3.0,
+        "soot_volume_fraction_ppm": 3.09,
+        "co_co2_molar_ratio": 0.053
+      }
+    },
+    {
+      "experiment_id": "EXP-0014",
+      "program": "BASS-II",
+      "fuel_material": "PMMA",
+      "fuel_geometry": "Flat Sheet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 24.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 35,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 1.131,
+      "peak_radiative_flux_kw_m2": 5.44,
+      "limiting_oxygen_index_pct": 18.01,
+      "burn_duration_s": 53.3,
+      "source_doc_id": "DOC-01",
+      "source_page": 3,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-BASS-II-302",
+        "igniter_power_w": 17.9,
+        "missing_channels_count": 0,
+        "sample_thickness_mm": 0.18,
+        "soot_volume_fraction_ppm": 0.77,
+        "co_co2_molar_ratio": 0.024
+      }
+    },
+    {
+      "experiment_id": "EXP-0015",
+      "program": "BASS-II",
+      "fuel_material": "PMMA",
+      "fuel_geometry": "Flat Sheet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 18.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 50,
+      "diluent_gas": "N2",
+      "combustion_regime": "Self-Extinguished",
+      "spread_or_burn_rate": 0.006,
+      "peak_radiative_flux_kw_m2": null,
+      "limiting_oxygen_index_pct": null,
+      "burn_duration_s": 7.5,
+      "source_doc_id": "DOC-01",
+      "source_page": 1,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-BASS-II-936",
+        "igniter_power_w": 22.2,
+        "missing_channels_count": 2,
+        "sample_thickness_mm": 0.08,
+        "soot_volume_fraction_ppm": 1.78,
+        "co_co2_molar_ratio": 0.112
+      }
+    },
+    {
+      "experiment_id": "EXP-0016",
+      "program": "SoFIE",
+      "fuel_material": "Nomex",
+      "fuel_geometry": "Flat Sheet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 21.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 20.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "No Ignition",
+      "spread_or_burn_rate": 0.0,
+      "peak_radiative_flux_kw_m2": null,
+      "limiting_oxygen_index_pct": 27.43,
+      "burn_duration_s": 0.0,
+      "source_doc_id": "DOC-02",
+      "source_page": 2,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-SoFIE-708",
+        "igniter_power_w": 44.1,
+        "missing_channels_count": 1,
+        "sample_thickness_mm": 1.0,
+        "soot_volume_fraction_ppm": 2.34,
+        "co_co2_molar_ratio": 0.014
+      }
+    },
+    {
+      "experiment_id": "EXP-0017",
+      "program": "SoFIE",
+      "fuel_material": "Nomex",
+      "fuel_geometry": "Flat Sheet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 26.5,
+      "pressure_kpa": 70.3,
+      "flow_velocity_cm_s": 0.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "No Ignition",
+      "spread_or_burn_rate": 0.0,
+      "peak_radiative_flux_kw_m2": 0.0,
+      "limiting_oxygen_index_pct": 31.17,
+      "burn_duration_s": 0.0,
+      "source_doc_id": "DOC-02",
+      "source_page": 2,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-SoFIE-850",
+        "igniter_power_w": 27.8,
+        "missing_channels_count": 0,
+        "sample_thickness_mm": 0.08,
+        "soot_volume_fraction_ppm": 1.7,
+        "co_co2_molar_ratio": 0.044
+      }
+    },
+    {
+      "experiment_id": "EXP-0018",
+      "program": "SoFIE",
+      "fuel_material": "PMMA",
+      "fuel_geometry": "Flat Sheet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 30.0,
+      "pressure_kpa": 65.0,
+      "flow_velocity_cm_s": 0.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 1.778,
+      "peak_radiative_flux_kw_m2": 7.77,
+      "limiting_oxygen_index_pct": 21.71,
+      "burn_duration_s": 45.8,
+      "source_doc_id": "DOC-02",
+      "source_page": 2,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-SoFIE-490",
+        "igniter_power_w": 30.1,
+        "missing_channels_count": 0,
+        "sample_thickness_mm": 1.0,
+        "soot_volume_fraction_ppm": 2.12,
+        "co_co2_molar_ratio": 0.025
+      }
+    },
+    {
+      "experiment_id": "EXP-0019",
+      "program": "SoFIE",
+      "fuel_material": "PMMA",
+      "fuel_geometry": "Rod",
+      "gravity_g": 0.0,
+      "oxygen_pct": 34.0,
+      "pressure_kpa": 56.5,
+      "flow_velocity_cm_s": 10.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 3.866,
+      "peak_radiative_flux_kw_m2": 11.41,
+      "limiting_oxygen_index_pct": 18.05,
+      "burn_duration_s": 59.3,
+      "source_doc_id": "DOC-02",
+      "source_page": 1,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-SoFIE-381",
+        "igniter_power_w": 15.4,
+        "missing_channels_count": 0,
+        "sample_thickness_mm": 3.0,
+        "soot_volume_fraction_ppm": 2.3,
+        "co_co2_molar_ratio": 0.057
+      }
+    },
+    {
+      "experiment_id": "EXP-0020",
+      "program": "SoFIE",
+      "fuel_material": "Cotton-Fiberglass",
+      "fuel_geometry": "Flat Sheet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 34.0,
+      "pressure_kpa": 56.5,
+      "flow_velocity_cm_s": 0.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 2.243,
+      "peak_radiative_flux_kw_m2": null,
+      "limiting_oxygen_index_pct": null,
+      "burn_duration_s": 60.3,
+      "source_doc_id": "DOC-02",
+      "source_page": 1,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-SoFIE-530",
+        "igniter_power_w": 18.0,
+        "missing_channels_count": 2,
+        "sample_thickness_mm": 1.0,
+        "soot_volume_fraction_ppm": 0.99,
+        "co_co2_molar_ratio": 0.018
+      }
+    },
+    {
+      "experiment_id": "EXP-0021",
+      "program": "SoFIE",
+      "fuel_material": "Nomex",
+      "fuel_geometry": "Rod",
+      "gravity_g": 0.0,
+      "oxygen_pct": 36.0,
+      "pressure_kpa": 52.0,
+      "flow_velocity_cm_s": 20.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 1.194,
+      "peak_radiative_flux_kw_m2": 6.44,
+      "limiting_oxygen_index_pct": 28.8,
+      "burn_duration_s": 30.9,
+      "source_doc_id": "DOC-02",
+      "source_page": 2,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-SoFIE-607",
+        "igniter_power_w": 39.1,
+        "missing_channels_count": 0,
+        "sample_thickness_mm": 0.08,
+        "soot_volume_fraction_ppm": 0.89,
+        "co_co2_molar_ratio": 0.062
+      }
+    },
+    {
+      "experiment_id": "EXP-0022",
+      "program": "SoFIE",
+      "fuel_material": "Nomex",
+      "fuel_geometry": "Rod",
+      "gravity_g": 0.0,
+      "oxygen_pct": 40.0,
+      "pressure_kpa": 48.0,
+      "flow_velocity_cm_s": 5.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 2.472,
+      "peak_radiative_flux_kw_m2": 9.2,
+      "limiting_oxygen_index_pct": 29.35,
+      "burn_duration_s": 75.2,
+      "source_doc_id": "DOC-02",
+      "source_page": 3,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-SoFIE-355",
+        "igniter_power_w": 16.5,
+        "missing_channels_count": 0,
+        "sample_thickness_mm": 1.0,
+        "soot_volume_fraction_ppm": 1.7,
+        "co_co2_molar_ratio": 0.105
+      }
+    },
+    {
+      "experiment_id": "EXP-0023",
+      "program": "SoFIE",
+      "fuel_material": "Cotton-Fiberglass",
+      "fuel_geometry": "Rod",
+      "gravity_g": 0.0,
+      "oxygen_pct": 21.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 10.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 1.125,
+      "peak_radiative_flux_kw_m2": 4.91,
+      "limiting_oxygen_index_pct": 17.8,
+      "burn_duration_s": 29.3,
+      "source_doc_id": "DOC-02",
+      "source_page": 2,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-SoFIE-549",
+        "igniter_power_w": 35.8,
+        "missing_channels_count": 0,
+        "sample_thickness_mm": 0.18,
+        "soot_volume_fraction_ppm": 1.77,
+        "co_co2_molar_ratio": 0.08
+      }
+    },
+    {
+      "experiment_id": "EXP-0024",
+      "program": "SoFIE",
+      "fuel_material": "Cotton-Fiberglass",
+      "fuel_geometry": "Rod",
+      "gravity_g": 0.0,
+      "oxygen_pct": 26.5,
+      "pressure_kpa": 70.3,
+      "flow_velocity_cm_s": 10.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 2.212,
+      "peak_radiative_flux_kw_m2": 6.69,
+      "limiting_oxygen_index_pct": 18.62,
+      "burn_duration_s": 67.8,
+      "source_doc_id": "DOC-02",
+      "source_page": 2,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-SoFIE-484",
+        "igniter_power_w": 43.5,
+        "missing_channels_count": 0,
+        "sample_thickness_mm": 0.08,
+        "soot_volume_fraction_ppm": 1.92,
+        "co_co2_molar_ratio": 0.056
+      }
+    },
+    {
+      "experiment_id": "EXP-0025",
+      "program": "SoFIE",
+      "fuel_material": "Nomex",
+      "fuel_geometry": "Flat Sheet",
+      "gravity_g": 0.16,
+      "oxygen_pct": 30.0,
+      "pressure_kpa": 65.0,
+      "flow_velocity_cm_s": 10.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 0.625,
+      "peak_radiative_flux_kw_m2": null,
+      "limiting_oxygen_index_pct": null,
+      "burn_duration_s": 54.3,
+      "source_doc_id": "DOC-05",
+      "source_page": 1,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-SoFIE-617",
+        "igniter_power_w": 34.8,
+        "missing_channels_count": 2,
+        "sample_thickness_mm": 3.0,
+        "soot_volume_fraction_ppm": 1.01,
+        "facility": "Parabolic flight (Lunar profile)",
+        "co_co2_molar_ratio": 0.036
+      }
+    },
+    {
+      "experiment_id": "EXP-0026",
+      "program": "SoFIE",
+      "fuel_material": "Nomex",
+      "fuel_geometry": "Flat Sheet",
+      "gravity_g": 0.16,
+      "oxygen_pct": 34.0,
+      "pressure_kpa": 56.5,
+      "flow_velocity_cm_s": 0.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 1.499,
+      "peak_radiative_flux_kw_m2": 4.03,
+      "limiting_oxygen_index_pct": 28.08,
+      "burn_duration_s": 57.2,
+      "source_doc_id": "DOC-05",
+      "source_page": 2,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-SoFIE-939",
+        "igniter_power_w": 43.0,
+        "missing_channels_count": 0,
+        "sample_thickness_mm": 0.08,
+        "soot_volume_fraction_ppm": 0.57,
+        "facility": "Parabolic flight (Lunar profile)",
+        "co_co2_molar_ratio": 0.003
+      }
+    },
+    {
+      "experiment_id": "EXP-0027",
+      "program": "SoFIE",
+      "fuel_material": "Cotton-Fiberglass",
+      "fuel_geometry": "Rod",
+      "gravity_g": 0.38,
+      "oxygen_pct": 34.0,
+      "pressure_kpa": 56.5,
+      "flow_velocity_cm_s": 0.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 3.107,
+      "peak_radiative_flux_kw_m2": 8.49,
+      "limiting_oxygen_index_pct": 19.74,
+      "burn_duration_s": 60.3,
+      "source_doc_id": "DOC-05",
+      "source_page": 3,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-SoFIE-591",
+        "igniter_power_w": 28.8,
+        "missing_channels_count": 0,
+        "sample_thickness_mm": 0.18,
+        "soot_volume_fraction_ppm": 2.71,
+        "facility": "Parabolic flight (Mars profile)",
+        "co_co2_molar_ratio": 0.09
+      }
+    },
+    {
+      "experiment_id": "EXP-0028",
+      "program": "SoFIE",
+      "fuel_material": "Nomex",
+      "fuel_geometry": "Flat Sheet",
+      "gravity_g": 0.38,
+      "oxygen_pct": 36.0,
+      "pressure_kpa": 52.0,
+      "flow_velocity_cm_s": 10.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 1.36,
+      "peak_radiative_flux_kw_m2": 4.03,
+      "limiting_oxygen_index_pct": 29.0,
+      "burn_duration_s": 55.4,
+      "source_doc_id": "DOC-05",
+      "source_page": 1,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-SoFIE-168",
+        "igniter_power_w": 27.5,
+        "missing_channels_count": 0,
+        "sample_thickness_mm": 1.0,
+        "soot_volume_fraction_ppm": 0.72,
+        "facility": "Parabolic flight (Mars profile)",
+        "co_co2_molar_ratio": 0.049
+      }
+    },
+    {
+      "experiment_id": "EXP-0029",
+      "program": "SoFIE",
+      "fuel_material": "Cotton-Fiberglass",
+      "fuel_geometry": "Rod",
+      "gravity_g": 1.0,
+      "oxygen_pct": 40.0,
+      "pressure_kpa": 48.0,
+      "flow_velocity_cm_s": 0.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 2.909,
+      "peak_radiative_flux_kw_m2": 8.25,
+      "limiting_oxygen_index_pct": 21.24,
+      "burn_duration_s": 57.8,
+      "source_doc_id": "DOC-02",
+      "source_page": 1,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-SoFIE-684",
+        "igniter_power_w": 39.8,
+        "missing_channels_count": 0,
+        "sample_thickness_mm": 0.18,
+        "soot_volume_fraction_ppm": 1.72,
+        "facility": "Ground lab",
+        "co_co2_molar_ratio": 0.044
+      }
+    },
+    {
+      "experiment_id": "EXP-0030",
+      "program": "SoFIE",
+      "fuel_material": "PMMA",
+      "fuel_geometry": "Flat Sheet",
+      "gravity_g": 1.0,
+      "oxygen_pct": 21.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 20.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 0.634,
+      "peak_radiative_flux_kw_m2": 2.82,
+      "limiting_oxygen_index_pct": 17.56,
+      "burn_duration_s": 65.6,
+      "source_doc_id": "DOC-02",
+      "source_page": 2,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-SoFIE-277",
+        "igniter_power_w": 27.0,
+        "missing_channels_count": 0,
+        "sample_thickness_mm": 1.0,
+        "soot_volume_fraction_ppm": 2.8,
+        "facility": "Ground lab",
+        "co_co2_molar_ratio": 0.025
+      }
+    },
+    {
+      "experiment_id": "EXP-0031",
+      "program": "FLEX",
+      "fuel_material": "Heptane",
+      "fuel_geometry": "Droplet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 18.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 0.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "Cool Flame",
+      "spread_or_burn_rate": 0.205,
+      "peak_radiative_flux_kw_m2": 1.28,
+      "limiting_oxygen_index_pct": 16.37,
+      "burn_duration_s": 22.4,
+      "source_doc_id": "DOC-03",
+      "source_page": 2,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-FLEX-576",
+        "igniter_power_w": 43.4,
+        "missing_channels_count": 0,
+        "initial_droplet_diameter_mm": 3.76,
+        "flame_standoff_ratio": 10.1,
+        "co_co2_molar_ratio": 0.047
+      }
+    },
+    {
+      "experiment_id": "EXP-0032",
+      "program": "FLEX",
+      "fuel_material": "Heptane",
+      "fuel_geometry": "Droplet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 18.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 0.0,
+      "diluent_gas": "He",
+      "combustion_regime": "Self-Extinguished",
+      "spread_or_burn_rate": 0.133,
+      "peak_radiative_flux_kw_m2": 1.28,
+      "limiting_oxygen_index_pct": 18.45,
+      "burn_duration_s": 13.3,
+      "source_doc_id": "DOC-03",
+      "source_page": 2,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-FLEX-242",
+        "igniter_power_w": 17.3,
+        "missing_channels_count": 0,
+        "initial_droplet_diameter_mm": 2.64,
+        "flame_standoff_ratio": 9.1,
+        "co_co2_molar_ratio": 0.087
+      }
+    },
+    {
+      "experiment_id": "EXP-0033",
+      "program": "FLEX",
+      "fuel_material": "Heptane",
+      "fuel_geometry": "Droplet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 15.0,
+      "pressure_kpa": 50.0,
+      "flow_velocity_cm_s": 0.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "No Ignition",
+      "spread_or_burn_rate": 0.0,
+      "peak_radiative_flux_kw_m2": null,
+      "limiting_oxygen_index_pct": 18.27,
+      "burn_duration_s": 0.0,
+      "source_doc_id": "DOC-03",
+      "source_page": 3,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-FLEX-195",
+        "igniter_power_w": 34.3,
+        "missing_channels_count": 1,
+        "initial_droplet_diameter_mm": 2.26,
+        "flame_standoff_ratio": 6.9,
+        "co_co2_molar_ratio": 0.076
+      }
+    },
+    {
+      "experiment_id": "EXP-0034",
+      "program": "FLEX",
+      "fuel_material": "Heptane",
+      "fuel_geometry": "Droplet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 15.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 0.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "Self-Extinguished",
+      "spread_or_burn_rate": 0.158,
+      "peak_radiative_flux_kw_m2": 1.0,
+      "limiting_oxygen_index_pct": 15.98,
+      "burn_duration_s": 11.9,
+      "source_doc_id": "DOC-03",
+      "source_page": 1,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-FLEX-400",
+        "igniter_power_w": 17.1,
+        "missing_channels_count": 0,
+        "initial_droplet_diameter_mm": 3.87,
+        "flame_standoff_ratio": 9.2,
+        "co_co2_molar_ratio": 0.03
+      }
+    },
+    {
+      "experiment_id": "EXP-0035",
+      "program": "FLEX",
+      "fuel_material": "Heptane",
+      "fuel_geometry": "Droplet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 21.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 0.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "Cool Flame",
+      "spread_or_burn_rate": 0.235,
+      "peak_radiative_flux_kw_m2": null,
+      "limiting_oxygen_index_pct": null,
+      "burn_duration_s": 21.2,
+      "source_doc_id": "DOC-03",
+      "source_page": 2,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-FLEX-879",
+        "igniter_power_w": 39.2,
+        "missing_channels_count": 2,
+        "initial_droplet_diameter_mm": 4.2,
+        "flame_standoff_ratio": 4.2,
+        "co_co2_molar_ratio": 0.056
+      }
+    },
+    {
+      "experiment_id": "EXP-0036",
+      "program": "FLEX",
+      "fuel_material": "Heptane",
+      "fuel_geometry": "Droplet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 21.0,
+      "pressure_kpa": 50.0,
+      "flow_velocity_cm_s": 0.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 0.652,
+      "peak_radiative_flux_kw_m2": 3.37,
+      "limiting_oxygen_index_pct": 18.12,
+      "burn_duration_s": 11.2,
+      "source_doc_id": "DOC-03",
+      "source_page": 1,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-FLEX-242",
+        "igniter_power_w": 29.9,
+        "missing_channels_count": 0,
+        "initial_droplet_diameter_mm": 3.9,
+        "flame_standoff_ratio": 6.6,
+        "co_co2_molar_ratio": 0.052
+      }
+    },
+    {
+      "experiment_id": "EXP-0037",
+      "program": "FLEX",
+      "fuel_material": "Heptane",
+      "fuel_geometry": "Droplet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 21.0,
+      "pressure_kpa": 50.0,
+      "flow_velocity_cm_s": 0.0,
+      "diluent_gas": "He",
+      "combustion_regime": "Cool Flame",
+      "spread_or_burn_rate": 0.203,
+      "peak_radiative_flux_kw_m2": 0.89,
+      "limiting_oxygen_index_pct": 19.79,
+      "burn_duration_s": 24.8,
+      "source_doc_id": "DOC-03",
+      "source_page": 2,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-FLEX-935",
+        "igniter_power_w": 43.6,
+        "missing_channels_count": 0,
+        "initial_droplet_diameter_mm": 3.25,
+        "flame_standoff_ratio": 7.7,
+        "co_co2_molar_ratio": 0.103
+      }
+    },
+    {
+      "experiment_id": "EXP-0038",
+      "program": "FLEX",
+      "fuel_material": "Heptane",
+      "fuel_geometry": "Droplet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 25.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 0.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 0.905,
+      "peak_radiative_flux_kw_m2": null,
+      "limiting_oxygen_index_pct": null,
+      "burn_duration_s": 14.9,
+      "source_doc_id": "DOC-03",
+      "source_page": 2,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-FLEX-398",
+        "igniter_power_w": 39.6,
+        "missing_channels_count": 2,
+        "initial_droplet_diameter_mm": 4.17,
+        "flame_standoff_ratio": 5.6,
+        "co_co2_molar_ratio": 0.0
+      }
+    },
+    {
+      "experiment_id": "EXP-0039",
+      "program": "FLEX",
+      "fuel_material": "Methanol",
+      "fuel_geometry": "Droplet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 18.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 0.0,
+      "diluent_gas": "CO2",
+      "combustion_regime": "No Ignition",
+      "spread_or_burn_rate": 0.0,
+      "peak_radiative_flux_kw_m2": 0.0,
+      "limiting_oxygen_index_pct": 20.75,
+      "burn_duration_s": 0.0,
+      "source_doc_id": "DOC-03",
+      "source_page": 2,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-FLEX-203",
+        "igniter_power_w": 29.7,
+        "missing_channels_count": 0,
+        "initial_droplet_diameter_mm": 2.26,
+        "flame_standoff_ratio": 7.9,
+        "co_co2_molar_ratio": 0.094
+      }
+    },
+    {
+      "experiment_id": "EXP-0040",
+      "program": "FLEX",
+      "fuel_material": "Methanol",
+      "fuel_geometry": "Droplet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 21.0,
+      "pressure_kpa": 50.0,
+      "flow_velocity_cm_s": 0.0,
+      "diluent_gas": "He",
+      "combustion_regime": "Self-Extinguished",
+      "spread_or_burn_rate": 0.134,
+      "peak_radiative_flux_kw_m2": null,
+      "limiting_oxygen_index_pct": 22.42,
+      "burn_duration_s": 5.7,
+      "source_doc_id": "DOC-03",
+      "source_page": 3,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-FLEX-599",
+        "igniter_power_w": 44.8,
+        "missing_channels_count": 1,
+        "initial_droplet_diameter_mm": 4.23,
+        "flame_standoff_ratio": 4.0,
+        "co_co2_molar_ratio": 0.008
+      }
+    },
+    {
+      "experiment_id": "EXP-0041",
+      "program": "FLEX",
+      "fuel_material": "Methanol",
+      "fuel_geometry": "Droplet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 21.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 0.0,
+      "diluent_gas": "CO2",
+      "combustion_regime": "Self-Extinguished",
+      "spread_or_burn_rate": 0.172,
+      "peak_radiative_flux_kw_m2": 1.47,
+      "limiting_oxygen_index_pct": 21.12,
+      "burn_duration_s": 16.5,
+      "source_doc_id": "DOC-03",
+      "source_page": 1,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-FLEX-388",
+        "igniter_power_w": 26.6,
+        "missing_channels_count": 0,
+        "initial_droplet_diameter_mm": 3.04,
+        "flame_standoff_ratio": 8.9,
+        "co_co2_molar_ratio": 0.049
+      }
+    },
+    {
+      "experiment_id": "EXP-0042",
+      "program": "FLEX",
+      "fuel_material": "Methanol",
+      "fuel_geometry": "Droplet",
+      "gravity_g": 0.0,
+      "oxygen_pct": 15.0,
+      "pressure_kpa": 50.0,
+      "flow_velocity_cm_s": 0.0,
+      "diluent_gas": "He",
+      "combustion_regime": "No Ignition",
+      "spread_or_burn_rate": 0.0,
+      "peak_radiative_flux_kw_m2": 0.0,
+      "limiting_oxygen_index_pct": 22.66,
+      "burn_duration_s": 0.0,
+      "source_doc_id": "DOC-03",
+      "source_page": 1,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-FLEX-255",
+        "igniter_power_w": 34.9,
+        "missing_channels_count": 0,
+        "initial_droplet_diameter_mm": 3.35,
+        "flame_standoff_ratio": 4.7,
+        "co_co2_molar_ratio": 0.036
+      }
+    },
+    {
+      "experiment_id": "EXP-0043",
+      "program": "ACME",
+      "fuel_material": "Heptane",
+      "fuel_geometry": "Gaseous",
+      "gravity_g": 0.0,
+      "oxygen_pct": 18.0,
+      "pressure_kpa": 60.0,
+      "flow_velocity_cm_s": 2.0,
+      "diluent_gas": "CO2",
+      "combustion_regime": "Self-Extinguished",
+      "spread_or_burn_rate": 0.153,
+      "peak_radiative_flux_kw_m2": 1.07,
+      "limiting_oxygen_index_pct": 19.1,
+      "burn_duration_s": 11.3,
+      "source_doc_id": "DOC-04",
+      "source_page": 2,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-ACME-955",
+        "igniter_power_w": 22.2,
+        "missing_channels_count": 0,
+        "initial_droplet_diameter_mm": 2.31,
+        "flame_standoff_ratio": 5.1,
+        "fuel_note": "pre-vaporised, burner-supported",
+        "co_co2_molar_ratio": 0.078
+      }
+    },
+    {
+      "experiment_id": "EXP-0044",
+      "program": "ACME",
+      "fuel_material": "Heptane",
+      "fuel_geometry": "Gaseous",
+      "gravity_g": 0.0,
+      "oxygen_pct": 21.0,
+      "pressure_kpa": 60.0,
+      "flow_velocity_cm_s": 2.0,
+      "diluent_gas": "Ar",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 0.864,
+      "peak_radiative_flux_kw_m2": 3.33,
+      "limiting_oxygen_index_pct": 15.13,
+      "burn_duration_s": 7.1,
+      "source_doc_id": "DOC-04",
+      "source_page": 2,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-ACME-826",
+        "igniter_power_w": 18.4,
+        "missing_channels_count": 0,
+        "initial_droplet_diameter_mm": 2.26,
+        "flame_standoff_ratio": 5.0,
+        "fuel_note": "pre-vaporised, burner-supported",
+        "co_co2_molar_ratio": 0.079
+      }
+    },
+    {
+      "experiment_id": "EXP-0045",
+      "program": "ACME",
+      "fuel_material": "Heptane",
+      "fuel_geometry": "Gaseous",
+      "gravity_g": 0.0,
+      "oxygen_pct": 21.0,
+      "pressure_kpa": 60.0,
+      "flow_velocity_cm_s": 0.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 0.639,
+      "peak_radiative_flux_kw_m2": 3.01,
+      "limiting_oxygen_index_pct": 18.01,
+      "burn_duration_s": 12.8,
+      "source_doc_id": "DOC-04",
+      "source_page": 3,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-ACME-593",
+        "igniter_power_w": 20.8,
+        "missing_channels_count": 0,
+        "initial_droplet_diameter_mm": 3.44,
+        "flame_standoff_ratio": 5.0,
+        "fuel_note": "pre-vaporised, burner-supported",
+        "co_co2_molar_ratio": 0.058
+      }
+    },
+    {
+      "experiment_id": "EXP-0046",
+      "program": "ACME",
+      "fuel_material": "Methanol",
+      "fuel_geometry": "Gaseous",
+      "gravity_g": 0.0,
+      "oxygen_pct": 18.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 0.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "Self-Extinguished",
+      "spread_or_burn_rate": 0.139,
+      "peak_radiative_flux_kw_m2": null,
+      "limiting_oxygen_index_pct": 18.51,
+      "burn_duration_s": 12.6,
+      "source_doc_id": "DOC-04",
+      "source_page": 1,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-ACME-345",
+        "igniter_power_w": 26.6,
+        "missing_channels_count": 1,
+        "initial_droplet_diameter_mm": 3.43,
+        "flame_standoff_ratio": 9.4,
+        "fuel_note": "pre-vaporised, burner-supported",
+        "co_co2_molar_ratio": 0.046
+      }
+    },
+    {
+      "experiment_id": "EXP-0047",
+      "program": "ACME",
+      "fuel_material": "Heptane",
+      "fuel_geometry": "Gaseous",
+      "gravity_g": 0.0,
+      "oxygen_pct": 18.0,
+      "pressure_kpa": 101.3,
+      "flow_velocity_cm_s": 2.0,
+      "diluent_gas": "Ar",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 0.79,
+      "peak_radiative_flux_kw_m2": 3.64,
+      "limiting_oxygen_index_pct": 13.16,
+      "burn_duration_s": 7.8,
+      "source_doc_id": "DOC-04",
+      "source_page": 3,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-ACME-277",
+        "igniter_power_w": 35.2,
+        "missing_channels_count": 0,
+        "initial_droplet_diameter_mm": 3.91,
+        "flame_standoff_ratio": 4.9,
+        "fuel_note": "pre-vaporised, burner-supported",
+        "co_co2_molar_ratio": 0.069
+      }
+    },
+    {
+      "experiment_id": "EXP-0048",
+      "program": "ACME",
+      "fuel_material": "Heptane",
+      "fuel_geometry": "Gaseous",
+      "gravity_g": 0.0,
+      "oxygen_pct": 25.0,
+      "pressure_kpa": 60.0,
+      "flow_velocity_cm_s": 2.0,
+      "diluent_gas": "CO2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 0.791,
+      "peak_radiative_flux_kw_m2": 4.0,
+      "limiting_oxygen_index_pct": 19.17,
+      "burn_duration_s": 12.4,
+      "source_doc_id": "DOC-04",
+      "source_page": 2,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-ACME-661",
+        "igniter_power_w": 31.2,
+        "missing_channels_count": 0,
+        "initial_droplet_diameter_mm": 3.52,
+        "flame_standoff_ratio": 7.3,
+        "fuel_note": "pre-vaporised, burner-supported",
+        "co_co2_molar_ratio": 0.02
+      }
+    },
+    {
+      "experiment_id": "EXP-0049",
+      "program": "ACME",
+      "fuel_material": "Heptane",
+      "fuel_geometry": "Gaseous",
+      "gravity_g": 0.0,
+      "oxygen_pct": 21.0,
+      "pressure_kpa": 80.0,
+      "flow_velocity_cm_s": 2.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "Sustained Burn",
+      "spread_or_burn_rate": 0.769,
+      "peak_radiative_flux_kw_m2": 3.55,
+      "limiting_oxygen_index_pct": 15.13,
+      "burn_duration_s": 9.7,
+      "source_doc_id": "DOC-04",
+      "source_page": 1,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-ACME-291",
+        "igniter_power_w": 25.6,
+        "missing_channels_count": 0,
+        "initial_droplet_diameter_mm": 3.88,
+        "flame_standoff_ratio": 6.8,
+        "fuel_note": "pre-vaporised, burner-supported",
+        "co_co2_molar_ratio": 0.077
+      }
+    },
+    {
+      "experiment_id": "EXP-0050",
+      "program": "ACME",
+      "fuel_material": "Heptane",
+      "fuel_geometry": "Gaseous",
+      "gravity_g": 0.0,
+      "oxygen_pct": 18.0,
+      "pressure_kpa": 60.0,
+      "flow_velocity_cm_s": 0.0,
+      "diluent_gas": "N2",
+      "combustion_regime": "Self-Extinguished",
+      "spread_or_burn_rate": 0.142,
+      "peak_radiative_flux_kw_m2": 0.96,
+      "limiting_oxygen_index_pct": 18.17,
+      "burn_duration_s": 10.2,
+      "source_doc_id": "DOC-04",
+      "source_page": 1,
+      "extra_telemetry": {
+        "psi_investigation_code": "PSI-ACME-322",
+        "igniter_power_w": 21.7,
+        "missing_channels_count": 0,
+        "initial_droplet_diameter_mm": 3.98,
+        "flame_standoff_ratio": 8.2,
+        "fuel_note": "pre-vaporised, burner-supported",
+        "co_co2_molar_ratio": 0.014
+      }
+    }
+  ],
+  "cases": [
+    {
+      "id": "preset-iss",
+      "config": {
+        "oxygen_pct": 21.0,
+        "pressure_kpa": 101.3,
+        "flow_velocity_cm_s": 10.0,
+        "gravity_g": 0.0,
+        "fuel_material": "Cotton-Fiberglass",
+        "diluent_gas": "N2"
+      },
+      "evaluation": {
+        "risk_index": 47.8,
+        "risk_band": "ELEVATED",
+        "baseline_risk": 47.8,
+        "predicted_regime": "Sustained Burn",
+        "estimated_loi_pct": 17.26,
+        "oxygen_margin_pct": 3.74,
+        "contributions": [
+          {
+            "feature": "oxygen_enrichment",
+            "label": "Oxygen concentration",
+            "value": 0.0
+          },
+          {
+            "feature": "ventilation_coupling",
+            "label": "HVAC ventilation flow",
+            "value": 0.0
+          },
+          {
+            "feature": "gravity_buoyancy_regime",
+            "label": "Gravity / buoyancy",
+            "value": 0.0
+          },
+          {
+            "feature": "cabin_pressure_density",
+            "label": "Cabin pressure",
+            "value": 0.0
+          },
+          {
+            "feature": "material_flammability_intrinsic",
+            "label": "Material & diluent",
+            "value": 0.0
+          }
+        ]
+      },
+      "top5": [
+        {
+          "experiment_id": "EXP-0023",
+          "total_score": 93.12,
+          "similarity": 100.0,
+          "completeness": 100.0,
+          "criticality": 77.08
+        },
+        {
+          "experiment_id": "EXP-0006",
+          "total_score": 92.75,
+          "similarity": 98.37,
+          "completeness": 100.0,
+          "criticality": 78.56
+        },
+        {
+          "experiment_id": "EXP-0001",
+          "total_score": 88.14,
+          "similarity": 90.51,
+          "completeness": 100.0,
+          "criticality": 76.28
+        },
+        {
+          "experiment_id": "EXP-0005",
+          "total_score": 80.18,
+          "similarity": 98.37,
+          "completeness": 65.0,
+          "criticality": 60.0
+        },
+        {
+          "experiment_id": "EXP-0024",
+          "total_score": 75.84,
+          "similarity": 58.56,
+          "completeness": 100.0,
+          "criticality": 88.54
+        }
+      ]
+    },
+    {
+      "id": "preset-artemis-transit",
+      "config": {
+        "oxygen_pct": 34.0,
+        "pressure_kpa": 56.5,
+        "flow_velocity_cm_s": 10.0,
+        "gravity_g": 0.0,
+        "fuel_material": "Cotton-Fiberglass",
+        "diluent_gas": "N2"
+      },
+      "evaluation": {
+        "risk_index": 97.5,
+        "risk_band": "CRITICAL",
+        "baseline_risk": 47.8,
+        "predicted_regime": "Sustained Burn",
+        "estimated_loi_pct": 19.03,
+        "oxygen_margin_pct": 14.97,
+        "contributions": [
+          {
+            "feature": "oxygen_enrichment",
+            "label": "Oxygen concentration",
+            "value": 57.3
+          },
+          {
+            "feature": "cabin_pressure_density",
+            "label": "Cabin pressure",
+            "value": -7.61
+          },
+          {
+            "feature": "ventilation_coupling",
+            "label": "HVAC ventilation flow",
+            "value": 0.0
+          },
+          {
+            "feature": "gravity_buoyancy_regime",
+            "label": "Gravity / buoyancy",
+            "value": 0.0
+          },
+          {
+            "feature": "material_flammability_intrinsic",
+            "label": "Material & diluent",
+            "value": 0.0
+          }
+        ]
+      },
+      "top5": [
+        {
+          "experiment_id": "EXP-0024",
+          "total_score": 83.78,
+          "similarity": 74.44,
+          "completeness": 100.0,
+          "criticality": 88.54
+        },
+        {
+          "experiment_id": "EXP-0027",
+          "total_score": 82.19,
+          "similarity": 66.65,
+          "completeness": 100.0,
+          "criticality": 96.22
+        },
+        {
+          "experiment_id": "EXP-0019",
+          "total_score": 80.0,
+          "similarity": 60.0,
+          "completeness": 100.0,
+          "criticality": 100.0
+        },
+        {
+          "experiment_id": "EXP-0020",
+          "total_score": 77.81,
+          "similarity": 93.62,
+          "completeness": 65.0,
+          "criticality": 60.0
+        },
+        {
+          "experiment_id": "EXP-0022",
+          "total_score": 74.37,
+          "similarity": 49.93,
+          "completeness": 100.0,
+          "criticality": 98.0
+        }
+      ]
+    },
+    {
+      "id": "preset-artemis-lunar",
+      "config": {
+        "oxygen_pct": 34.0,
+        "pressure_kpa": 56.5,
+        "flow_velocity_cm_s": 5.0,
+        "gravity_g": 0.16,
+        "fuel_material": "Cotton-Fiberglass",
+        "diluent_gas": "N2"
+      },
+      "evaluation": {
+        "risk_index": 97.5,
+        "risk_band": "CRITICAL",
+        "baseline_risk": 47.8,
+        "predicted_regime": "Sustained Burn",
+        "estimated_loi_pct": 19.07,
+        "oxygen_margin_pct": 14.93,
+        "contributions": [
+          {
+            "feature": "oxygen_enrichment",
+            "label": "Oxygen concentration",
+            "value": 59.36
+          },
+          {
+            "feature": "cabin_pressure_density",
+            "label": "Cabin pressure",
+            "value": -6.89
+          },
+          {
+            "feature": "gravity_buoyancy_regime",
+            "label": "Gravity / buoyancy",
+            "value": -1.83
+          },
+          {
+            "feature": "ventilation_coupling",
+            "label": "HVAC ventilation flow",
+            "value": -0.98
+          },
+          {
+            "feature": "material_flammability_intrinsic",
+            "label": "Material & diluent",
+            "value": 0.0
+          }
+        ]
+      },
+      "top5": [
+        {
+          "experiment_id": "EXP-0027",
+          "total_score": 92.76,
+          "similarity": 87.78,
+          "completeness": 100.0,
+          "criticality": 96.22
+        },
+        {
+          "experiment_id": "EXP-0024",
+          "total_score": 81.03,
+          "similarity": 68.94,
+          "completeness": 100.0,
+          "criticality": 88.54
+        },
+        {
+          "experiment_id": "EXP-0019",
+          "total_score": 77.78,
+          "similarity": 55.57,
+          "completeness": 100.0,
+          "criticality": 100.0
+        },
+        {
+          "experiment_id": "EXP-0020",
+          "total_score": 77.31,
+          "similarity": 92.62,
+          "completeness": 65.0,
+          "criticality": 60.0
+        },
+        {
+          "experiment_id": "EXP-0022",
+          "total_score": 73.3,
+          "similarity": 47.79,
+          "completeness": 100.0,
+          "criticality": 98.0
+        }
+      ]
+    },
+    {
+      "id": "preset-mars-transit",
+      "config": {
+        "oxygen_pct": 26.5,
+        "pressure_kpa": 70.3,
+        "flow_velocity_cm_s": 10.0,
+        "gravity_g": 0.0,
+        "fuel_material": "Cotton-Fiberglass",
+        "diluent_gas": "N2"
+      },
+      "evaluation": {
+        "risk_index": 79.2,
+        "risk_band": "CRITICAL",
+        "baseline_risk": 47.8,
+        "predicted_regime": "Sustained Burn",
+        "estimated_loi_pct": 18.49,
+        "oxygen_margin_pct": 8.01,
+        "contributions": [
+          {
+            "feature": "oxygen_enrichment",
+            "label": "Oxygen concentration",
+            "value": 39.35
+          },
+          {
+            "feature": "cabin_pressure_density",
+            "label": "Cabin pressure",
+            "value": -7.94
+          },
+          {
+            "feature": "ventilation_coupling",
+            "label": "HVAC ventilation flow",
+            "value": 0.0
+          },
+          {
+            "feature": "gravity_buoyancy_regime",
+            "label": "Gravity / buoyancy",
+            "value": 0.0
+          },
+          {
+            "feature": "material_flammability_intrinsic",
+            "label": "Material & diluent",
+            "value": 0.0
+          }
+        ]
+      },
+      "top5": [
+        {
+          "experiment_id": "EXP-0024",
+          "total_score": 96.56,
+          "similarity": 100.0,
+          "completeness": 100.0,
+          "criticality": 88.54
+        },
+        {
+          "experiment_id": "EXP-0018",
+          "total_score": 74.05,
+          "similarity": 52.99,
+          "completeness": 100.0,
+          "criticality": 91.86
+        },
+        {
+          "experiment_id": "EXP-0027",
+          "total_score": 73.67,
+          "similarity": 49.61,
+          "completeness": 100.0,
+          "criticality": 96.22
+        },
+        {
+          "experiment_id": "EXP-0001",
+          "total_score": 72.89,
+          "similarity": 60.01,
+          "completeness": 100.0,
+          "criticality": 76.28
+        },
+        {
+          "experiment_id": "EXP-0023",
+          "total_score": 72.4,
+          "similarity": 58.56,
+          "completeness": 100.0,
+          "criticality": 77.08
+        }
+      ]
+    },
+    {
+      "id": "preset-mars-surface",
+      "config": {
+        "oxygen_pct": 26.5,
+        "pressure_kpa": 70.3,
+        "flow_velocity_cm_s": 5.0,
+        "gravity_g": 0.38,
+        "fuel_material": "Cotton-Fiberglass",
+        "diluent_gas": "N2"
+      },
+      "evaluation": {
+        "risk_index": 73.1,
+        "risk_band": "HIGH",
+        "baseline_risk": 47.8,
+        "predicted_regime": "Sustained Burn",
+        "estimated_loi_pct": 19.51,
+        "oxygen_margin_pct": 6.99,
+        "contributions": [
+          {
+            "feature": "oxygen_enrichment",
+            "label": "Oxygen concentration",
+            "value": 40.79
+          },
+          {
+            "feature": "cabin_pressure_density",
+            "label": "Cabin pressure",
+            "value": -7.88
+          },
+          {
+            "feature": "gravity_buoyancy_regime",
+            "label": "Gravity / buoyancy",
+            "value": -5.75
+          },
+          {
+            "feature": "ventilation_coupling",
+            "label": "HVAC ventilation flow",
+            "value": -1.89
+          },
+          {
+            "feature": "material_flammability_intrinsic",
+            "label": "Material & diluent",
+            "value": 0.0
+          }
+        ]
+      },
+      "top5": [
+        {
+          "experiment_id": "EXP-0027",
+          "total_score": 85.48,
+          "similarity": 73.22,
+          "completeness": 100.0,
+          "criticality": 96.22
+        },
+        {
+          "experiment_id": "EXP-0024",
+          "total_score": 81.58,
+          "similarity": 70.03,
+          "completeness": 100.0,
+          "criticality": 88.54
+        },
+        {
+          "experiment_id": "EXP-0018",
+          "total_score": 67.37,
+          "similarity": 39.63,
+          "completeness": 100.0,
+          "criticality": 91.86
+        },
+        {
+          "experiment_id": "EXP-0019",
+          "total_score": 65.64,
+          "similarity": 31.28,
+          "completeness": 100.0,
+          "criticality": 100.0
+        },
+        {
+          "experiment_id": "EXP-0001",
+          "total_score": 65.33,
+          "similarity": 44.89,
+          "completeness": 100.0,
+          "criticality": 76.28
+        }
+      ]
+    },
+    {
+      "id": "edge-pmma-0g-flow0",
+      "config": {
+        "oxygen_pct": 21.0,
+        "pressure_kpa": 101.3,
+        "flow_velocity_cm_s": 0.0,
+        "gravity_g": 0.0,
+        "fuel_material": "PMMA",
+        "diluent_gas": "N2"
+      },
+      "evaluation": {
+        "risk_index": 25.3,
+        "risk_band": "ELEVATED",
+        "baseline_risk": 47.8,
+        "predicted_regime": "Sustained Burn",
+        "estimated_loi_pct": 20.25,
+        "oxygen_margin_pct": 0.75,
+        "contributions": [
+          {
+            "feature": "ventilation_coupling",
+            "label": "HVAC ventilation flow",
+            "value": -29.52
+          },
+          {
+            "feature": "material_flammability_intrinsic",
+            "label": "Material & diluent",
+            "value": 7.04
+          },
+          {
+            "feature": "oxygen_enrichment",
+            "label": "Oxygen concentration",
+            "value": 0.0
+          },
+          {
+            "feature": "gravity_buoyancy_regime",
+            "label": "Gravity / buoyancy",
+            "value": 0.0
+          },
+          {
+            "feature": "cabin_pressure_density",
+            "label": "Cabin pressure",
+            "value": 0.0
+          }
+        ]
+      },
+      "top5": [
+        {
+          "experiment_id": "EXP-0007",
+          "total_score": 89.14,
+          "similarity": 93.6,
+          "completeness": 100.0,
+          "criticality": 74.45
+        },
+        {
+          "experiment_id": "EXP-0009",
+          "total_score": 88.71,
+          "similarity": 92.22,
+          "completeness": 100.0,
+          "criticality": 75.34
+        },
+        {
+          "experiment_id": "EXP-0010",
+          "total_score": 75.79,
+          "similarity": 89.59,
+          "completeness": 65.0,
+          "criticality": 60.0
+        },
+        {
+          "experiment_id": "EXP-0006",
+          "total_score": 73.08,
+          "similarity": 59.02,
+          "completeness": 100.0,
+          "criticality": 78.56
+        },
+        {
+          "experiment_id": "EXP-0001",
+          "total_score": 71.89,
+          "similarity": 58.0,
+          "completeness": 100.0,
+          "criticality": 76.28
+        }
+      ]
+    },
+    {
+      "id": "edge-pmma-0g-flow8",
+      "config": {
+        "oxygen_pct": 21.0,
+        "pressure_kpa": 101.3,
+        "flow_velocity_cm_s": 8.0,
+        "gravity_g": 0.0,
+        "fuel_material": "PMMA",
+        "diluent_gas": "N2"
+      },
+      "evaluation": {
+        "risk_index": 56.6,
+        "risk_band": "HIGH",
+        "baseline_risk": 47.8,
+        "predicted_regime": "Sustained Burn",
+        "estimated_loi_pct": 16.21,
+        "oxygen_margin_pct": 4.79,
+        "contributions": [
+          {
+            "feature": "material_flammability_intrinsic",
+            "label": "Material & diluent",
+            "value": 8.3
+          },
+          {
+            "feature": "ventilation_coupling",
+            "label": "HVAC ventilation flow",
+            "value": 0.47
+          },
+          {
+            "feature": "oxygen_enrichment",
+            "label": "Oxygen concentration",
+            "value": 0.0
+          },
+          {
+            "feature": "gravity_buoyancy_regime",
+            "label": "Gravity / buoyancy",
+            "value": 0.0
+          },
+          {
+            "feature": "cabin_pressure_density",
+            "label": "Cabin pressure",
+            "value": 0.0
+          }
+        ]
+      },
+      "top5": [
+        {
+          "experiment_id": "EXP-0009",
+          "total_score": 91.72,
+          "similarity": 98.25,
+          "completeness": 100.0,
+          "criticality": 75.34
+        },
+        {
+          "experiment_id": "EXP-0007",
+          "total_score": 90.64,
+          "similarity": 96.6,
+          "completeness": 100.0,
+          "criticality": 74.45
+        },
+        {
+          "experiment_id": "EXP-0010",
+          "total_score": 79.74,
+          "similarity": 97.47,
+          "completeness": 65.0,
+          "criticality": 60.0
+        },
+        {
+          "experiment_id": "EXP-0012",
+          "total_score": 76.47,
+          "similarity": 90.95,
+          "completeness": 65.0,
+          "criticality": 60.0
+        },
+        {
+          "experiment_id": "EXP-0014",
+          "total_score": 74.68,
+          "similarity": 59.8,
+          "completeness": 100.0,
+          "criticality": 82.58
+        }
+      ]
+    },
+    {
+      "id": "edge-pmma-0g-flow45",
+      "config": {
+        "oxygen_pct": 21.0,
+        "pressure_kpa": 101.3,
+        "flow_velocity_cm_s": 45.0,
+        "gravity_g": 0.0,
+        "fuel_material": "PMMA",
+        "diluent_gas": "N2"
+      },
+      "evaluation": {
+        "risk_index": 39.7,
+        "risk_band": "ELEVATED",
+        "baseline_risk": 47.8,
+        "predicted_regime": "Sustained Burn",
+        "estimated_loi_pct": 18.25,
+        "oxygen_margin_pct": 2.75,
+        "contributions": [
+          {
+            "feature": "ventilation_coupling",
+            "label": "HVAC ventilation flow",
+            "value": -16.04
+          },
+          {
+            "feature": "material_flammability_intrinsic",
+            "label": "Material & diluent",
+            "value": 7.98
+          },
+          {
+            "feature": "oxygen_enrichment",
+            "label": "Oxygen concentration",
+            "value": 0.0
+          },
+          {
+            "feature": "gravity_buoyancy_regime",
+            "label": "Gravity / buoyancy",
+            "value": 0.0
+          },
+          {
+            "feature": "cabin_pressure_density",
+            "label": "Cabin pressure",
+            "value": 0.0
+          }
+        ]
+      },
+      "top5": [
+        {
+          "experiment_id": "EXP-0014",
+          "total_score": 90.03,
+          "similarity": 90.51,
+          "completeness": 100.0,
+          "criticality": 82.58
+        },
+        {
+          "experiment_id": "EXP-0015",
+          "total_score": 67.74,
+          "similarity": 95.09,
+          "completeness": 65.0,
+          "criticality": 24.0
+        },
+        {
+          "experiment_id": "EXP-0009",
+          "total_score": 64.58,
+          "similarity": 43.95,
+          "completeness": 100.0,
+          "criticality": 75.34
+        },
+        {
+          "experiment_id": "EXP-0012",
+          "total_score": 64.12,
+          "similarity": 66.25,
+          "completeness": 65.0,
+          "criticality": 60.0
+        },
+        {
+          "experiment_id": "EXP-0007",
+          "total_score": 61.0,
+          "similarity": 37.34,
+          "completeness": 100.0,
+          "criticality": 74.45
+        }
+      ]
+    },
+    {
+      "id": "edge-heptane-0g-flow0",
+      "config": {
+        "oxygen_pct": 21.0,
+        "pressure_kpa": 101.3,
+        "flow_velocity_cm_s": 0.0,
+        "gravity_g": 0.0,
+        "fuel_material": "Heptane",
+        "diluent_gas": "N2"
+      },
+      "evaluation": {
+        "risk_index": 56.2,
+        "risk_band": "HIGH",
+        "baseline_risk": 47.8,
+        "predicted_regime": "Cool Flame",
+        "estimated_loi_pct": 16.25,
+        "oxygen_margin_pct": 4.75,
+        "contributions": [
+          {
+            "feature": "material_flammability_intrinsic",
+            "label": "Material & diluent",
+            "value": 35.91
+          },
+          {
+            "feature": "ventilation_coupling",
+            "label": "HVAC ventilation flow",
+            "value": -27.45
+          },
+          {
+            "feature": "oxygen_enrichment",
+            "label": "Oxygen concentration",
+            "value": 0.0
+          },
+          {
+            "feature": "gravity_buoyancy_regime",
+            "label": "Gravity / buoyancy",
+            "value": 0.0
+          },
+          {
+            "feature": "cabin_pressure_density",
+            "label": "Cabin pressure",
+            "value": 0.0
+          }
+        ]
+      },
+      "top5": [
+        {
+          "experiment_id": "EXP-0047",
+          "total_score": 86.29,
+          "similarity": 86.77,
+          "completeness": 100.0,
+          "criticality": 76.36
+        },
+        {
+          "experiment_id": "EXP-0031",
+          "total_score": 85.33,
+          "similarity": 96.67,
+          "completeness": 100.0,
+          "criticality": 56.65
+        },
+        {
+          "experiment_id": "EXP-0049",
+          "total_score": 84.18,
+          "similarity": 81.75,
+          "completeness": 100.0,
+          "criticality": 77.68
+        },
+        {
+          "experiment_id": "EXP-0035",
+          "total_score": 78.3,
+          "similarity": 100.0,
+          "completeness": 65.0,
+          "criticality": 51.0
+        },
+        {
+          "experiment_id": "EXP-0038",
+          "total_score": 78.08,
+          "similarity": 94.15,
+          "completeness": 65.0,
+          "criticality": 60.0
+        }
+      ]
+    },
+    {
+      "id": "edge-nomex-co2-lunar-40kpa-o2-30",
+      "config": {
+        "oxygen_pct": 30.0,
+        "pressure_kpa": 40.0,
+        "flow_velocity_cm_s": 10.0,
+        "gravity_g": 0.16,
+        "fuel_material": "Nomex",
+        "diluent_gas": "CO2"
+      },
+      "evaluation": {
+        "risk_index": 13.3,
+        "risk_band": "LOW",
+        "baseline_risk": 47.8,
+        "predicted_regime": "Self-Extinguished",
+        "estimated_loi_pct": 31.62,
+        "oxygen_margin_pct": -1.62,
+        "contributions": [
+          {
+            "feature": "material_flammability_intrinsic",
+            "label": "Material & diluent",
+            "value": -55.31
+          },
+          {
+            "feature": "oxygen_enrichment",
+            "label": "Oxygen concentration",
+            "value": 34.61
+          },
+          {
+            "feature": "cabin_pressure_density",
+            "label": "Cabin pressure",
+            "value": -10.32
+          },
+          {
+            "feature": "gravity_buoyancy_regime",
+            "label": "Gravity / buoyancy",
+            "value": -3.45
+          },
+          {
+            "feature": "ventilation_coupling",
+            "label": "HVAC ventilation flow",
+            "value": 0.0
+          }
+        ]
+      },
+      "top5": [
+        {
+          "experiment_id": "EXP-0026",
+          "total_score": 78.89,
+          "similarity": 70.41,
+          "completeness": 100.0,
+          "criticality": 78.96
+        },
+        {
+          "experiment_id": "EXP-0021",
+          "total_score": 78.59,
+          "similarity": 65.04,
+          "completeness": 100.0,
+          "criticality": 86.9
+        },
+        {
+          "experiment_id": "EXP-0022",
+          "total_score": 77.21,
+          "similarity": 55.62,
+          "completeness": 100.0,
+          "criticality": 98.0
+        },
+        {
+          "experiment_id": "EXP-0028",
+          "total_score": 77.09,
+          "similarity": 65.84,
+          "completeness": 100.0,
+          "criticality": 80.58
+        },
+        {
+          "experiment_id": "EXP-0019",
+          "total_score": 71.24,
+          "similarity": 42.49,
+          "completeness": 100.0,
+          "criticality": 100.0
+        }
+      ]
+    },
+    {
+      "id": "edge-methanol-he-mars-70kpa",
+      "config": {
+        "oxygen_pct": 26.5,
+        "pressure_kpa": 70.0,
+        "flow_velocity_cm_s": 10.0,
+        "gravity_g": 0.38,
+        "fuel_material": "Methanol",
+        "diluent_gas": "He"
+      },
+      "evaluation": {
+        "risk_index": 78.2,
+        "risk_band": "CRITICAL",
+        "baseline_risk": 47.8,
+        "predicted_regime": "Sustained Burn",
+        "estimated_loi_pct": 18.67,
+        "oxygen_margin_pct": 7.83,
+        "contributions": [
+          {
+            "feature": "oxygen_enrichment",
+            "label": "Oxygen concentration",
+            "value": 39.35
+          },
+          {
+            "feature": "cabin_pressure_density",
+            "label": "Cabin pressure",
+            "value": -7.86
+          },
+          {
+            "feature": "gravity_buoyancy_regime",
+            "label": "Gravity / buoyancy",
+            "value": -7.79
+          },
+          {
+            "feature": "material_flammability_intrinsic",
+            "label": "Material & diluent",
+            "value": 6.73
+          },
+          {
+            "feature": "ventilation_coupling",
+            "label": "HVAC ventilation flow",
+            "value": 0.0
+          }
+        ]
+      },
+      "top5": [
+        {
+          "experiment_id": "EXP-0027",
+          "total_score": 67.75,
+          "similarity": 37.77,
+          "completeness": 100.0,
+          "criticality": 96.22
+        },
+        {
+          "experiment_id": "EXP-0024",
+          "total_score": 65.79,
+          "similarity": 38.44,
+          "completeness": 100.0,
+          "criticality": 88.54
+        },
+        {
+          "experiment_id": "EXP-0018",
+          "total_score": 64.56,
+          "similarity": 34.0,
+          "completeness": 100.0,
+          "criticality": 91.86
+        },
+        {
+          "experiment_id": "EXP-0019",
+          "total_score": 64.36,
+          "similarity": 28.72,
+          "completeness": 100.0,
+          "criticality": 100.0
+        },
+        {
+          "experiment_id": "EXP-0048",
+          "total_score": 61.11,
+          "similarity": 34.98,
+          "completeness": 100.0,
+          "criticality": 78.75
+        }
+      ]
+    },
+    {
+      "id": "edge-cotton-ar-1g",
+      "config": {
+        "oxygen_pct": 21.0,
+        "pressure_kpa": 101.3,
+        "flow_velocity_cm_s": 10.0,
+        "gravity_g": 1.0,
+        "fuel_material": "Cotton-Fiberglass",
+        "diluent_gas": "Ar"
+      },
+      "evaluation": {
+        "risk_index": 45.2,
+        "risk_band": "ELEVATED",
+        "baseline_risk": 47.8,
+        "predicted_regime": "Sustained Burn",
+        "estimated_loi_pct": 17.58,
+        "oxygen_margin_pct": 3.42,
+        "contributions": [
+          {
+            "feature": "gravity_buoyancy_regime",
+            "label": "Gravity / buoyancy",
+            "value": -10.8
+          },
+          {
+            "feature": "material_flammability_intrinsic",
+            "label": "Material & diluent",
+            "value": 8.18
+          },
+          {
+            "feature": "oxygen_enrichment",
+            "label": "Oxygen concentration",
+            "value": 0.0
+          },
+          {
+            "feature": "ventilation_coupling",
+            "label": "HVAC ventilation flow",
+            "value": 0.0
+          },
+          {
+            "feature": "cabin_pressure_density",
+            "label": "Cabin pressure",
+            "value": 0.0
+          }
+        ]
+      },
+      "top5": [
+        {
+          "experiment_id": "EXP-0030",
+          "total_score": 66.94,
+          "similarity": 50.56,
+          "completeness": 100.0,
+          "criticality": 72.21
+        },
+        {
+          "experiment_id": "EXP-0027",
+          "total_score": 52.61,
+          "similarity": 7.49,
+          "completeness": 100.0,
+          "criticality": 96.22
+        },
+        {
+          "experiment_id": "EXP-0029",
+          "total_score": 51.8,
+          "similarity": 6.23,
+          "completeness": 100.0,
+          "criticality": 95.62
+        },
+        {
+          "experiment_id": "EXP-0019",
+          "total_score": 50.56,
+          "similarity": 1.13,
+          "completeness": 100.0,
+          "criticality": 100.0
+        },
+        {
+          "experiment_id": "EXP-0022",
+          "total_score": 49.59,
+          "similarity": 0.37,
+          "completeness": 100.0,
+          "criticality": 98.0
+        }
+      ]
+    },
+    {
+      "id": "edge-cotton-0g-o2-at-loi",
+      "config": {
+        "oxygen_pct": 17.26,
+        "pressure_kpa": 101.3,
+        "flow_velocity_cm_s": 10.0,
+        "gravity_g": 0.0,
+        "fuel_material": "Cotton-Fiberglass",
+        "diluent_gas": "N2"
+      },
+      "evaluation": {
+        "risk_index": 20.8,
+        "risk_band": "LOW",
+        "baseline_risk": 47.8,
+        "predicted_regime": "Self-Extinguished",
+        "estimated_loi_pct": 17.26,
+        "oxygen_margin_pct": -0.0,
+        "contributions": [
+          {
+            "feature": "oxygen_enrichment",
+            "label": "Oxygen concentration",
+            "value": -26.96
+          },
+          {
+            "feature": "ventilation_coupling",
+            "label": "HVAC ventilation flow",
+            "value": 0.0
+          },
+          {
+            "feature": "gravity_buoyancy_regime",
+            "label": "Gravity / buoyancy",
+            "value": 0.0
+          },
+          {
+            "feature": "cabin_pressure_density",
+            "label": "Cabin pressure",
+            "value": 0.0
+          },
+          {
+            "feature": "material_flammability_intrinsic",
+            "label": "Material & diluent",
+            "value": 0.0
+          }
+        ]
+      },
+      "top5": [
+        {
+          "experiment_id": "EXP-0023",
+          "total_score": 90.56,
+          "similarity": 94.87,
+          "completeness": 100.0,
+          "criticality": 77.08
+        },
+        {
+          "experiment_id": "EXP-0006",
+          "total_score": 90.23,
+          "similarity": 93.32,
+          "completeness": 100.0,
+          "criticality": 78.56
+        },
+        {
+          "experiment_id": "EXP-0001",
+          "total_score": 82.34,
+          "similarity": 78.91,
+          "completeness": 100.0,
+          "criticality": 76.28
+        },
+        {
+          "experiment_id": "EXP-0005",
+          "total_score": 77.66,
+          "similarity": 93.32,
+          "completeness": 65.0,
+          "criticality": 60.0
+        },
+        {
+          "experiment_id": "EXP-0009",
+          "total_score": 72.26,
+          "similarity": 59.32,
+          "completeness": 100.0,
+          "criticality": 75.34
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,164 @@
+{
+  "answer": "Adding a weak forced flow of roughly 5-10 cm/s - comparable to normal spacecraft cabin ventilation - brought in fresh oxygen without the large convective heat losses of buoyant flow on Earth [DOC-01 p.1]. The combustion products build up around the flame and the oxygen supply is limited by slow diffusion [DOC-01 p.1]. - **Adding forced ventilation** to partial-gravity buoyancy can push the effective velocity past the flammability peak [DOC-05 p.2]. EXP-0023 (rank #1, score=93.1 [sim=100, comp=100, crit=77]): SoFIE Cotton-Fiberglass at 0.0g, 21.0% O2, 101.3 kPa, 10.0 cm/s -> Sustained Burn (LOI=17.8%, rate=1.125) [EXP-0023]. EXP-0006 (rank #2, score=92.8 [sim=98, comp=100, crit=79]): BASS-II Cotton-Fiberglass at 0.0g, 21.0% O2, 101.3 kPa, 5 cm/s -> Sustained Burn (LOI=17.99%, rate=0.966) [EXP-0006].",
+  "route": "compare",
+  "supported": true,
+  "rewrites": 0,
+  "citations": [
+    {
+      "id": "[DOC-01 p.1]",
+      "kind": "doc",
+      "doc_id": "DOC-01",
+      "page": 1,
+      "experiment_id": null,
+      "snippet": "[DOC-01 p.1 - Key finding: the ventilation paradox] In quiescent microgravity, flames over thin PMMA and cotton-fiberglass (SIBAL) fabric weakened and\nself-extinguished at oxygen levels that support burning on Earth. The combustion products build up\naround the flame and the oxyge"
+    },
+    {
+      "id": "[DOC-05 p.2]",
+      "kind": "doc",
+      "doc_id": "DOC-05",
+      "page": 2,
+      "experiment_id": null,
+      "snippet": "[DOC-05 p.2 - Findings] - **Peak flammability at intermediate gravity.** Thin fabrics in parabolic-flight Lunar profiles had\n  LOI values 0.5-1.5 percentage points below their 1g value. The effect was strongest in the Artemis\n  34 % / 56.5 kPa atmosphere.\n- **Mars (0.38g)** behav"
+    },
+    {
+      "id": "[EXP-0023]",
+      "kind": "experiment",
+      "doc_id": "DOC-02",
+      "page": 2,
+      "experiment_id": "EXP-0023",
+      "snippet": "EXP-0023 (rank #1, score=93.1 [sim=100, comp=100, crit=77]): SoFIE Cotton-Fiberglass at 0.0g, 21.0% O2, 101.3 kPa, 10.0 cm/s -> Sustained Burn (LOI=17.8%, rate=1.125)"
+    },
+    {
+      "id": "[EXP-0006]",
+      "kind": "experiment",
+      "doc_id": "DOC-01",
+      "page": 1,
+      "experiment_id": "EXP-0006",
+      "snippet": "EXP-0006 (rank #2, score=92.8 [sim=98, comp=100, crit=79]): BASS-II Cotton-Fiberglass at 0.0g, 21.0% O2, 101.3 kPa, 5 cm/s -> Sustained Burn (LOI=17.99%, rate=0.966)"
+    }
+  ],
+  "evidence": [
+    {
+      "id": "EXP-0023",
+      "kind": "ranked_run",
+      "source": "scenario_ranker",
+      "score": 0.931,
+      "text": "EXP-0023 (rank #1, score=93.1 [sim=100, comp=100, crit=77]): SoFIE Cotton-Fiberglass at 0.0g, 21.0% O2, 101.3 kPa, 10.0 cm/s -> Sustained Burn (LOI=17.8%, rate=1.125)",
+      "doc_id": "DOC-02",
+      "page": 2,
+      "experiment_id": "EXP-0023"
+    },
+    {
+      "id": "EXP-0006",
+      "kind": "ranked_run",
+      "source": "scenario_ranker",
+      "score": 0.927,
+      "text": "EXP-0006 (rank #2, score=92.8 [sim=98, comp=100, crit=79]): BASS-II Cotton-Fiberglass at 0.0g, 21.0% O2, 101.3 kPa, 5 cm/s -> Sustained Burn (LOI=17.99%, rate=0.966)",
+      "doc_id": "DOC-01",
+      "page": 1,
+      "experiment_id": "EXP-0006"
+    },
+    {
+      "id": "EXP-0001",
+      "kind": "ranked_run",
+      "source": "scenario_ranker",
+      "score": 0.881,
+      "text": "EXP-0001 (rank #3, score=88.1 [sim=91, comp=100, crit=76]): BASS-II Cotton-Fiberglass at 0.0g, 24.0% O2, 101.3 kPa, 0 cm/s -> Sustained Burn (LOI=21.36%, rate=0.658)",
+      "doc_id": "DOC-01",
+      "page": 3,
+      "experiment_id": "EXP-0001"
+    },
+    {
+      "id": "EXP-0005",
+      "kind": "ranked_run",
+      "source": "scenario_ranker",
+      "score": 0.802,
+      "text": "EXP-0005 (rank #4, score=80.2 [sim=98, comp=65, crit=60]): BASS-II Cotton-Fiberglass at 0.0g, 21.0% O2, 101.3 kPa, 5 cm/s -> Sustained Burn (LOI=None%, rate=0.969)",
+      "doc_id": "DOC-01",
+      "page": 3,
+      "experiment_id": "EXP-0005"
+    },
+    {
+      "id": "DOC-01:p1",
+      "kind": "chunk",
+      "source": "hybrid_retriever",
+      "score": 0.0164,
+      "text": "[DOC-01 p.1 - Key finding: the ventilation paradox] In quiescent microgravity, flames over thin PMMA and cotton-fiberglass (SIBAL) fabric weakened and\nself-extinguished at oxygen levels that support burning on Earth. The combustion products build up\naround the flame and the oxygen supply is limited by slow diffusion. Adding a weak forced flow of\nroughly 5-10 cm/s - comparable to normal spacecraft cabin ventilation - brought in fresh oxygen\nwithout the large convective heat losses of buoyant flow on Earth. In this low-speed range the\nlimiting oxygen index (LOI) fell **below** both the quiescent microgravity value and the normal-gravity\nvalue. In practice, a cabin ventilation fan can keep alive a flame that would otherwise go out.",
+      "doc_id": "DOC-01",
+      "page": 1,
+      "experiment_id": null
+    },
+    {
+      "id": "DOC-05:p2",
+      "kind": "chunk",
+      "source": "hybrid_retriever",
+      "score": 0.0161,
+      "text": "[DOC-05 p.2 - Findings] - **Peak flammability at intermediate gravity.** Thin fabrics in parabolic-flight Lunar profiles had\n  LOI values 0.5-1.5 percentage points below their 1g value. The effect was strongest in the Artemis\n  34 % / 56.5 kPa atmosphere.\n- **Mars (0.38g)** behaved more like 1g, with a buoyant velocity of about 15-19 cm/s. Its flammability\n  was similar to or slightly above 1g.\n- **Adding forced ventilation** to partial-gravity buoyancy can push the effective velocity past the\n  flammability peak. This depends on direction and magnitude, so habitat ventilation design changes\n  fire behaviour.",
+      "doc_id": "DOC-05",
+      "page": 2,
+      "experiment_id": null
+    },
+    {
+      "id": "DOC-01:p3",
+      "kind": "chunk",
+      "source": "hybrid_retriever",
+      "score": 0.0159,
+      "text": "[DOC-01 p.3 - Implications for spacecraft fire safety] 1. **Shut down ventilation immediately.** Cutting cabin ventilation as soon as a fire is detected\n   removes the oxygen supply that low-speed flow provides. Without that flow, a weak microgravity\n   flame goes back to the starved, quiescent regime. This supports the existing ISS practice of\n   shutting off fans as the first fire response.\n2. **Earth-based material tests are not always conservative.** The normal-gravity upward\n   flammability test (NASA-STD-6001B Test 1) is usually considered conservative. However, thin\n   materials in low-speed concurrent flow can burn at oxygen levels slightly below their 1g limit.\n   The margin between cabin O2 and a material's LOI should account for this.\n3. **Watch for smouldering and re-ignition.** After extinction, samples sometimes smouldered. When\n   the flow was restored, a hot ember could re-ignite.",
+      "doc_id": "DOC-01",
+      "page": 3,
+      "experiment_id": null
+    },
+    {
+      "id": "DOC-02:p2",
+      "kind": "chunk",
+      "source": "hybrid_retriever",
+      "score": 0.0156,
+      "text": "[DOC-02 p.2 - Partial-gravity and 1g comparison] A subset of runs repeated the exploration atmospheres in parabolic-flight Lunar (0.16g) and Mars\n(0.38g) profiles and in a ground laboratory (1g). At 0.16g, weak buoyant flow acts like a gentle\nventilation velocity of about 10-12 cm/s, close to the most flammable flow regime. See DOC-05.",
+      "doc_id": "DOC-02",
+      "page": 2,
+      "experiment_id": null
+    },
+    {
+      "id": "DOC-05:p3",
+      "kind": "chunk",
+      "source": "hybrid_retriever",
+      "score": 0.0154,
+      "text": "[DOC-05 p.3 - Summary table] | Gravity | Buoyant velocity (56.5 kPa) | Flammability vs 1g |\n|---|---|---|\n| 0g, quiescent | 0 cm/s | lower (starved) |\n| 0g, 5-10 cm/s ventilation | 5-10 cm/s | higher |\n| 0.16g Lunar | ~9 cm/s | higher (peak) |\n| 0.38g Mars | ~15 cm/s | similar / slightly higher |\n| 1g | ~22 cm/s | reference |",
+      "doc_id": "DOC-05",
+      "page": 3,
+      "experiment_id": null
+    },
+    {
+      "id": "EXP-0007",
+      "kind": "test_run",
+      "source": "sql_tool",
+      "score": 0.95,
+      "text": "EXP-0007 (BASS-II, PMMA, Flat Sheet): g=0.0g, O2=18.0%, P=101.3 kPa, flow=7 cm/s, diluent=N2 -> regime=Sustained Burn, spread/burn=0.781, LOI=15.88%, peak_flux=4.51 kW/m2 (source: DOC-01 p.2)",
+      "doc_id": "DOC-01",
+      "page": 2,
+      "experiment_id": "EXP-0007"
+    },
+    {
+      "id": "EXP-0008",
+      "kind": "test_run",
+      "source": "sql_tool",
+      "score": 0.9,
+      "text": "EXP-0008 (BASS-II, Nomex, Flat Sheet): g=0.0g, O2=19.0%, P=101.3 kPa, flow=8 cm/s, diluent=N2 -> regime=No Ignition, spread/burn=0.0, LOI=25.02%, peak_flux=0.0 kW/m2 (source: DOC-01 p.3)",
+      "doc_id": "DOC-01",
+      "page": 3,
+      "experiment_id": "EXP-0008"
+    },
+    {
+      "id": "EXP-0009",
+      "kind": "test_run",
+      "source": "sql_tool",
+      "score": 0.75,
+      "text": "EXP-0009 (BASS-II, PMMA, Flat Sheet): g=0.0g, O2=19.0%, P=101.3 kPa, flow=10 cm/s, diluent=N2 -> regime=Sustained Burn, spread/burn=0.976, LOI=15.91%, peak_flux=4.28 kW/m2 (source: DOC-01 p.3)",
+      "doc_id": "DOC-01",
+      "page": 3,
+      "experiment_id": "EXP-0009"
+    }
+  ],
+  "dropped_claims": [],
+  "trace_id": "tr-4cb9c12f1f"
+}

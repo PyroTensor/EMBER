@@ -16,6 +16,8 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Health" }
+        "422": { description: Validation error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+        "500": { description: Internal server error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
   /api/presets:
     get:
       summary: Mission cabin presets
@@ -26,6 +28,8 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/Preset" }
+        "422": { description: Validation error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+        "500": { description: Internal server error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
   /api/evaluate-cabin:
     post:
       summary: Baseline risk index + per-factor contributions for a cabin configuration
@@ -38,6 +42,8 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/CabinEvaluation" }
+        "422": { description: Validation error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+        "500": { description: Internal server error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
   /api/experiments:
     get:
       summary: All test runs (schema_v1 records)
@@ -48,6 +54,8 @@ paths:
               schema:
                 type: array
                 items: { $ref: "schema_v1.json" }
+        "422": { description: Validation error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+        "500": { description: Internal server error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
   /api/experiments/rank:
     post:
       summary: Scenario ranker - score test runs against a habitat configuration
@@ -60,6 +68,8 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/RankResponse" }
+        "422": { description: Validation error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+        "500": { description: Internal server error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
   /api/telemetry/{experiment_id}:
     get:
       summary: Time-series curves for one run
@@ -70,7 +80,9 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Telemetry" }
-        "404": { description: Unknown experiment }
+        "404": { description: Unknown experiment, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+        "422": { description: Validation error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+        "500": { description: Internal server error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
   /api/copilot/ask:
     post:
       summary: Grounded RAG question answering (LangGraph)
@@ -83,6 +95,9 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/AskResponse" }
+        "422": { description: Validation error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+        "500": { description: Internal server error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+        "503": { description: Upstream (LLM / retrieval) unavailable, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
 
 components:
   schemas:
@@ -223,3 +238,17 @@ components:
         evidence: { type: array, items: { $ref: "#/components/schemas/Evidence" } }
         dropped_claims: { type: array, items: { type: string }, description: "Sentences removed by citation_check" }
         trace_id: { type: string }
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string, description: "e.g. NOT_FOUND | VALIDATION_ERROR | UPSTREAM_UNAVAILABLE | INTERNAL_ERROR" }
+            message: { type: string }
+            details:
+              type: ["object", "array", "null"]
+              description: "Optional extra context (e.g. validation error list); null when absent"
