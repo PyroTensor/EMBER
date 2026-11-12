@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from sqlalchemy import Float, ForeignKey, Integer, Text, text
+from sqlalchemy import Float, ForeignKey, Index, Integer, Text, text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -14,6 +14,8 @@ from app.db.base import Base
 class TestRun(Base):
     __tablename__ = "test_runs"
     __test__ = False  # keep pytest from collecting this class
+    # Mirrors migration 0002 (GIN for JSONB containment queries on extra_telemetry).
+    __table_args__ = (Index("ix_test_runs_extra_telemetry", "extra_telemetry", postgresql_using="gin"),)
 
     # identity
     experiment_id: Mapped[str] = mapped_column(Text, primary_key=True)

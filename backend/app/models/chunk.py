@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Any
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import BigInteger, Computed, ForeignKey, Identity, Integer, Text
+from sqlalchemy import BigInteger, Computed, ForeignKey, Identity, Index, Integer, Text
 from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -15,6 +15,18 @@ from app.db.base import Base
 
 class Chunk(Base):
     __tablename__ = "chunks"
+    # Mirrors migration 0003 so autogenerate / `alembic check` sees no drift.
+    __table_args__ = (
+        Index(
+            "ix_chunks_embedding",
+            "embedding",
+            postgresql_using="hnsw",
+            postgresql_with={"m": 16, "ef_construction": 64},
+            postgresql_ops={"embedding": "vector_cosine_ops"},
+        ),
+        Index("ix_chunks_tsv", "tsv", postgresql_using="gin"),
+        Index("ix_chunks_metadata", "metadata", postgresql_using="gin"),
+    )
 
     id: Mapped[int] = mapped_column(BigInteger, Identity(), primary_key=True)
     doc_id: Mapped[str] = mapped_column(ForeignKey("documents.doc_id", ondelete="CASCADE"), index=True)
