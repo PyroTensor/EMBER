@@ -14,6 +14,7 @@ import anyio.to_thread
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.db.availability import DbAvailability
 from app.db.engine import Database
 from app.db.session import get_db, get_readonly_session, get_session
@@ -37,6 +38,7 @@ from app.repositories.snapshot.repos import (
 from app.repositories.snapshot.store import SnapshotStore, get_snapshot_store
 from app.repositories.telemetry_repo import PgTelemetryRepository
 from app.repositories.test_run_repo import PgTestRunRepository
+from app.services.health_service import HealthService
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 ROSessionDep = Annotated[AsyncSession, Depends(get_readonly_session)]
@@ -90,9 +92,22 @@ TestRunReaderDep = Annotated[TestRunReader, Depends(get_test_run_reader)]
 TelemetryReaderDep = Annotated[TelemetryReader, Depends(get_telemetry_reader)]
 ChunkSearcherDep = Annotated[ChunkSearcher, Depends(get_chunk_searcher)]
 
+
+async def get_health_service(availability: AvailabilityDep, stats: StatsReaderDep) -> HealthService:
+    # llm_name comes from settings until the LLM provider singleton exists (B8).
+    return HealthService(
+        stats=stats,
+        db_up=await availability.is_up(),
+        llm_name=get_settings().LLM_PROVIDER.value,
+    )
+
+
+HealthServiceDep = Annotated[HealthService, Depends(get_health_service)]
+
 __all__ = [
     "AvailabilityDep",
     "ChunkSearcherDep",
+    "HealthServiceDep",
     "PresetReaderDep",
     "ROSessionDep",
     "SessionDep",
@@ -101,6 +116,7 @@ __all__ = [
     "TestRunReaderDep",
     "get_availability",
     "get_chunk_searcher",
+    "get_health_service",
     "get_preset_reader",
     "get_stats_reader",
     "get_telemetry_reader",
