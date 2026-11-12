@@ -1,0 +1,20 @@
+{
+  "status": "ok",
+  "db": false,
+  "test_runs": 50,
+  "chunks": 35,
+  "llm_provider": "heuristic",
+  "schema_version": "v1",
+  "extra_telemetry_keys": [
+    "co_co2_molar_ratio",
+    "facility",
+    "flame_standoff_ratio",
+    "fuel_note",
+    "igniter_power_w",
+    "initial_droplet_diameter_mm",
+    "missing_channels_count",
+    "psi_investigation_code",
+    "sample_thickness_mm",
+    "soot_volume_fraction_ppm"
+  ]
+}
