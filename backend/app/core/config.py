@@ -103,6 +103,7 @@ class Settings(BaseSettings):
     # relative paths resolve against backend/
     SNAPSHOT_PATH: Path = Path("data/.cache/store.json")
     SEED_DIR: Path = Path("data/seed")
+    CACHE_DIR: Path = Path("data/.cache")  # ingestion: raw/ copies, manifest.json, review_queue.csv
 
     # ── HTTP ─────────────────────────────────────────────────────────
     CORS_ORIGINS: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["http://localhost:3000"])
@@ -148,7 +149,7 @@ class Settings(BaseSettings):
             raise ValueError("CORS_ORIGINS cannot contain '*'; list exact origins")
         return [origin.rstrip("/") for origin in value]
 
-    @field_validator("SNAPSHOT_PATH", "SEED_DIR")
+    @field_validator("SNAPSHOT_PATH", "SEED_DIR", "CACHE_DIR")
     @classmethod
     def _resolve_path(cls, value: Path) -> Path:
         return value if value.is_absolute() else BASE_DIR / value
