@@ -1,0 +1,8 @@
+# Golden-set gates for `make eval` (eval/run_eval.py exits 1 if any is not met).
+# Each metric takes one of: min (>=), max (<=), eq (==).
+supported_accuracy:        # share of questions whose `supported` flag matches `expected_supported`
+  min: 0.9
+expected_citation_recall:  # share of expected doc / experiment ids that appear in the verified citations
+  min: 0.8
+leaked_unverified_claims:  # answer sentences or citations in supported answers not backed by evidence
+  eq: 0
