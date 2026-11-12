@@ -1,36 +1,28 @@
-.PHONY: setup db-up db-down db-reset proxy ingest ingest-drill backend frontend test eval
+# EMBER root: the integration stack plus pass-through targets for the two apps.
+# On Windows use `mingw32-make` if `make` is missing.
+.PHONY: help up down logs ps backend-% frontend-%
 
-MOVED = @echo "moved — see backend/Makefile or frontend/package.json"
+help:
+	@echo "make up              build and start db + backend + frontend (docker compose)"
+	@echo "make down            stop the stack (data volumes are kept)"
+	@echo "make logs / ps       follow logs / list services"
+	@echo "make backend-<t>     run 'make <t>' in backend/   (e.g. backend-dev, backend-contract-check)"
+	@echo "make frontend-<s>    run 'npm run <s>' in frontend/ (e.g. frontend-dev, frontend-lint)"
 
-setup:
-	$(MOVED)
+up:
+	docker compose up --build
 
-db-up:
-	$(MOVED)
+down:
+	docker compose down
 
-db-down:
-	$(MOVED)
+logs:
+	docker compose logs -f
 
-db-reset:
-	$(MOVED)
+ps:
+	docker compose ps
 
-proxy:
-	$(MOVED)
+backend-%:
+	$(MAKE) -C backend $*
 
-ingest:
-	$(MOVED)
-
-ingest-drill:
-	$(MOVED)
-
-backend:
-	$(MOVED)
-
-frontend:
-	$(MOVED)
-
-test:
-	$(MOVED)
-
-eval:
-	$(MOVED)
+frontend-%:
+	npm --prefix frontend run $*
