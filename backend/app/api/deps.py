@@ -38,6 +38,7 @@ from app.repositories.snapshot.repos import (
 from app.repositories.snapshot.store import SnapshotStore, get_snapshot_store
 from app.repositories.telemetry_repo import PgTelemetryRepository
 from app.repositories.test_run_repo import PgTestRunRepository
+from app.services.cabin_service import CabinService
 from app.services.health_service import HealthService
 from app.services.preset_service import PresetService
 
@@ -112,8 +113,16 @@ def get_preset_service(reader: PresetReaderDep) -> PresetService:
 
 PresetServiceDep = Annotated[PresetService, Depends(get_preset_service)]
 
+
+def get_cabin_service() -> CabinService:
+    return CabinService()
+
+
+CabinServiceDep = Annotated[CabinService, Depends(get_cabin_service)]
+
 __all__ = [
     "AvailabilityDep",
+    "CabinServiceDep",
     "ChunkSearcherDep",
     "HealthServiceDep",
     "PresetReaderDep",
@@ -124,6 +133,7 @@ __all__ = [
     "TelemetryReaderDep",
     "TestRunReaderDep",
     "get_availability",
+    "get_cabin_service",
     "get_chunk_searcher",
     "get_health_service",
     "get_preset_reader",

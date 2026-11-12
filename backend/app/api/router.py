@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from app.api.routers import health, presets
+from app.api.routers import cabin, health, presets
 
 api_router = APIRouter(prefix="/api")
 api_router.include_router(health.router)
 api_router.include_router(presets.router)
+api_router.include_router(cabin.router)
