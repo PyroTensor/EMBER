@@ -6,11 +6,8 @@ __pycache__/
 .ruff_cache/
 *.egg-info/
 
-# Data / caches
-data_ml/.cache/
-data_ml/review_queue.csv
+# Data / caches (backend/.gitignore covers ingestion and eval outputs)
 *.duckdb
-eval_results*.json
 
 # Env
 .env

@@ -11,7 +11,7 @@ export interface Scenario {
   label: string;
   gLabel: string;
   blurb: string;
-  /** Atmosphere applied when the scenario is selected (mirrors contracts/mock_data/presets.json). */
+  /** Atmosphere applied when the scenario is selected (mirrors backend/data/seed/presets.json). */
   atmosphere: Pick<FlameParams, "oxygen_pct" | "pressure_kpa" | "flow_velocity_cm_s" | "gravity_g">;
 }
 

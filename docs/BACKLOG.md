@@ -4,30 +4,30 @@ The monorepo backbone is wired end-to-end. Below is the prioritized backlog for 
 
 ---
 
-## Squad 1 (`data_ml/`)
+## Squad 1 (data & domain, now in `backend/app/ingestion/` and `backend/app/domain/`)
 
 ### Track S1-A: Ingestion & Document Extraction
-- [ ] **`TODO(squad1-A)` PDF / Table Parsing** ([parse.py](file:///Users/dulnithliyanage/Academics/PyroTensor/EMBER/data_ml/ember_data/ingestion/parse.py)): Add table extraction (PyMuPDF / Docling) so test matrices inside NTRS PDFs emit structured rows.
-- [ ] **`TODO(squad1-A)` Gemini Structured Extraction** ([llm_extract.py](file:///Users/dulnithliyanage/Academics/PyroTensor/EMBER/data_ml/ember_data/ingestion/llm_extract.py)): Implement `GeminiExtractor` using `google-genai` `response_schema` to pull `Investigation` and `TestRun` records from prose pages with `(source_doc_id, source_page)` provenance.
-- [ ] **`TODO(squad1-A)` NTRS / PSI Fetcher** ([fetch_cache.py](file:///Users/dulnithliyanage/Academics/PyroTensor/EMBER/data_ml/ember_data/ingestion/fetch_cache.py)): Add `fetch_url()` to download official NTRS PDFs / PSI CSVs directly into `data_ml/.cache/raw/`.
+- [ ] **`TODO(squad1-A)` PDF / Table Parsing** ([parse.py](../backend/app/ingestion/stages/parse.py)): Add table extraction (PyMuPDF / Docling) so test matrices inside NTRS PDFs emit structured rows.
+- [ ] **`TODO(squad1-A)` Gemini Structured Extraction** ([llm_extract.py](../backend/app/ingestion/stages/llm_extract.py)): Implement `GeminiExtractor` using `google-genai` `response_schema` to pull `Investigation` and `TestRun` records from prose pages with `(source_doc_id, source_page)` provenance.
+- [ ] **`TODO(squad1-A)` NTRS / PSI Fetcher** ([fetch_cache.py](../backend/app/ingestion/stages/fetch_cache.py)): Add `fetch_url()` to download official NTRS PDFs / PSI CSVs directly into `backend/data/.cache/raw/`.
 
 ### Track S1-B: Physics, Surrogate Risk & Ranking
-- [ ] **`TODO(squad1-B)` 2D Flammability Phase Grid** ([combustion.py](file:///Users/dulnithliyanage/Academics/PyroTensor/EMBER/data_ml/ember_data/physics/combustion.py)): Implement `phase_grid(gravity_g, flow_cm_s, material, diluent)` returning an $(O_2\%, P_{\text{kPa}})$ contour matrix for Module 1's Plotly phase diagram.
-- [ ] **`TODO(squad1-B)` Calibrate Surrogate on Nov 14 Data** ([risk.py](file:///Users/dulnithliyanage/Academics/PyroTensor/EMBER/data_ml/ember_data/models/risk.py)): Fit `MATERIAL_BASE_LOI` and flow/pressure coefficients (or a gradient-boosted classifier) on the official dataset while keeping the exact 32-coalition Shapley wrapper.
-- [ ] **`TODO(squad1-B)` Learned Ranker Length-Scales** ([scenario_ranker.py](file:///Users/dulnithliyanage/Academics/PyroTensor/EMBER/data_ml/ember_data/ranking/scenario_ranker.py)): Tune `SIM_FEATURES` weights based on empirical sensitivity in the Nov 14 dataset.
+- [ ] **`TODO(squad1-B)` 2D Flammability Phase Grid** ([combustion.py](../backend/app/domain/physics/combustion.py)): Implement `phase_grid(gravity_g, flow_cm_s, material, diluent)` returning an $(O_2\%, P_{\text{kPa}})$ contour matrix for Module 1's Plotly phase diagram.
+- [ ] **`TODO(squad1-B)` Calibrate Surrogate on Nov 14 Data** ([fire_risk.py](../backend/app/domain/risk/fire_risk.py)): Fit `MATERIAL_BASE_LOI` and flow/pressure coefficients (or a gradient-boosted classifier) on the official dataset while keeping the exact 32-coalition Shapley wrapper.
+- [ ] **`TODO(squad1-B)` Learned Ranker Length-Scales** ([scenario_ranker.py](../backend/app/domain/ranking/scenario_ranker.py)): Tune `SIM_FEATURES` weights based on empirical sensitivity in the Nov 14 dataset.
 
 ---
 
 ## Squad 2 (`backend/`)
 
 ### Track S2-A: LangGraph RAG Quality & Evaluation
-- [ ] **`TODO(squad2-A)` Cross-Encoder Reranker** ([hybrid_retriever.py](file:///Users/dulnithliyanage/Academics/PyroTensor/EMBER/backend/app/rag/nodes/hybrid_retriever.py)): Rerank the top-20 RRF candidates using `BAAI/bge-reranker-base` before passing top-5 to `evidence_grader`.
-- [ ] **`TODO(squad2-A)` Guardrailed Text-to-SQL** ([sql_tool.py](file:///Users/dulnithliyanage/Academics/PyroTensor/EMBER/backend/app/rag/nodes/sql_tool.py)): Add LLM SQL generation restricted to `SELECT` queries over `investigations` and `test_runs` via `ember_ro`.
-- [ ] **`TODO(squad2-A)` 30-Question Golden Set & RAGAS** ([golden_set.jsonl](file:///Users/dulnithliyanage/Academics/PyroTensor/EMBER/backend/eval/golden_set.jsonl), [run_eval.py](file:///Users/dulnithliyanage/Academics/PyroTensor/EMBER/backend/eval/run_eval.py)): Expand `golden_set.jsonl` from 8 to 30 questions and integrate RAGAS faithfulness & answer relevancy scoring.
+- [ ] **`TODO(squad2-A)` Cross-Encoder Reranker** ([hybrid_retriever.py](../backend/app/rag/nodes/hybrid_retriever.py)): Rerank the top-20 RRF candidates using `BAAI/bge-reranker-base` before passing top-5 to `evidence_grader`.
+- [ ] **`TODO(squad2-A)` Guardrailed Text-to-SQL** ([sql_tool.py](../backend/app/rag/nodes/sql_tool.py)): Add LLM SQL generation restricted to `SELECT` queries over `investigations` and `test_runs` via `ember_ro`.
+- [ ] **`TODO(squad2-A)` 30-Question Golden Set & RAGAS** ([golden_set.jsonl](../backend/eval/golden_set.jsonl), [run_eval.py](../backend/eval/run_eval.py)): Expand `golden_set.jsonl` from 8 to 30 questions and integrate RAGAS faithfulness & answer relevancy scoring.
 
 ### Track S2-B: API Extensions & Compliance Brief Generator
-- [ ] **`TODO(squad2-B)` NASA-STD-6001B Compliance Brief Endpoint** ([routes_copilot.py](file:///Users/dulnithliyanage/Academics/PyroTensor/EMBER/backend/app/api/routes_copilot.py)): Implement `POST /api/copilot/compliance-brief` returning a structured, downloadable Markdown/PDF report cross-referencing cabin evaluation metrics, top ranked experiments, and cited NTRS clauses.
-- [ ] **`TODO(squad2-B)` Phase Grid Response in `/api/evaluate-cabin`** ([routes_cabin.py](file:///Users/dulnithliyanage/Academics/PyroTensor/EMBER/backend/app/api/routes_cabin.py)): Include S1-B's `phase_grid` output in `POST /api/evaluate-cabin` so Module 1 renders the 2D phase diagram.
+- [ ] **`TODO(squad2-B)` NASA-STD-6001B Compliance Brief Endpoint** ([routers/copilot.py](../backend/app/api/routers/copilot.py)): Implement `POST /api/copilot/compliance-brief` returning a structured, downloadable Markdown/PDF report cross-referencing cabin evaluation metrics, top ranked experiments, and cited NTRS clauses.
+- [ ] **`TODO(squad2-B)` Phase Grid Response in `/api/evaluate-cabin`** ([routers/cabin.py](../backend/app/api/routers/cabin.py)): Include S1-B's `phase_grid` output in `POST /api/evaluate-cabin` so Module 1 renders the 2D phase diagram.
 
 ---
 

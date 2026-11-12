@@ -1,8 +1,0 @@
-{"id": "Q01", "question": "Does low-speed ventilation make microgravity flames more dangerous in BASS-II?", "expected_supported": true, "expected_docs": ["DOC-01"]}
-{"id": "Q02", "question": "How does the Artemis 34% O2 / 56.5 kPa exploration atmosphere change material flammability in SoFIE?", "expected_supported": true, "expected_docs": ["DOC-02"]}
-{"id": "Q03", "question": "What is a cool flame in FLEX n-heptane droplet combustion and why is it hazardous?", "expected_supported": true, "expected_docs": ["DOC-03"]}
-{"id": "Q04", "question": "How do spherical gaseous diffusion flames behave in ACME microgravity experiments?", "expected_supported": true, "expected_docs": ["DOC-04"]}
-{"id": "Q05", "question": "Why can Lunar 0.16g partial gravity be more flammable than 1g under NASA-STD-6001B?", "expected_supported": true, "expected_docs": ["DOC-05"]}
-{"id": "Q06", "question": "What happened in experiment EXP-0001 and what was its combustion regime?", "expected_supported": true, "expected_exps": ["EXP-0001"]}
-{"id": "Q07", "question": "What is the current stock price of Bitcoin and the weather in Tokyo?", "expected_supported": false, "expected_docs": []}
-{"id": "Q08", "question": "How do you bake a sourdough pizza in a brick oven?", "expected_supported": false, "expected_docs": []}
