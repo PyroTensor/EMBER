@@ -1,0 +1,16 @@
+# environments
+.venv/
+.env
+
+# data / outputs
+data/.cache/
+eval/results/
+
+# caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/

@@ -1,0 +1,33 @@
+# Backend-only dev services. Alembic owns the schema (no schema.sql mount).
+# Values come from backend/.env (see .env.example); the defaults below apply when it is missing.
+name: ember-backend
+
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    container_name: ember-postgres
+    restart: always
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      POSTGRES_USER: ${DB_USER:-ember}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-ember}
+      POSTGRES_DB: ${DB_NAME:-ember}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - ember-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  postgres_data:
+
+networks:
+  ember-network:

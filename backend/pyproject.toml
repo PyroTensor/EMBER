@@ -1,0 +1,70 @@
+[project]
+name = "ember-backend"
+version = "0.1.0"
+description = "EMBER backend: FastAPI + Postgres/pgvector + LangGraph grounded RAG"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic>=2.7",
+    "pydantic-settings",
+    "sqlalchemy[asyncio]>=2.0.30",
+    "asyncpg",
+    "alembic",
+    "pgvector",
+    "langgraph",
+    "google-genai",
+    "numpy",
+    "pyyaml",
+    "sentence-transformers",
+    "anyio",
+]
+
+[project.optional-dependencies]
+pdf = ["pymupdf"]
+eval = ["ragas"]
+tracing = ["langsmith"]
+
+[dependency-groups]
+dev = [
+    "ruff",
+    "mypy",
+    "pytest",
+    "pytest-asyncio",
+    "httpx",
+]
+
+[tool.uv]
+package = false
+
+# ── ruff ──────────────────────────────────────────────────────────────
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = ["data", ".cache"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "ASYNC"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+# ── mypy ──────────────────────────────────────────────────────────────
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+warn_unused_configs = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["app.domain.*", "app.schemas.*", "app.services.*"]
+strict = true
+
+# ── pytest ────────────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = [
+    "integration: needs a real Postgres (testcontainers / docker)",
+    "slow: long-running tests",
+]
