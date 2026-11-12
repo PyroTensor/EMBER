@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AppShell } from "@/components/layout/app-shell";
+import { HealthStatus } from "@/features/health";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -23,7 +24,7 @@ export default function RootLayout({
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full bg-black font-sans text-zinc-100">
         <Providers>
-          <AppShell>{children}</AppShell>
+          <AppShell status={<HealthStatus />}>{children}</AppShell>
         </Providers>
       </body>
     </html>
