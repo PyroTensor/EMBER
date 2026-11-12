@@ -3,6 +3,9 @@ import { fmtNum } from "@/lib/format";
 
 export type ScoreComponent = keyof RankWeights;
 
+/** Backend defaults (RankWeights in the contract / app.domain.ranking DEFAULT_WEIGHTS). */
+export const DEFAULT_RANK_WEIGHTS: Readonly<RankWeights> = { similarity: 0.5, completeness: 0.2, criticality: 0.3 };
+
 /** The three ranker sub-scores (each 0–100), in display order. */
 export const SCORE_COMPONENTS: readonly {
   key: ScoreComponent;
