@@ -114,6 +114,7 @@ class Settings(BaseSettings):
     OPENAI_API_KEY: SecretStr = SecretStr("")
 
     # ── embeddings ───────────────────────────────────────────────────
+    EMBED_ENABLED: bool = True  # False → NullEmbedder (keyword-only retrieval)
     EMBED_MODEL: str = "BAAI/bge-small-en-v1.5"
     EMBED_DIM: int = Field(default=DEFAULT_EMBED_DIM, ge=1, le=8192)
     EMBED_WARMUP: bool = True
