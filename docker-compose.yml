@@ -12,6 +12,8 @@ services:
       POSTGRES_USER: ember
       POSTGRES_PASSWORD: ember
       POSTGRES_DB: ember
+    ports:
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
