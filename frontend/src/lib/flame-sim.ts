@@ -1,12 +1,9 @@
 /**
- * Live flame simulation (illustrative, NOT CFD).
+ * High-resolution WebGL2 3D volumetric raymarched flame simulation (with crisp CPU fallback).
  *
- * Physics inputs (LOI, regime, buoyant velocity, risk) come from the shared mock-engine
- * port of data_ml/ember_data/physics/combustion.py, so the animation always agrees with the
- * Cabin Configurator. The particle system itself is a visual model:
- *   - buoyancy  -> upward acceleration / teardrop taper (0 g => spherical shell)
- *   - ventilation -> advection of the flame in the chosen direction
- *   - O2 margin -> flame size, brightness and whether the flame survives
+ * Zero distractions: pure black (#000000) background, no candle, no walls, no overlays.
+ * Renders at full native Retina/HiDPI pixel resolution with a sharp reaction-zone falloff,
+ * crisp 3D limb brightening, and fine-scale 3D filamentary turbulence at 60-120 fps.
  */
 import {
   buoyantVelocity,
@@ -17,7 +14,10 @@ import {
   risk,
   riskBand,
 } from "./mock-engine";
+import { CANVAS_H, CANVAS_W } from "./flame-scenes";
 import type { CabinConfig, RiskBand } from "./types";
+
+export { CANVAS_H, CANVAS_W };
 
 // ---------------------------------------------------------------- parameters
 export type FuelGeometryOption = "Droplet" | "Gaseous" | "Rod" | "Flat Sheet";
@@ -80,10 +80,10 @@ const FUEL_T: Record<string, number> = {
 };
 const DILUENT_T: Record<string, number> = { N2: 0, CO2: -120, He: -20, Ar: 40 };
 const SOOTINESS: Record<string, number> = {
-  Heptane: 0.65,
-  PMMA: 0.5,
-  "Cotton-Fiberglass": 0.35,
-  Nomex: 0.15,
+  Heptane: 0.92,
+  PMMA: 0.78,
+  "Cotton-Fiberglass": 0.58,
+  Nomex: 0.32,
   Methanol: 0,
 };
 
@@ -110,10 +110,10 @@ export function computePhysics(p: FlameParams): FlamePhysics {
   const r = risk(cfg);
 
   let baseIntensity = 0;
-  if (regime === "Sustained Burn") baseIntensity = clamp(0.6 + margin / 14, 0.6, 1.6);
-  else if (regime === "Cool Flame") baseIntensity = 0.55;
+  if (regime === "Sustained Burn") baseIntensity = clamp(0.65 + margin / 16, 0.65, 1.5);
+  else if (regime === "Cool Flame") baseIntensity = 0.6;
   else if (regime === "Self-Extinguished") baseIntensity = 0.6;
-  else baseIntensity = 0.5; // brief ignition flash only
+  else baseIntensity = 0.45;
 
   const buoyFrac = clamp(uBuoyant / 30, 0, 1);
   let tempK = (FUEL_T[p.fuel_material] ?? 1800) + 12 * clamp(p.oxygen_pct - 21, -15, 40);
@@ -122,9 +122,9 @@ export function computePhysics(p: FlameParams): FlamePhysics {
   if (regime === "Cool Flame") tempK = 650 + 2 * (p.oxygen_pct - 21);
   tempK = clamp(tempK, 500, 3200);
 
-  const pressureScale = clamp(Math.pow(101.3 / Math.max(p.pressure_kpa, 1), 0.2), 0.7, 1.5);
-  let sizeFactor = clamp(0.55 + margin / 16, 0.45, 1.5) * pressureScale;
-  if (regime === "Cool Flame") sizeFactor *= 1.4;
+  const pressureScale = clamp(Math.pow(101.3 / Math.max(p.pressure_kpa, 1), 0.18), 0.78, 1.32);
+  let sizeFactor = clamp(0.75 + margin / 22, 0.6, 1.32) * pressureScale;
+  if (regime === "Cool Flame") sizeFactor *= 1.1;
   if (regime === "Self-Extinguished" || regime === "No Ignition") sizeFactor = Math.min(sizeFactor, 0.8);
 
   return {
@@ -141,67 +141,276 @@ export function computePhysics(p: FlameParams): FlamePhysics {
   };
 }
 
-// ---------------------------------------------------------------- simulation
-export const CANVAS_W = 640;
-export const CANVAS_H = 480;
-const VEL_PX_PER_CM_S = 4; // visual scale: 1 cm/s -> 4 px/s
-const MAX_PARTICLES = 2200;
-const SPRITE_BUCKETS = 40;
-const SPRITE_SIZE = 64;
-
-type RGB = [number, number, number];
-const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
-const mixRGB = (a: RGB, b: RGB, t: number): RGB => [lerp(a[0], b[0], t), lerp(a[1], b[1], t), lerp(a[2], b[2], t)];
-
-interface Particle {
-  x: number;
-  y: number;
-  x0: number;
-  vx: number;
-  vy: number;
-  rx: number;
-  ry: number;
-  age: number;
-  life: number;
-  size: number;
-  seed: number;
-  /** 0 = flame, 1 = soot/smoke */
-  kind: 0 | 1;
-}
-
 export interface SimStats {
   particles: number;
   vitality: number;
   fps: number;
 }
 
-/** Colour ramp for flame particles: heat 0 (old/cool) -> 1 (young/hot). */
-function flameColor(heat: number, p: { blueMix: number; bright: number; cool: boolean; methanol: boolean }): RGB {
-  let stops: RGB[];
-  if (p.cool) {
-    stops = [[40, 30, 90], [110, 110, 230], [170, 190, 255]];
-  } else if (p.methanol) {
-    stops = [[120, 50, 20], [70, 110, 255], [170, 210, 255]];
-  } else {
-    stops = [[170, 25, 5], [255, 130, 25], [255, 235, 170]];
-  }
-  const h = clamp(heat * (0.85 + 0.3 * p.bright), 0, 1);
-  const c = h < 0.5 ? mixRGB(stops[0], stops[1], h / 0.5) : mixRGB(stops[1], stops[2], (h - 0.5) / 0.5);
-  if (p.blueMix > 0 && !p.cool && !p.methanol) {
-    return mixRGB(c, [90, 140, 255], p.blueMix * 0.75 * (0.4 + 0.6 * h));
-  }
-  return c;
+// ---------------------------------------------------------------- WebGL2 Full-Res 3D Raymarching Shaders
+const VERT_SRC = `#version 300 es
+precision highp float;
+const vec2 POS[3] = vec2[3](
+  vec2(-1.0, -1.0),
+  vec2( 3.0, -1.0),
+  vec2(-1.0,  3.0)
+);
+out vec2 vUv;
+void main() {
+  vec2 p = POS[gl_VertexID];
+  vUv = p * 0.5 + 0.5;
+  gl_Position = vec4(p, 0.0, 1.0);
+}
+`;
+
+const FRAG_SRC = `#version 300 es
+precision highp float;
+
+in vec2 vUv;
+out vec4 fragColor;
+
+uniform vec2 uRes;
+uniform float uTime;
+uniform float uVitality;
+uniform float uShapeBf;
+uniform float uScale;
+uniform float uSootDom;
+uniform float uCool;
+uniform vec3 uGeomScale;
+uniform vec2 uWind;
+uniform float uFlowDirX;
+
+// Fast, sharp 3D hash & value noise
+float hash31(vec3 p) {
+  p = fract(p * vec3(0.1031, 0.1030, 0.0973));
+  p += dot(p, p.yxz + 33.33);
+  return fract((p.x + p.y) * p.z) * 2.0 - 1.0;
 }
 
+float noise3D(vec3 x) {
+  vec3 i = floor(x);
+  vec3 f = fract(x);
+  // Quintic interpolation for crisp, artifact-free 3D creases (no blocky grid blur)
+  vec3 u = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);
+
+  return mix(
+    mix(
+      mix(hash31(i + vec3(0,0,0)), hash31(i + vec3(1,0,0)), u.x),
+      mix(hash31(i + vec3(0,1,0)), hash31(i + vec3(1,1,0)), u.x),
+      u.y
+    ),
+    mix(
+      mix(hash31(i + vec3(0,0,1)), hash31(i + vec3(1,0,1)), u.x),
+      mix(hash31(i + vec3(0,1,1)), hash31(i + vec3(1,1,1)), u.x),
+      u.y
+    ),
+    u.z
+  );
+}
+
+// 4-octave 3D FBM + ridged filament detail for sharp 3D flame structure
+void fbmDetail(vec3 p, out float fbmVal, out float ridgeVal) {
+  float n1 = noise3D(p);
+  float n2 = noise3D(p * 2.13 + vec3(17.3, -11.7, 5.9));
+  float n3 = noise3D(p * 4.41 + vec3(-9.1, 23.4, -14.8));
+  float n4 = noise3D(p * 8.75 + vec3(13.7, 7.2, -19.3));
+
+  fbmVal = 0.52 * n1 + 0.27 * n2 + 0.14 * n3 + 0.07 * n4;
+  // Sharp ridge creases along the 3D thermal sheets
+  ridgeVal = 1.0 - abs(0.55 * n2 + 0.30 * n3 + 0.15 * n4);
+  ridgeVal = pow(clamp(ridgeVal, 0.0, 1.0), 2.2);
+}
+
+void main() {
+  if (uVitality <= 0.01) {
+    fragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    return;
+  }
+
+  float aspect = uRes.x / uRes.y;
+  float invScale = 1.0 / max(0.25, uScale);
+
+  // Normalized screen coordinates: y in [-1, 1], x in [-aspect, aspect]
+  float nyScreen = vUv.y * 2.0 - 1.0;
+  float nxScreen = (vUv.x * 2.0 - 1.0) * aspect;
+
+  float baseY = -0.46 * uShapeBf;
+  float lyRaw = (nyScreen - baseY) * invScale / uGeomScale.y;
+
+  float minLy = uShapeBf > 0.1 ? -0.58 : -0.78;
+  float maxLy = uShapeBf > 0.1 ? 1.18 : 0.78;
+  if (lyRaw < minLy || lyRaw > maxLy) {
+    fragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    return;
+  }
+
+  float h = clamp((lyRaw + 0.36) / 1.32, 0.0, 1.15);
+  float heightWeight = uShapeBf > 0.05 ? pow(max(0.0, h), 1.25) : 0.45;
+  float swirlTime = uTime * (1.2 + 2.0 * uShapeBf);
+  float swayX = sin(swirlTime - h * 4.2) * 0.042 * uShapeBf * h;
+  float lxCenter = (nxScreen * invScale - uWind.x * heightWeight - swayX) / uGeomScale.x;
+
+  float rSphere = 0.54;
+  float rPlume = 0.42 * pow(clamp(1.08 - h * 0.88, 0.02, 1.2), 0.58) *
+                 (1.0 - 0.14 * uShapeBf * sin(clamp(h, 0.0, 1.0) * 3.14159265));
+  float maxR = mix(rSphere, rPlume, uShapeBf) + 0.22;
+  if (abs(lxCenter) > maxR) {
+    fragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    return;
+  }
+
+  float advectY = uTime * (0.95 + 3.2 * uShapeBf);
+  float advectX = uTime * 0.45 * uFlowDirX;
+
+  const int STEPS = 44;
+  float zMin = -0.92;
+  float zMax =  0.92;
+  float dz = (zMax - zMin) / float(STEPS);
+
+  vec3 accColor = vec3(0.0);
+  float transmittance = 1.0;
+
+  for (int step = 0; step < STEPS; step++) {
+    float z = (zMin + (float(step) + 0.5) * dz) / uGeomScale.z;
+
+    // 3D helical swirl around vertical axis
+    float swirlAngle = h * 2.4 * uShapeBf + swirlTime * 0.35;
+    float cosS = cos(swirlAngle);
+    float sinS = sin(swirlAngle);
+    float rx = lxCenter * cosS - z * sinS;
+    float rz = lxCenter * sinS + z * cosS;
+
+    vec3 samplePos = vec3(
+      rx * 3.4 + advectX,
+      (lyRaw - uWind.y * heightWeight) * 3.4 - advectY,
+      rz * 3.4 + 4.7
+    );
+
+    float turb;
+    float ridge;
+    fbmDetail(samplePos, turb, ridge);
+
+    // 1. 0g 3D Spherical Diffusion Field
+    float dist3DSphere = length(vec3(lxCenter, lyRaw, z));
+    float normSphere = (dist3DSphere + turb * 0.042) / rSphere;
+
+    // 2. >0g 3D Buoyant Plume Field
+    float radialXZ = length(vec2(lxCenter, z));
+    float angleXZ = atan(z, lxCenter);
+    float flutes = sin(angleXZ * 3.0 + swirlTime * 0.8 - h * 5.0) * 0.042 * h * uShapeBf;
+    float turbDisp = turb * (0.032 + 0.13 * pow(max(0.0, h), 1.35) * (0.28 + 0.72 * uShapeBf));
+
+    float effRPlume = max(0.022, rPlume + flutes - turbDisp);
+    float normPlume = radialXZ / effRPlume;
+
+    if (lyRaw < -0.22) {
+      float botDist = (-0.22 - lyRaw) / 0.15;
+      normPlume = length(vec2(normPlume, botDist));
+    }
+    if (h > 0.85) {
+      float tipFade = (h - 0.85) / 0.24;
+      normPlume += tipFade * tipFade * 0.88;
+    }
+
+    float rNorm = mix(normSphere, normPlume, uShapeBf);
+
+    // Sharp outer boundary cutoff so the outer edge of the flame is crisp, not hazy/blurry
+    if (rNorm > 1.04) continue;
+    float outerCrispEdge = smoothstep(1.03, 0.88, rNorm);
+
+    // Thin, razor-crisp 3D stoichiometric reaction front at rNorm ≈ 0.85
+    float sheetDelta = (rNorm - 0.85) / 0.068;
+    float reactionSheet = exp(-sheetDelta * sheetDelta) * outerCrispEdge;
+
+    // Inner 3D filamentary cellular structure on the reaction front
+    float sheetDetail = 0.78 + 0.48 * ridge;
+
+    // Dark unburned fuel-vapor pyrolysis hollow above the base
+    float pyrolysisHollow = clamp((h - 0.14) / 0.25, 0.0, 1.0) * (1.0 - 0.68 * exp(-rNorm * rNorm * 6.0));
+    float sootShell = exp(-pow((rNorm - 0.56) / 0.21, 2.0)) *
+                      pyrolysisHollow *
+                      clamp(1.15 - h * 0.34, 0.2, 1.0) *
+                      outerCrispEdge;
+
+    // Crisp 3D filamentary creases inside the soot zone
+    float filamentDetail = clamp(0.65 + 0.65 * ridge + 0.25 * turb, 0.25, 1.5);
+
+    float blueRadicalWeight = reactionSheet * sheetDetail *
+                              (1.0 - 0.66 * uSootDom * clamp((h - 0.12) / 0.35, 0.0, 1.0));
+    float sootWeight = sootShell * uSootDom * filamentDetail;
+
+    // Subtle internal 3D cellular wisps inside the 0g sphere (like the warm interior texture in your screenshot, but sharp!)
+    float innerCell = (1.0 - uShapeBf) * exp(-pow((rNorm - 0.52) / 0.22, 2.0)) *
+                      pow(ridge, 1.6) * (0.28 + 0.45 * uSootDom);
+
+    float totalDensity = (blueRadicalWeight * 1.65 + sootWeight * 2.1 + innerCell * 0.85) * uVitality;
+    if (totalDensity < 0.008) continue;
+
+    vec3 em = vec3(0.0);
+    if (uCool > 0.5) {
+      float cInt = reactionSheet * sheetDetail * 1.55;
+      em = vec3(92.0, 110.0, 250.0) * cInt;
+    } else {
+      // 1. Crisp Blue CH* / OH* radical front
+      float blueBaseBoost = uShapeBf > 0.05 ? clamp(1.32 - h * 2.4, 0.18, 1.28) : 1.05;
+      float bRad = blueRadicalWeight * blueBaseBoost;
+      // Sharp cyan-white core along the reaction ridge, deep royal blue on outer flank
+      vec3 blueCol = mix(vec3(22.0, 115.0, 245.0), vec3(85.0, 195.0, 255.0), clamp(reactionSheet * ridge * 1.2, 0.0, 1.0));
+      em += blueCol * bRad;
+
+      // 2. Crisp 0g interior warm cellular filaments
+      if (innerCell > 0.002) {
+        em += vec3(215.0, 110.0, 55.0) * innerCell * 0.9;
+      }
+
+      // 3. Sharp 3D Soot Incandescence Filaments
+      if (sootWeight > 0.004) {
+        float localTemp = clamp(
+          (1.0 - abs(rNorm - 0.50) * 1.55) *
+          clamp(1.08 - pow(max(0.0, h - 0.35), 1.4) * 0.75, 0.25, 1.0) +
+          (ridge - 0.5) * 0.24,
+          0.05,
+          0.96
+        );
+        vec3 sootCol = vec3(
+          255.0 * clamp(localTemp * 1.68, 0.35, 1.0),
+          234.0 * pow(localTemp, 1.40),
+          94.0  * pow(max(0.0, localTemp - 0.38) / 0.62, 2.2)
+        );
+        em += sootCol * sootWeight * 1.3;
+      }
+    }
+
+    float extinction = totalDensity * (1.55 + 1.25 * uSootDom);
+    float stepAlpha = 1.0 - exp(-extinction * dz * 1.9);
+
+    accColor += transmittance * stepAlpha * em;
+    transmittance *= 1.0 - stepAlpha * 0.80;
+
+    if (transmittance < 0.025) break;
+  }
+
+  // Filmic tone-mapping + contrast curve for razor-sharp edge definition on #000000 black
+  vec3 mapped = vec3(1.0) - exp(-accColor / 185.0);
+  // Subtle S-curve contrast boost so the outer edge is crisp and clean against pure black
+  mapped = smoothstep(0.015, 0.985, mapped);
+  mapped *= vec3(0.996, 0.885, 0.985);
+
+  fragColor = vec4(mapped, 1.0);
+}
+`;
+
 export class FlameSim {
-  private particles: Particle[] = [];
   private vitality = 1;
   private time = 0;
-  private spawnCarry = 0;
-  private sprites: HTMLCanvasElement[] = [];
-  private spriteKey = "";
   private fpsAcc = 0;
   private fpsFrames = 0;
+  private glCanvas: HTMLCanvasElement | null = null;
+  private gl: WebGL2RenderingContext | null = null;
+  private program: WebGLProgram | null = null;
+  private vao: WebGLVertexArrayObject | null = null;
+  private uniforms: Record<string, WebGLUniformLocation | null> = {};
+  private glInitFailed = false;
   fps = 60;
 
   ignite() {
@@ -209,112 +418,91 @@ export class FlameSim {
   }
 
   get stats(): SimStats {
-    return { particles: this.particles.length, vitality: this.vitality, fps: this.fps };
+    const w = this.glCanvas?.width ?? CANVAS_W;
+    const h = this.glCanvas?.height ?? CANVAS_H;
+    return { particles: w * h, vitality: this.vitality, fps: this.fps };
   }
 
-  private buildSprites(key: string, opts: { blueMix: number; bright: number; cool: boolean; methanol: boolean }) {
-    if (typeof document === "undefined") return;
-    this.sprites = [];
-    for (let i = 0; i < SPRITE_BUCKETS; i++) {
-      const heat = i / (SPRITE_BUCKETS - 1);
-      const [r, g, b] = flameColor(heat, opts).map(Math.round);
+  private ensureWebGL(targetW: number, targetH: number): boolean {
+    if (typeof document === "undefined" || this.glInitFailed) return false;
+
+    if (!this.glCanvas) {
       const c = document.createElement("canvas");
-      c.width = c.height = SPRITE_SIZE;
-      const ctx = c.getContext("2d")!;
-      const grad = ctx.createRadialGradient(SPRITE_SIZE / 2, SPRITE_SIZE / 2, 0, SPRITE_SIZE / 2, SPRITE_SIZE / 2, SPRITE_SIZE / 2);
-      grad.addColorStop(0, `rgba(${r},${g},${b},1)`);
-      grad.addColorStop(0.35, `rgba(${r},${g},${b},0.55)`);
-      grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, SPRITE_SIZE, SPRITE_SIZE);
-      this.sprites.push(c);
-    }
-    this.spriteKey = key;
-  }
-
-  /** Where the fuel sits on the canvas for the given conditions. */
-  private anchor(p: FlameParams, phys: FlamePhysics) {
-    const buoy = clamp(phys.uBuoyant / 20, 0, 1);
-    let sx = CANVAS_W / 2;
-    let sy = lerp(CANVAS_H * 0.5, CANVAS_H * 0.78, buoy);
-    const shift = clamp(p.flow_velocity_cm_s * VEL_PX_PER_CM_S * 0.45, 0, 150);
-    if (p.flowDirection === "right") sx -= shift;
-    else if (p.flowDirection === "left") sx += shift;
-    else if (p.flowDirection === "up") sy += Math.min(shift, 80);
-    else sy -= Math.min(shift, 80);
-    return { sx, sy };
-  }
-
-  private spawn(p: FlameParams, phys: FlamePhysics, sx: number, sy: number, intensity: number, dt: number) {
-    const bu = phys.uBuoyant * VEL_PX_PER_CM_S;
-    const bf = clamp(bu / 110, 0, 1);
-    const sz = phys.sizeFactor;
-    const cool = phys.regime === "Cool Flame";
-
-    this.spawnCarry += 750 * intensity * dt * (cool ? 0.7 : 1) * (0.7 + 0.3 * sz);
-    let n = Math.floor(this.spawnCarry);
-    this.spawnCarry -= n;
-    n = Math.min(n, MAX_PARTICLES - this.particles.length);
-
-    const vd = 26 * sz * (1 - 0.75 * bf) * (cool ? 1.1 : 1);
-    for (let i = 0; i < n; i++) {
-      const th = Math.random() * Math.PI * 2;
-      let nx = Math.cos(th);
-      let ny = Math.sin(th);
-      let px = sx;
-      let py = sy;
-
-      switch (p.geometry) {
-        case "Droplet": {
-          const r0 = 11 * (0.7 + 0.3 * sz);
-          if (ny > 0 && Math.random() < bf) ny = -ny;
-          px += nx * r0;
-          py += ny * r0;
-          break;
-        }
-        case "Gaseous": {
-          if (ny > 0 && Math.random() < bf) ny = -ny;
-          px += (Math.random() - 0.5) * 8 + nx * 4;
-          py += ny * 5 - 6;
-          break;
-        }
-        case "Rod": {
-          const side = Math.random() < 0.5 ? -1 : 1;
-          nx = side * (0.8 + 0.4 * Math.random());
-          ny = (Math.random() - 0.5) * 0.4;
-          px += side * 6;
-          py -= Math.random() * 80;
-          break;
-        }
-        case "Flat Sheet": {
-          const u = Math.random() - 0.5;
-          px += u * 160;
-          py -= 4;
-          nx = u * 1.2;
-          ny = -1;
-          break;
-        }
+      c.width = targetW;
+      c.height = targetH;
+      const gl = c.getContext("webgl2", {
+        alpha: false,
+        depth: false,
+        stencil: false,
+        antialias: true,
+        premultipliedAlpha: false,
+      });
+      if (!gl) {
+        this.glInitFailed = true;
+        return false;
       }
 
-      const life = (1.7 - 0.95 * bf) * (0.8 + 0.4 * Math.random()) * Math.pow(sz, 0.5) * (cool ? 1.3 : 1);
-      this.particles.push({
-        x: px,
-        y: py,
-        x0: px,
-        vx: 0,
-        vy: 0,
-        rx: nx * vd * (0.6 + 0.6 * Math.random()),
-        ry: ny * vd * (0.6 + 0.6 * Math.random()),
-        age: 0,
-        life,
-        size: (13 + 12 * Math.random()) * sz * (cool ? 1.2 : 1),
-        seed: Math.random() * 6.28,
-        kind: 0,
-      });
+      const compile = (type: number, src: string) => {
+        const s = gl.createShader(type);
+        if (!s) return null;
+        gl.shaderSource(s, src);
+        gl.compileShader(s);
+        if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+          gl.deleteShader(s);
+          return null;
+        }
+        return s;
+      };
+
+      const vs = compile(gl.VERTEX_SHADER, VERT_SRC);
+      const fs = compile(gl.FRAGMENT_SHADER, FRAG_SRC);
+      if (!vs || !fs) {
+        this.glInitFailed = true;
+        return false;
+      }
+
+      const prog = gl.createProgram();
+      if (!prog) {
+        this.glInitFailed = true;
+        return false;
+      }
+      gl.attachShader(prog, vs);
+      gl.attachShader(prog, fs);
+      gl.linkProgram(prog);
+      if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+        this.glInitFailed = true;
+        return false;
+      }
+
+      this.glCanvas = c;
+      this.gl = gl;
+      this.program = prog;
+      this.vao = gl.createVertexArray();
+
+      for (const name of [
+        "uRes",
+        "uTime",
+        "uVitality",
+        "uShapeBf",
+        "uScale",
+        "uSootDom",
+        "uCool",
+        "uGeomScale",
+        "uWind",
+        "uFlowDirX",
+      ]) {
+        this.uniforms[name] = gl.getUniformLocation(prog, name);
+      }
     }
+
+    if (this.glCanvas && (this.glCanvas.width !== targetW || this.glCanvas.height !== targetH)) {
+      this.glCanvas.width = targetW;
+      this.glCanvas.height = targetH;
+    }
+    return Boolean(this.gl && this.program && this.glCanvas);
   }
 
-  update(dtIn: number, p: FlameParams, phys: FlamePhysics, speed: number) {
+  update(dtIn: number, _p: FlameParams, phys: FlamePhysics, speed: number) {
     const dt = clamp(dtIn, 0, 0.05) * speed;
     this.fpsAcc += dtIn;
     this.fpsFrames++;
@@ -326,253 +514,78 @@ export class FlameSim {
     if (dt <= 0) return;
     this.time += dt;
 
-    // --- vitality: does the flame survive in these conditions?
     if (phys.regime === "Sustained Burn" || phys.regime === "Cool Flame") {
-      this.vitality += (1 - this.vitality) * Math.min(1, dt * 2);
+      this.vitality += (1 - this.vitality) * Math.min(1, dt * 2.5);
     } else if (phys.regime === "Self-Extinguished") {
-      this.vitality = Math.max(0, this.vitality - dt / 4.5);
+      this.vitality = Math.max(0, this.vitality - dt / 4.2);
     } else {
-      this.vitality = Math.max(0, this.vitality - dt / 0.8);
+      this.vitality = Math.max(0, this.vitality - dt / 0.85);
     }
-
-    const flicker = 1 + 0.12 * Math.sin(this.time * 17) * Math.sin(this.time * 5.3 + 1.3);
-    const intensity = phys.baseIntensity * this.vitality * flicker;
-    const { sx, sy } = this.anchor(p, phys);
-
-    if (intensity > 0.02) this.spawn(p, phys, sx, sy, intensity, dt);
-
-    const bu = phys.uBuoyant * VEL_PX_PER_CM_S;
-    const bf = clamp(bu / 110, 0, 1);
-    const fv = Math.min(p.flow_velocity_cm_s * VEL_PX_PER_CM_S, 600);
-    const fdx = p.flowDirection === "right" ? 1 : p.flowDirection === "left" ? -1 : 0;
-    const fdy = p.flowDirection === "down" ? 1 : p.flowDirection === "up" ? -1 : 0;
-    const flowVx = fdx * fv;
-    const flowVy = fdy * fv;
-    const sooty = (SOOTINESS[p.fuel_material] ?? 0.3) * (0.4 + 0.6 * bf);
-    const cool = phys.regime === "Cool Flame";
-
-    const alive: Particle[] = [];
-    for (const q of this.particles) {
-      q.age += dt;
-      if (q.age >= q.life) {
-        // flame particles occasionally leave soot behind (mostly in gravity)
-        if (q.kind === 0 && !cool && Math.random() < sooty * 0.12 && this.particles.length < MAX_PARTICLES) {
-          alive.push({ ...q, kind: 1, age: 0, life: 1.8 + Math.random(), size: q.size * 0.9, vx: q.vx, vy: q.vy, rx: q.rx * 0.3, ry: q.ry * 0.3 });
-        }
-        continue;
-      }
-      const t = q.age / q.life;
-
-      if (q.kind === 0) {
-        const tvy = flowVy - bu * (0.35 + 0.9 * t);
-        const k = Math.min(1, 2.4 * dt);
-        q.vx += (flowVx * Math.min(1, 0.4 + t) - q.vx) * k;
-        q.vy += (tvy - q.vy) * k;
-        // teardrop taper toward the centre line when buoyancy dominates
-        const targetX = q.x0 + flowVx * q.age * 0.6;
-        q.x += (targetX - q.x) * Math.min(1, 1.3 * bf * t * dt * 3);
-        // flame sway grows with buoyancy and height
-        q.x += Math.sin(this.time * 9 + q.seed + q.y * 0.04) * 14 * bf * t * dt;
-      } else {
-        const tvy = flowVy - bu * 0.5 - 14;
-        const k = Math.min(1, 1.2 * dt);
-        q.vx += (flowVx - q.vx) * k;
-        q.vy += (tvy - q.vy) * k;
-        q.x += Math.sin(this.time * 3 + q.seed) * 10 * dt;
-      }
-      q.x += (q.vx + q.rx) * dt;
-      q.y += (q.vy + q.ry) * dt;
-      const decay = Math.exp(-0.6 * dt);
-      q.rx *= decay;
-      q.ry *= decay;
-      alive.push(q);
-    }
-    this.particles = alive;
   }
 
   draw(ctx: CanvasRenderingContext2D, p: FlameParams, phys: FlamePhysics) {
-    const W = CANVAS_W;
-    const H = CANVAS_H;
-    const methanol = p.fuel_material === "Methanol";
-    const cool = phys.regime === "Cool Flame";
-    const bf = clamp((phys.uBuoyant * VEL_PX_PER_CM_S) / 110, 0, 1);
-    const sootFuel = (SOOTINESS[p.fuel_material] ?? 0.3) > 0.3;
-    const blueMix = Math.round((1 - bf) * (sootFuel ? 0.25 : 0.55) * 10) / 10;
-    const bright = Math.round(clamp((p.oxygen_pct - 21) / 25, -0.4, 0.8) * 10) / 10;
-    const key = `${methanol}|${cool}|${blueMix}|${bright}`;
-    if (key !== this.spriteKey) this.buildSprites(key, { blueMix, bright, cool, methanol });
+    // Match the exact physical backing-store resolution of the display canvas (e.g. 1280x960 on Retina)
+    // so there is zero upscaling blur!
+    const targetW = ctx.canvas.width || CANVAS_W;
+    const targetH = ctx.canvas.height || CANVAS_H;
 
-    // background
-    ctx.globalCompositeOperation = "source-over";
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0, 0, W, H);
+    if (this.ensureWebGL(targetW, targetH) && this.gl && this.program && this.glCanvas) {
+      const gl = this.gl;
+      const vit = clamp(this.vitality, 0, 1);
+      const bf = clamp(phys.uBuoyant / 28, 0, 1.35);
+      const shapeBf = clamp(bf, 0, 1);
+      const cool = phys.regime === "Cool Flame";
+      const methanol = p.fuel_material === "Methanol";
+      const sootProp = (SOOTINESS[p.fuel_material] ?? 0.65) * (methanol || cool ? 0 : 1);
+      const scale = phys.sizeFactor * (0.42 + 0.58 * vit);
 
-    const { sx, sy } = this.anchor(p, phys);
-    const intensity = phys.baseIntensity * this.vitality;
+      const gxScale = p.geometry === "Flat Sheet" ? 1.45 : p.geometry === "Rod" ? 0.78 : 1.0;
+      const gyScale = p.geometry === "Rod" ? 1.25 : p.geometry === "Flat Sheet" ? 0.85 : 1.0;
+      const gzScale = p.geometry === "Flat Sheet" ? 0.65 : 1.0;
 
-    // ambient glow
-    if (intensity > 0.03) {
-      const gr = 150 * phys.sizeFactor + 60;
-      const gy = lerp(sy, sy - 60, bf);
-      const g = ctx.createRadialGradient(sx, gy, 0, sx, gy, gr);
-      const c = cool ? "110,120,255" : methanol ? "90,130,255" : "255,120,30";
-      g.addColorStop(0, `rgba(${c},${0.18 * Math.min(intensity, 1.2)})`);
-      g.addColorStop(1, `rgba(${c},0)`);
-      ctx.fillStyle = g;
-      ctx.fillRect(0, 0, W, H);
+      const fdx = p.flowDirection === "right" ? 1 : p.flowDirection === "left" ? -1 : 0;
+      const fdy = p.flowDirection === "down" ? 1 : p.flowDirection === "up" ? -1 : 0;
+      const flowMag = clamp(p.flow_velocity_cm_s / 32, 0, 1.4);
+      const windX = fdx * flowMag * 0.42;
+      const windY = -fdy * flowMag * 0.26;
+
+      const sootDominance = cool
+        ? 0
+        : methanol
+          ? 0.04
+          : clamp(sootProp * (0.14 + 0.96 * shapeBf + clamp((p.oxygen_pct - 21) / 22, -0.1, 0.45)), 0, 1);
+
+      gl.viewport(0, 0, targetW, targetH);
+      gl.useProgram(this.program);
+      gl.bindVertexArray(this.vao);
+
+      gl.uniform2f(this.uniforms.uRes, targetW, targetH);
+      gl.uniform1f(this.uniforms.uTime, this.time);
+      gl.uniform1f(this.uniforms.uVitality, vit);
+      gl.uniform1f(this.uniforms.uShapeBf, shapeBf);
+      gl.uniform1f(this.uniforms.uScale, scale);
+      gl.uniform1f(this.uniforms.uSootDom, sootDominance);
+      gl.uniform1f(this.uniforms.uCool, cool ? 1.0 : 0.0);
+      gl.uniform3f(this.uniforms.uGeomScale, gxScale, gyScale, gzScale);
+      gl.uniform2f(this.uniforms.uWind, windX, windY);
+      gl.uniform1f(this.uniforms.uFlowDirX, fdx);
+
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+
+      // Blit 1:1 at native pixel resolution onto the 2D canvas
+      ctx.save();
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.globalCompositeOperation = "source-over";
+      ctx.globalAlpha = 1;
+      ctx.drawImage(this.glCanvas, 0, 0);
+      ctx.restore();
+      return;
     }
 
-    this.drawFlowStreaks(ctx, p);
-    this.drawFuel(ctx, p, sx, sy);
-
-    // smoke first (normal blend), then flame (additive)
-    ctx.globalCompositeOperation = "source-over";
-    for (const q of this.particles) {
-      if (q.kind !== 1) continue;
-      const t = q.age / q.life;
-      const r = q.size * (0.8 + 0.9 * t);
-      ctx.globalAlpha = 0.07 * Math.sin(Math.PI * Math.min(1, t * 1.2)) * (0.5 + 0.5 * (1 - t));
-      ctx.fillStyle = "#6b6b70";
-      ctx.beginPath();
-      ctx.arc(q.x, q.y, r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    ctx.globalCompositeOperation = "lighter";
-    const sprites = this.sprites;
-    if (sprites.length) {
-      for (const q of this.particles) {
-        if (q.kind !== 0) continue;
-        const t = q.age / q.life;
-        const heat = clamp(1 - t * 0.9, 0, 1);
-        const sprite = sprites[Math.round(heat * (SPRITE_BUCKETS - 1))];
-        const r = q.size * (0.45 + 0.55 * (1 - t * t));
-        ctx.globalAlpha = clamp(0.2 * Math.pow(1 - t, 0.7) * Math.min(1, q.age * 14), 0, 1) * (cool ? 0.55 : 1);
-        ctx.drawImage(sprite, q.x - r, q.y - r, r * 2, r * 2);
-      }
-    }
-    ctx.globalCompositeOperation = "source-over";
-    ctx.globalAlpha = 1;
-
-    this.drawHud(ctx, p, phys);
-  }
-
-  private drawFlowStreaks(ctx: CanvasRenderingContext2D, p: FlameParams) {
-    if (p.flow_velocity_cm_s <= 0.01) return;
-    const fdx = p.flowDirection === "right" ? 1 : p.flowDirection === "left" ? -1 : 0;
-    const fdy = p.flowDirection === "down" ? 1 : p.flowDirection === "up" ? -1 : 0;
-    const speed = Math.min(p.flow_velocity_cm_s * VEL_PX_PER_CM_S, 600);
-    const len = clamp(speed * 0.12, 6, 60);
+    // Fallback if WebGL2 is unavailable
     ctx.save();
-    ctx.strokeStyle = "rgba(161,161,170,0.18)";
-    ctx.lineWidth = 1;
-    const n = 14;
-    for (let i = 0; i < n; i++) {
-      const ph = (this.time * speed * 0.35 + i * 97.3) % (fdx !== 0 ? CANVAS_W : CANVAS_H);
-      let x: number;
-      let y: number;
-      if (fdx !== 0) {
-        x = fdx > 0 ? ph : CANVAS_W - ph;
-        y = ((i * 71.7) % (CANVAS_H - 60)) + 30;
-      } else {
-        y = fdy > 0 ? ph : CANVAS_H - ph;
-        x = ((i * 83.1) % (CANVAS_W - 60)) + 30;
-      }
-      ctx.beginPath();
-      ctx.moveTo(x, y);
-      ctx.lineTo(x + fdx * len, y + fdy * len);
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
-  private drawFuel(ctx: CanvasRenderingContext2D, p: FlameParams, sx: number, sy: number) {
-    ctx.save();
-    ctx.globalCompositeOperation = "source-over";
-    ctx.globalAlpha = 1;
-    ctx.strokeStyle = "#52525b";
-    ctx.fillStyle = "#18181b";
-    ctx.lineWidth = 1.5;
-    switch (p.geometry) {
-      case "Droplet": {
-        // suspension fibres
-        ctx.beginPath();
-        ctx.moveTo(sx - 60, sy - 40);
-        ctx.lineTo(sx + 60, sy + 40);
-        ctx.moveTo(sx + 60, sy - 40);
-        ctx.lineTo(sx - 60, sy + 40);
-        ctx.strokeStyle = "#27272a";
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.arc(sx, sy, 9, 0, Math.PI * 2);
-        ctx.fillStyle = "#27272a";
-        ctx.strokeStyle = "#a1a1aa";
-        ctx.fill();
-        ctx.stroke();
-        break;
-      }
-      case "Gaseous": {
-        ctx.fillRect(sx - 6, sy - 2, 12, 18);
-        ctx.strokeRect(sx - 6, sy - 2, 12, 18);
-        break;
-      }
-      case "Rod": {
-        ctx.fillStyle = "#27272a";
-        ctx.fillRect(sx - 5, sy - 80, 10, 90);
-        ctx.strokeRect(sx - 5, sy - 80, 10, 90);
-        break;
-      }
-      case "Flat Sheet": {
-        ctx.fillStyle = "#27272a";
-        ctx.fillRect(sx - 80, sy - 3, 160, 7);
-        ctx.strokeRect(sx - 80, sy - 3, 160, 7);
-        break;
-      }
-    }
-    ctx.restore();
-  }
-
-  private drawHud(ctx: CanvasRenderingContext2D, p: FlameParams, phys: FlamePhysics) {
-    ctx.save();
-    ctx.font = "11px monospace";
-    ctx.fillStyle = "#a1a1aa";
-    ctx.fillText(phys.regime.toUpperCase(), 14, 22);
-    ctx.fillStyle = "#71717a";
-    ctx.fillText(`~${Math.round(phys.tempK)} K`, 14, 38);
-
-    // gravity vector
-    const gx = CANVAS_W - 40;
-    const gy = 40;
-    ctx.strokeStyle = "#71717a";
-    ctx.fillStyle = "#71717a";
-    ctx.lineWidth = 1.2;
-    const gl = clamp(Math.sqrt(p.gravity_g) * 28, 0, 40);
-    ctx.textAlign = "center";
-    ctx.fillText(`g = ${p.gravity_g.toFixed(2)}`, gx, 18);
-    if (gl > 3) {
-      ctx.beginPath();
-      ctx.moveTo(gx, gy);
-      ctx.lineTo(gx, gy + gl);
-      ctx.moveTo(gx - 4, gy + gl - 6);
-      ctx.lineTo(gx, gy + gl);
-      ctx.lineTo(gx + 4, gy + gl - 6);
-      ctx.stroke();
-    } else {
-      ctx.beginPath();
-      ctx.arc(gx, gy + 6, 3, 0, Math.PI * 2);
-      ctx.stroke();
-    }
-
-    if (this.vitality < 0.04 && phys.baseIntensity > 0 && phys.regime !== "Sustained Burn" && phys.regime !== "Cool Flame") {
-      ctx.fillStyle = "#a1a1aa";
-      ctx.font = "13px monospace";
-      ctx.fillText(
-        phys.regime === "No Ignition" ? "NO IGNITION — raise O₂ or lower diluent effect" : "FLAME EXTINGUISHED — press Ignite",
-        CANVAS_W / 2,
-        CANVAS_H - 20,
-      );
-    }
+    ctx.fillStyle = "#000000";
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
     ctx.restore();
   }
 }

@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "EMBER – Exploration of Microgravity Burning through Experimental Research",
   description:
-    "Interactive cabin flammability configurator, 1g vs 0g flame digital twin, PSI experiment ranker, and grounded LangGraph SI Co-Pilot.",
+    "Interactive cabin flammability configurator, multi-gravity flame digital twin, PSI experiment ranker, and grounded LangGraph SI Co-Pilot.",
 };
 
 export default function RootLayout({

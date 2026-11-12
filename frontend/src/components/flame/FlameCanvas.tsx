@@ -20,7 +20,14 @@ interface FlameCanvasProps {
   onStats?: (s: SimStats) => void;
 }
 
-export function FlameCanvas({ params, physics, speed, paused, igniteSignal, onStats }: FlameCanvasProps) {
+export function FlameCanvas({
+  params,
+  physics,
+  speed,
+  paused,
+  igniteSignal,
+  onStats,
+}: FlameCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const simRef = useRef<FlameSim | null>(null);
   const live = useRef({ params, physics, speed, paused, onStats });
@@ -75,7 +82,7 @@ export function FlameCanvas({ params, physics, speed, paused, igniteSignal, onSt
     <canvas
       ref={canvasRef}
       role="img"
-      aria-label="Live flame simulation"
+      aria-label="Live 2D flame simulation inside virtual environment chamber"
       className="block w-full rounded border border-zinc-900 bg-black"
       style={{ aspectRatio: `${CANVAS_W} / ${CANVAS_H}` }}
     />

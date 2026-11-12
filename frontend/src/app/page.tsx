@@ -16,10 +16,10 @@ const MODULES = [
   },
   {
     code: "02",
-    title: "1g vs 0g Flame Twin",
+    title: "Flame Digital Twin",
     href: "/twin",
     description:
-      "Compare 1g buoyant teardrop flames against 0g spherical diffusion and low-temperature cool-flame regimes.",
+      "Simulate 3D volumetric flame morphology across variable gravity, cabin atmospheres, fuel geometries, and airflow regimes.",
   },
   {
     code: "03",

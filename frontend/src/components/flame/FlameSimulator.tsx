@@ -15,6 +15,7 @@ import {
   type FuelGeometryOption,
   type SimStats,
 } from "@/lib/flame-sim";
+import { SCENARIOS, getScenario, type SceneId } from "@/lib/flame-scenes";
 import presets from "@/mock/presets.json";
 import { FlameCanvas } from "./FlameCanvas";
 import { ParamControl } from "./ParamControl";
@@ -28,6 +29,13 @@ const DEFAULTS: FlameParams = {
   diluent_gas: "N2",
   geometry: "Droplet",
   flowDirection: "right",
+};
+
+const PRESET_TO_SCENE: Record<string, SceneId> = {
+  iss: "iss",
+  "artemis-transit": "transit",
+  "artemis-lunar": "moon",
+  "mars-surface": "mars",
 };
 
 const selectCls =
@@ -54,24 +62,46 @@ function Stat({ label, value, tone }: { label: string; value: string; tone?: str
 
 export function FlameSimulator() {
   const [params, setParams] = useState<FlameParams>(DEFAULTS);
+  const [sceneId, setSceneId] = useState<SceneId | null>(null);
   const [presetId, setPresetId] = useState("custom");
   const [speed, setSpeed] = useState(1);
   const [paused, setPaused] = useState(false);
   const [igniteSignal, setIgniteSignal] = useState(0);
-  const [stats, setStats] = useState<SimStats>({ particles: 0, vitality: 1, fps: 60 });
+  const [stats, setStats] = useState<SimStats>({ particles: 64, vitality: 1, fps: 60 });
 
   const physics = useMemo(() => computePhysics(params), [params]);
+  const activeScenario = useMemo(() => (sceneId ? getScenario(sceneId) : null), [sceneId]);
 
   const update = <K extends keyof FlameParams>(key: K, value: FlameParams[K]) => {
     setPresetId("custom");
+    setSceneId(null);
     setParams((prev) => ({ ...prev, [key]: value }));
   };
 
+  const selectScenario = (id: SceneId) => {
+    const s = getScenario(id);
+    setSceneId(id);
+    setPresetId("custom");
+    setParams((prev) => ({
+      ...prev,
+      oxygen_pct: s.atmosphere.oxygen_pct,
+      pressure_kpa: s.atmosphere.pressure_kpa,
+      flow_velocity_cm_s: s.atmosphere.flow_velocity_cm_s,
+      gravity_g: s.atmosphere.gravity_g,
+    }));
+    setIgniteSignal((n) => n + 1);
+  };
+
   const applyPreset = (id: string) => {
-    if (id === "custom") return;
+    if (id === "custom") {
+      setPresetId("custom");
+      setSceneId(null);
+      return;
+    }
     const p = presets.find((x) => x.id === id);
     if (!p) return;
     setPresetId(id);
+    setSceneId(PRESET_TO_SCENE[id] ?? null);
     setParams((prev) => ({
       ...prev,
       oxygen_pct: p.oxygen_pct,
@@ -112,6 +142,7 @@ export function FlameSimulator() {
             type="button"
             onClick={() => {
               setParams(DEFAULTS);
+              setSceneId(null);
               setPresetId("custom");
               setIgniteSignal((n) => n + 1);
             }}
@@ -303,7 +334,35 @@ export function FlameSimulator() {
 
         {/* Simulation */}
         <div className="space-y-4 lg:col-span-7">
-          <div className="rounded-lg border border-zinc-900 bg-zinc-950 p-3">
+          <div className="space-y-3 rounded-lg border border-zinc-900 bg-zinc-950 p-3">
+            {/* Scenario Selector */}
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="font-mono text-[11px] uppercase tracking-wider text-zinc-500">
+                Gravity Scenario
+              </span>
+              <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Virtual environment scenarios">
+                {SCENARIOS.map((s) => {
+                  const active = s.id === sceneId;
+                  return (
+                    <button
+                      key={s.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={active}
+                      onClick={() => selectScenario(s.id)}
+                      className={`rounded border px-2.5 py-1 font-mono text-xs transition ${
+                        active
+                          ? "border-zinc-500 bg-zinc-900 text-white"
+                          : "border-zinc-800 bg-black text-zinc-400 hover:border-zinc-700 hover:text-zinc-200"
+                      }`}
+                    >
+                      {s.label} <span className="text-zinc-500">({s.gLabel})</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
             <FlameCanvas
               params={params}
               physics={physics}
@@ -312,10 +371,26 @@ export function FlameSimulator() {
               igniteSignal={igniteSignal}
               onStats={setStats}
             />
-            <div className="mt-2 flex justify-between font-mono text-[10px] text-zinc-600">
-              <span>Illustrative particle model — physics inputs shared with the Cabin Configurator</span>
-              <span>
-                {stats.particles} particles · {Math.round(stats.fps)} fps
+
+            <div className="flex flex-wrap items-center justify-between gap-2 border-t border-zinc-900 pt-2.5 text-xs">
+              {activeScenario ? (
+                <p className="text-zinc-300">
+                  <span className="font-mono font-medium text-white">
+                    {activeScenario.label} ({activeScenario.gLabel}):
+                  </span>{" "}
+                  <span className="text-zinc-400">{activeScenario.blurb}</span>
+                </p>
+              ) : (
+                <p className="text-zinc-300">
+                  <span className="font-mono font-medium text-white">Custom conditions:</span>{" "}
+                  <span className="text-zinc-400">
+                    {params.oxygen_pct} % O₂ · {params.pressure_kpa} kPa · {params.flow_velocity_cm_s} cm/s ·{" "}
+                    {params.gravity_g} g
+                  </span>
+                </p>
+              )}
+              <span className="font-mono text-[10px] text-zinc-600">
+                3D volumetric raymarch · {Math.round(stats.fps)} fps
               </span>
             </div>
           </div>
