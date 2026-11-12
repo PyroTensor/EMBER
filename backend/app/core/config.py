@@ -20,6 +20,8 @@ from dotenv import load_dotenv
 from pydantic import Field, SecretStr, computed_field, field_validator, model_validator
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
+from app.core.constants import EMBED_DIM as DEFAULT_EMBED_DIM
+
 BASE_DIR: Final[Path] = Path(__file__).resolve().parents[2]
 ENV_FILE: Final[Path] = BASE_DIR / ".env"
 
@@ -113,7 +115,7 @@ class Settings(BaseSettings):
 
     # ── embeddings ───────────────────────────────────────────────────
     EMBED_MODEL: str = "BAAI/bge-small-en-v1.5"
-    EMBED_DIM: int = Field(default=384, ge=1, le=8192)
+    EMBED_DIM: int = Field(default=DEFAULT_EMBED_DIM, ge=1, le=8192)
     EMBED_WARMUP: bool = True
 
     # ── RAG ──────────────────────────────────────────────────────────

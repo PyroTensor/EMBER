@@ -8,6 +8,10 @@ from typing import Final
 
 SCHEMA_VERSION: Final = "v1"
 
+# Output dimension of the default embedding model (BAAI/bge-small-en-v1.5). Fixed by the model and baked into
+# the chunks.embedding vector(N) column; switching to a model of another size needs a migration.
+EMBED_DIM: Final = 384
+
 # Reciprocal Rank Fusion constant and per-retriever candidate count for hybrid search.
 RRF_K: Final = 60
 HYBRID_CANDIDATES: Final = 20
