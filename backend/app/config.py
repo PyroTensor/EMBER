@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     database_url_readonly: str = "postgresql://ember_ro:ember_ro@localhost:5432/ember"
 
     llm_provider: str = "gemini"  # gemini | openai | anthropic | heuristic
-    llm_model: str = "gemini-2.5-flash"
+    llm_model: str = "gemini-3.5-flash"
     gemini_api_key: str = ""
     openai_api_key: str = ""
     anthropic_api_key: str = ""

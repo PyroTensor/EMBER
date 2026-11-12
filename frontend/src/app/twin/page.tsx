@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { FlameSimulator } from "@/components/flame/FlameSimulator";
 
 export default function FlameDigitalTwinPage() {
   return (
@@ -10,6 +11,12 @@ export default function FlameDigitalTwinPage() {
         <h1 className="mt-1 text-xl font-semibold text-white">
           1g Buoyant vs. 0g Diffusion Flame Morphology
         </h1>
+      </div>
+
+      <FlameSimulator />
+
+      <div className="border-t border-zinc-900 pt-6">
+        <p className="font-mono text-xs text-zinc-500">REFERENCE MORPHOLOGY</p>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
@@ -139,10 +146,7 @@ export default function FlameDigitalTwinPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <div className="rounded-lg border border-dashed border-zinc-800 p-4 font-mono text-xs text-zinc-500">
-          TODO(squad3-B): Interactive 60 FPS Canvas flame renderer
-        </div>
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
         <div className="rounded-lg border border-dashed border-zinc-800 p-4 font-mono text-xs text-zinc-500">
           TODO(squad3-B): Two-stage hot-to-cool flame transition scrubber
         </div>
