@@ -84,7 +84,7 @@ export const experimentHandlers = [
     if ("errors" in result) return validationErrorResponse(result.errors);
     return respond<RankResponse>(
       () => rankMock(RUNS, result.req),
-      () => ({ weights: result.req.weights, results: [] }),
+      () => ({ ...rankMock(RUNS, result.req), results: [] }), // same (default-filled) weights, no runs
       request,
     );
   }),

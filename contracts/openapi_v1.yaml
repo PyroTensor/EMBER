@@ -4,7 +4,7 @@ info:
   version: 0.1.0
   description: |
     Contract between Squad 2 (backend/) and Squad 3 (frontend/).
-    The frontend mock layer (NEXT_PUBLIC_USE_MOCK_DATA=true) MUST return the same shapes.
+    The frontend mock layer (NEXT_PUBLIC_API_MODE=mock) MUST return the same shapes.
 servers:
   - url: http://localhost:8000
 paths:
@@ -34,6 +34,7 @@ paths:
     post:
       summary: Baseline risk index + per-factor contributions for a cabin configuration
       requestBody:
+        required: true
         content:
           application/json:
             schema: { $ref: "#/components/schemas/CabinConfig" }
@@ -46,7 +47,16 @@ paths:
         "500": { description: Internal server error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
   /api/experiments:
     get:
-      summary: All test runs (schema_v1 records)
+      summary: All test runs (schema_v1 records), optionally filtered
+      parameters:
+        - { name: program, in: query, required: false, schema: { anyOf: [{ $ref: "#/components/schemas/Program" }, { type: "null" }] } }
+        - { name: fuel_material, in: query, required: false, schema: { anyOf: [{ $ref: "#/components/schemas/FuelMaterial" }, { type: "null" }] } }
+        - { name: combustion_regime, in: query, required: false, schema: { anyOf: [{ $ref: "#/components/schemas/CombustionRegime" }, { type: "null" }] } }
+        - name: gravity_g
+          in: query
+          required: false
+          description: "Matched within ±0.01 g"
+          schema: { anyOf: [{ type: number, minimum: 0, maximum: 1 }, { type: "null" }] }
       responses:
         "200":
           content:
@@ -60,6 +70,7 @@ paths:
     post:
       summary: Scenario ranker - score test runs against a habitat configuration
       requestBody:
+        required: true
         content:
           application/json:
             schema: { $ref: "#/components/schemas/RankRequest" }
@@ -87,6 +98,7 @@ paths:
     post:
       summary: Grounded RAG question answering (LangGraph)
       requestBody:
+        required: true
         content:
           application/json:
             schema: { $ref: "#/components/schemas/AskRequest" }
@@ -98,11 +110,19 @@ paths:
         "422": { description: Validation error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
         "500": { description: Internal server error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
         "503": { description: Upstream (LLM / retrieval) unavailable, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+        "504": { description: Upstream (LLM / retrieval) timed out, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
 
 components:
   schemas:
+    Program: { type: string, enum: [BASS-II, SoFIE, FLEX, ACME] }
+    FuelMaterial: { type: string, enum: [PMMA, Cotton-Fiberglass, Nomex, Heptane, Methanol] }
+    DiluentGas: { type: string, enum: [N2, CO2, He, Ar] }
+    CombustionRegime: { type: string, enum: [Sustained Burn, Self-Extinguished, Cool Flame, No Ignition] }
+    EvidenceSource: { type: string, enum: [sql_tool, hybrid_retriever, scenario_ranker] }
+
     Health:
       type: object
+      required: [status, db, test_runs, chunks, llm_provider]
       properties:
         status: { type: string, enum: [ok, degraded] }
         db: { type: boolean }
@@ -120,13 +140,14 @@ components:
         pressure_kpa: { type: number }
         flow_velocity_cm_s: { type: number }
         gravity_g: { type: number }
-        fuel_material: { type: string }
-        diluent_gas: { type: string }
+        fuel_material: { $ref: "#/components/schemas/FuelMaterial" }
+        diluent_gas: { $ref: "#/components/schemas/DiluentGas" }
 
     Preset:
       allOf:
         - $ref: "#/components/schemas/CabinConfig"
         - type: object
+          required: [id, name, description]
           properties:
             id: { type: string }
             name: { type: string }
@@ -134,6 +155,7 @@ components:
 
     Contribution:
       type: object
+      required: [feature, label, value]
       properties:
         feature: { type: string }
         label: { type: string }
@@ -141,11 +163,12 @@ components:
 
     CabinEvaluation:
       type: object
+      required: [risk_index, risk_band, baseline_risk, predicted_regime, estimated_loi_pct, oxygen_margin_pct, contributions]
       properties:
         risk_index: { type: number, minimum: 0, maximum: 100 }
         risk_band: { type: string, enum: [LOW, ELEVATED, HIGH, CRITICAL] }
         baseline_risk: { type: number }
-        predicted_regime: { type: string }
+        predicted_regime: { $ref: "#/components/schemas/CombustionRegime" }
         estimated_loi_pct: { type: number }
         oxygen_margin_pct: { type: number, description: "oxygen_pct - estimated_loi_pct" }
         contributions:
@@ -169,6 +192,7 @@ components:
 
     RankedExperiment:
       type: object
+      required: [rank, experiment_id, total_score, similarity, completeness, criticality, record]
       properties:
         rank: { type: integer }
         experiment_id: { type: string }
@@ -180,6 +204,7 @@ components:
 
     RankResponse:
       type: object
+      required: [weights, results]
       properties:
         weights: { $ref: "#/components/schemas/RankWeights" }
         results:
@@ -188,6 +213,7 @@ components:
 
     Telemetry:
       type: object
+      required: [experiment_id, time_s, flame_radius_mm, radiative_heat_flux_kw_m2, flame_temp_k]
       properties:
         experiment_id: { type: string }
         time_s: { type: array, items: { type: number } }
@@ -203,10 +229,11 @@ components:
       required: [question]
       properties:
         question: { type: string }
-        scenario: { $ref: "#/components/schemas/CabinConfig" }
+        scenario: { anyOf: [{ $ref: "#/components/schemas/CabinConfig" }, { type: "null" }] }
 
     Citation:
       type: object
+      required: [id, kind, snippet]
       properties:
         id: { type: string, description: "Label used inline in the answer, e.g. '[DOC-02 p.3]' or '[EXP-0012]'" }
         kind: { type: string, enum: [doc, experiment] }
@@ -217,10 +244,11 @@ components:
 
     Evidence:
       type: object
+      required: [id, kind, source, score, text]
       properties:
         id: { type: string }
         kind: { type: string, enum: [chunk, test_run, ranked_run] }
-        source: { type: string, description: "Node that produced it: sql_tool | hybrid_retriever | scenario_ranker" }
+        source: { $ref: "#/components/schemas/EvidenceSource", description: "Graph node that produced it" }
         score: { type: number }
         text: { type: string }
         doc_id: { type: ["string", "null"] }
@@ -229,6 +257,7 @@ components:
 
     AskResponse:
       type: object
+      required: [answer, route, supported, rewrites, trace_id]
       properties:
         answer: { type: string }
         route: { type: string, enum: [facts, search, compare, out_of_scope] }

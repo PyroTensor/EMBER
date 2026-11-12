@@ -1,6 +1,6 @@
 // Friendly aliases over the generated contract types. Never hand-write shapes here: edit
 // contracts/openapi_v1.yaml and run `npm run gen:api` instead.
-import type { components } from "./schema";
+import type { components, paths } from "./schema";
 
 type Schemas = components["schemas"];
 
@@ -19,23 +19,18 @@ export type AskResponse = Schemas["AskResponse"];
 export type Citation = Schemas["Citation"];
 export type Evidence = Schemas["Evidence"];
 export type ErrorResponse = Schemas["ErrorResponse"];
+export type EvidenceSource = Schemas["EvidenceSource"];
 
 /** One combustion test run (contracts/schema_v1.json). */
 export type TestRunRecord = NonNullable<RankedExperiment["record"]>;
 
-export type Program = TestRunRecord["program"];
-export type FuelMaterial = TestRunRecord["fuel_material"];
-export type DiluentGas = TestRunRecord["diluent_gas"];
-export type CombustionRegime = TestRunRecord["combustion_regime"];
+export type Program = Schemas["Program"];
+export type FuelMaterial = Schemas["FuelMaterial"];
+export type DiluentGas = Schemas["DiluentGas"];
+export type CombustionRegime = Schemas["CombustionRegime"];
 
 export type RiskBand = NonNullable<CabinEvaluation["risk_band"]>;
 export type Route = NonNullable<AskResponse["route"]>;
 
-/** Optional query params for GET /api/experiments (mirrors the backend ExperimentFilters). */
-export interface ExperimentFilters {
-  program?: Program;
-  fuel_material?: FuelMaterial;
-  combustion_regime?: CombustionRegime;
-  /** 0–1; matched within ±0.01 g. */
-  gravity_g?: number;
-}
+/** Optional query params for GET /api/experiments (gravity_g is matched within ±0.01 g). */
+export type ExperimentFilters = NonNullable<paths["/api/experiments"]["get"]["parameters"]["query"]>;

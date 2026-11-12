@@ -1,4 +1,5 @@
 // Port of backend/app/domain/physics/combustion.py: keep formulas line-by-line equal.
+import type { CombustionRegime } from "@/lib/api/types";
 
 export const P0_KPA = 101.3;
 
@@ -48,7 +49,7 @@ export function limitingOxygenIndex(
   return base + flowLoiShift(u) + pressureLoiShift(pressureKpa) + (DILUENT_SHIFT[diluent] ?? 0.0);
 }
 
-export function predictRegime(material: string, gravityG: number, oxygenMargin: number): string {
+export function predictRegime(material: string, gravityG: number, oxygenMargin: number): CombustionRegime {
   if (oxygenMargin < -2.0) return "No Ignition";
   if (oxygenMargin < 0.0) return "Self-Extinguished";
   if (material === "Heptane" && gravityG === 0.0 && oxygenMargin < 9.0) return "Cool Flame";

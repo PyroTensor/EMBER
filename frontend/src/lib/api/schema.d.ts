@@ -127,7 +127,7 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody?: {
+            requestBody: {
                 content: {
                     "application/json": components["schemas"]["CabinConfig"];
                 };
@@ -174,10 +174,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** All test runs (schema_v1 records) */
+        /** All test runs (schema_v1 records), optionally filtered */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    program?: components["schemas"]["Program"] | null;
+                    fuel_material?: components["schemas"]["FuelMaterial"] | null;
+                    combustion_regime?: components["schemas"]["CombustionRegime"] | null;
+                    /** @description Matched within ±0.01 g */
+                    gravity_g?: number | null;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -237,7 +243,7 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody?: {
+            requestBody: {
                 content: {
                     "application/json": components["schemas"]["RankRequest"];
                 };
@@ -358,7 +364,7 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody?: {
+            requestBody: {
                 content: {
                     "application/json": components["schemas"]["AskRequest"];
                 };
@@ -399,6 +405,15 @@ export interface paths {
                         "application/json": components["schemas"]["ErrorResponse"];
                     };
                 };
+                /** @description Upstream (LLM / retrieval) timed out */
+                504: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
             };
         };
         delete?: never;
@@ -411,13 +426,23 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** @enum {string} */
+        Program: "BASS-II" | "SoFIE" | "FLEX" | "ACME";
+        /** @enum {string} */
+        FuelMaterial: "PMMA" | "Cotton-Fiberglass" | "Nomex" | "Heptane" | "Methanol";
+        /** @enum {string} */
+        DiluentGas: "N2" | "CO2" | "He" | "Ar";
+        /** @enum {string} */
+        CombustionRegime: "Sustained Burn" | "Self-Extinguished" | "Cool Flame" | "No Ignition";
+        /** @enum {string} */
+        EvidenceSource: "sql_tool" | "hybrid_retriever" | "scenario_ranker";
         Health: {
             /** @enum {string} */
-            status?: "ok" | "degraded";
-            db?: boolean;
-            test_runs?: number;
-            chunks?: number;
-            llm_provider?: string;
+            status: "ok" | "degraded";
+            db: boolean;
+            test_runs: number;
+            chunks: number;
+            llm_provider: string;
             /** @example v1 */
             schema_version?: string;
             extra_telemetry_keys?: string[];
@@ -427,30 +452,30 @@ export interface components {
             pressure_kpa: number;
             flow_velocity_cm_s: number;
             gravity_g: number;
-            fuel_material: string;
-            diluent_gas: string;
+            fuel_material: components["schemas"]["FuelMaterial"];
+            diluent_gas: components["schemas"]["DiluentGas"];
         };
         Preset: components["schemas"]["CabinConfig"] & {
-            id?: string;
-            name?: string;
-            description?: string;
+            id: string;
+            name: string;
+            description: string;
         };
         Contribution: {
-            feature?: string;
-            label?: string;
+            feature: string;
+            label: string;
             /** @description Signed risk points; contributions sum to risk_index - baseline_risk */
-            value?: number;
+            value: number;
         };
         CabinEvaluation: {
-            risk_index?: number;
+            risk_index: number;
             /** @enum {string} */
-            risk_band?: "LOW" | "ELEVATED" | "HIGH" | "CRITICAL";
-            baseline_risk?: number;
-            predicted_regime?: string;
-            estimated_loi_pct?: number;
+            risk_band: "LOW" | "ELEVATED" | "HIGH" | "CRITICAL";
+            baseline_risk: number;
+            predicted_regime: components["schemas"]["CombustionRegime"];
+            estimated_loi_pct: number;
             /** @description oxygen_pct - estimated_loi_pct */
-            oxygen_margin_pct?: number;
-            contributions?: components["schemas"]["Contribution"][];
+            oxygen_margin_pct: number;
+            contributions: components["schemas"]["Contribution"][];
         };
         RankWeights: {
             /** @default 0.5 */
@@ -467,64 +492,64 @@ export interface components {
             limit: number;
         };
         RankedExperiment: {
-            rank?: number;
-            experiment_id?: string;
-            total_score?: number;
-            similarity?: number;
-            completeness?: number;
-            criticality?: number;
-            record?: components["schemas"]["schema_v1"];
+            rank: number;
+            experiment_id: string;
+            total_score: number;
+            similarity: number;
+            completeness: number;
+            criticality: number;
+            record: components["schemas"]["schema_v1"];
         };
         RankResponse: {
-            weights?: components["schemas"]["RankWeights"];
-            results?: components["schemas"]["RankedExperiment"][];
+            weights: components["schemas"]["RankWeights"];
+            results: components["schemas"]["RankedExperiment"][];
         };
         Telemetry: {
-            experiment_id?: string;
-            time_s?: number[];
-            flame_radius_mm?: number[];
+            experiment_id: string;
+            time_s: number[];
+            flame_radius_mm: number[];
             d_squared_mm2?: number[] | null;
-            radiative_heat_flux_kw_m2?: number[];
-            flame_temp_k?: number[];
+            radiative_heat_flux_kw_m2: number[];
+            flame_temp_k: number[];
         };
         AskRequest: {
             question: string;
-            scenario?: components["schemas"]["CabinConfig"];
+            scenario?: components["schemas"]["CabinConfig"] | null;
         };
         Citation: {
             /** @description Label used inline in the answer, e.g. '[DOC-02 p.3]' or '[EXP-0012]' */
-            id?: string;
+            id: string;
             /** @enum {string} */
-            kind?: "doc" | "experiment";
+            kind: "doc" | "experiment";
             doc_id?: string | null;
             page?: number | null;
             experiment_id?: string | null;
-            snippet?: string;
+            snippet: string;
         };
         Evidence: {
-            id?: string;
+            id: string;
             /** @enum {string} */
-            kind?: "chunk" | "test_run" | "ranked_run";
-            /** @description Node that produced it: sql_tool | hybrid_retriever | scenario_ranker */
-            source?: string;
-            score?: number;
-            text?: string;
+            kind: "chunk" | "test_run" | "ranked_run";
+            /** @description Graph node that produced it */
+            source: components["schemas"]["EvidenceSource"];
+            score: number;
+            text: string;
             doc_id?: string | null;
             page?: number | null;
             experiment_id?: string | null;
         };
         AskResponse: {
-            answer?: string;
+            answer: string;
             /** @enum {string} */
-            route?: "facts" | "search" | "compare" | "out_of_scope";
+            route: "facts" | "search" | "compare" | "out_of_scope";
             /** @description false when the graph answered 'no data' */
-            supported?: boolean;
-            rewrites?: number;
+            supported: boolean;
+            rewrites: number;
             citations?: components["schemas"]["Citation"][];
             evidence?: components["schemas"]["Evidence"][];
             /** @description Sentences removed by citation_check */
             dropped_claims?: string[];
-            trace_id?: string;
+            trace_id: string;
         };
         ErrorResponse: {
             error: {

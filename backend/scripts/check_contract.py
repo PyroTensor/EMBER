@@ -1,13 +1,15 @@
-"""Diff ``contracts/openapi_v1.yaml`` (the contract) against ``create_app().openapi()`` (what we serve).
+"""Two-way diff of ``contracts/openapi_v1.yaml`` (the contract) vs ``create_app().openapi()`` (what we serve).
 
-Reports, as ``✗`` lines:
-  * operations (method + path) in the contract that the app does not serve,
+Reports, as ``✗`` lines, any semantic difference in either direction:
+  * operations (method + path) missing from the app, or served but not in the contract,
+  * parameters (presence, required), ``requestBody.required`` and the set of documented response codes,
   * component schemas in the contract that the app does not define,
-  * fields of contract schemas (components, request bodies, 200 responses) that are missing in the app,
-  * fields the contract marks required that the app leaves optional.
+  * fields of contract schemas (components, request bodies, 200 responses) missing in or extra in the app,
+  * required-ness, enum values and nullability that differ.
 ``$ref`` (including the external ``schema_v1.json``), ``allOf`` and nullable ``anyOf`` are resolved; nested
-objects and array items are compared recursively. Descriptions, enums, bounds, extra fields and extra
-endpoints are ignored. Exit code 1 on drift, 0 when the app covers the contract.
+objects and array items are compared recursively. Descriptions, titles, numeric/length bounds, operationIds
+and extra component names (e.g. enums the app names separately) are ignored: they don't change what the
+generated frontend types mean. Exit code 1 on drift, 0 when the app matches the contract.
 
 Usage (from backend/): ``make contract-check`` or ``uv run python scripts/check_contract.py``.
 """
@@ -85,6 +87,21 @@ class Resolver:
         return schema
 
 
+def _nullable(schema: Schema | None) -> bool:
+    """True for ``nullable: true``, ``type: [..., "null"]`` or an anyOf/oneOf null branch (unresolved)."""
+    if not schema:
+        return False
+    t = schema.get("type")
+    if schema.get("nullable") or (isinstance(t, list) and "null" in t):
+        return True
+    return any(b.get("type") == "null" for key in ("anyOf", "oneOf") for b in schema.get(key, []))
+
+
+def _enum(schema: Schema) -> list[str] | None:
+    values = schema.get("enum")
+    return sorted(map(str, values)) if values is not None else None
+
+
 def _is_array(schema: Schema) -> bool:
     t = schema.get("type")
     return t == "array" or (isinstance(t, list) and "array" in t)
@@ -99,12 +116,16 @@ def compare(
     problems: list[str],
     depth: int = 0,
 ) -> None:
-    """Record fields/required-ness present in the contract schema ``want`` but missing in ``have``."""
+    """Record differences between contract schema ``want`` and app schema ``have``, in both directions."""
     if depth > MAX_DEPTH:
         return
     w, h = c.resolve(want), g.resolve(have)
     if not w:
         return
+    if _nullable(want) != _nullable(have) and not (_nullable(w) or _nullable(h)):
+        problems.append(f"{where}: nullable in {'contract' if _nullable(want) else 'app'} only")
+    if _enum(w) != _enum(h):
+        problems.append(f"{where}: enum differs (contract={_enum(w)}, app={_enum(h)})")
     if _is_array(w):
         if _is_array(h):
             compare(f"{where}[]", w.get("items"), h.get("items"), c, g, problems, depth + 1)
@@ -115,15 +136,18 @@ def compare(
     if not w_props:
         return
     h_props: Schema = h.get("properties", {})
-    h_required = set(h.get("required", []))
-    for name in w.get("required", []):
-        if name in h_props and name not in h_required:
-            problems.append(f"{where}.{name}: should be required")
+    w_required, h_required = set(w.get("required", [])), set(h.get("required", []))
+    for name in sorted(h_props.keys() - w_props.keys()):
+        problems.append(f"{where}.{name}: extra field in app (not in contract)")
     for name, sub in w_props.items():
         if name not in h_props:
             problems.append(f"{where}.{name}: missing field")
-        else:
-            compare(f"{where}.{name}", sub, h_props[name], c, g, problems, depth + 1)
+            continue
+        if name in w_required and name not in h_required:
+            problems.append(f"{where}.{name}: should be required")
+        elif name in h_required and name not in w_required:
+            problems.append(f"{where}.{name}: required in app, optional in contract")
+        compare(f"{where}.{name}", sub, h_props[name], c, g, problems, depth + 1)
 
 
 def _json_schema(container: Schema | None) -> Schema | None:
@@ -131,6 +155,34 @@ def _json_schema(container: Schema | None) -> Schema | None:
         return None
     schema: Schema | None = container.get("content", {}).get("application/json", {}).get("schema")
     return schema
+
+
+def check_operation(
+    op_name: str, want: Schema, have: Schema, c: Resolver, g: Resolver, problems: list[str]
+) -> None:
+    """Parameters, ``requestBody.required`` and documented response codes of one operation."""
+    w_params = {(p["in"], p["name"]): p for p in want.get("parameters", [])}
+    h_params = {(p["in"], p["name"]): p for p in have.get("parameters", [])}
+    for key in sorted(w_params.keys() - h_params.keys()):
+        problems.append(f"{op_name}: missing {key[0]} parameter {key[1]!r}")
+    for key in sorted(h_params.keys() - w_params.keys()):
+        problems.append(f"{op_name}: extra {key[0]} parameter {key[1]!r} (not in contract)")
+    for key in sorted(w_params.keys() & h_params.keys()):
+        if bool(w_params[key].get("required")) != bool(h_params[key].get("required")):
+            problems.append(f"{op_name}: {key[0]} parameter {key[1]!r} required-ness differs")
+        where = f"{op_name} {key[0]} {key[1]}"
+        compare(where, w_params[key].get("schema"), h_params[key].get("schema"), c, g, problems)
+    w_body, h_body = want.get("requestBody") or {}, have.get("requestBody") or {}
+    if (w_body or h_body) and bool(w_body.get("required")) != bool(h_body.get("required")):
+        problems.append(
+            f"{op_name}: requestBody.required differs "
+            f"(contract={bool(w_body.get('required'))}, app={bool(h_body.get('required'))})"
+        )
+    w_codes, h_codes = set(want.get("responses", {})), set(have.get("responses", {}))
+    if w_codes != h_codes:
+        problems.append(
+            f"{op_name}: response codes differ (contract={sorted(w_codes)}, app={sorted(h_codes)})"
+        )
 
 
 def check(contract: Schema, generated: Schema) -> list[str]:
@@ -148,6 +200,7 @@ def check(contract: Schema, generated: Schema) -> list[str]:
             if gen_op is None:
                 problems.append(f"missing operation {op_name}")
                 continue
+            check_operation(op_name, item[method], gen_op, c, g, problems)
             want_body = _json_schema(item[method].get("requestBody"))
             if want_body is not None:
                 have_body = _json_schema(gen_op.get("requestBody"))
@@ -159,6 +212,12 @@ def check(contract: Schema, generated: Schema) -> list[str]:
             if want_ok is not None:
                 have_ok = _json_schema(gen_op.get("responses", {}).get("200"))
                 compare(f"{op_name} 200", want_ok, have_ok or {}, c, g, problems)
+
+    contract_paths: Schema = contract.get("paths", {})
+    for path, item in gen_paths.items():
+        for method in HTTP_METHODS:
+            if method in item and method not in contract_paths.get(path, {}):
+                problems.append(f"extra operation {method.upper()} {path} (served but not in contract)")
 
     gen_schemas: Schema = generated.get("components", {}).get("schemas", {})
     for name, schema in contract.get("components", {}).get("schemas", {}).items():
@@ -180,7 +239,7 @@ def main() -> int:
     if problems:
         print(f"\n{len(problems)} contract drift item(s) vs {CONTRACT_FILE.name}")
         return 1
-    print(f"✓ app covers {CONTRACT_FILE.name}")
+    print(f"✓ app matches {CONTRACT_FILE.name}")
     return 0
 
 
