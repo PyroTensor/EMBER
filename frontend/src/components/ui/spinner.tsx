@@ -11,11 +11,8 @@ interface SpinnerProps {
 
 export function Spinner({ size = "md", label, className }: SpinnerProps) {
   return (
-    <span role="status" className={cn("inline-flex items-center gap-3 text-sm text-zinc-400", className)}>
-      <span
-        aria-hidden
-        className={cn("animate-spin rounded-full border-zinc-700 border-t-amber-400", SIZES[size])}
-      />
+    <span role="status" className={cn("inline-flex items-center gap-3 text-sm text-muted", className)}>
+      <span aria-hidden className={cn("animate-spin rounded-full border-border border-t-accent", SIZES[size])} />
       {label ? <span>{label}</span> : <span className="sr-only">Loading…</span>}
     </span>
   );
