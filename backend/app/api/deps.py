@@ -14,10 +14,13 @@ import anyio.to_thread
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import get_settings
 from app.db.availability import DbAvailability
 from app.db.engine import Database
 from app.db.session import get_db, get_readonly_session, get_session
+from app.embeddings.factory import get_embedder
 from app.llm.factory import get_llm_provider
+from app.rag.toolkit import RagToolkit
 from app.repositories.chunk_repo import PgChunkRepository
 from app.repositories.interfaces import (
     ChunkSearcher,
@@ -39,6 +42,7 @@ from app.repositories.snapshot.store import SnapshotStore, get_snapshot_store
 from app.repositories.telemetry_repo import PgTelemetryRepository
 from app.repositories.test_run_repo import PgTestRunRepository
 from app.services.cabin_service import CabinService
+from app.services.copilot_service import CopilotService
 from app.services.experiment_service import ExperimentService
 from app.services.health_service import HealthService
 from app.services.preset_service import PresetService
@@ -143,15 +147,37 @@ def get_telemetry_service(reader: TelemetryReaderDep) -> TelemetryService:
 
 TelemetryServiceDep = Annotated[TelemetryService, Depends(get_telemetry_service)]
 
+
+def get_rag_toolkit(runs: TestRunReaderDep, chunks: ChunkSearcherDep) -> RagToolkit:
+    return RagToolkit(
+        runs=runs,
+        chunks=chunks,
+        embedder=get_embedder(),
+        llm=get_llm_provider(),
+        settings=get_settings(),
+    )
+
+
+RagToolkitDep = Annotated[RagToolkit, Depends(get_rag_toolkit)]
+
+
+def get_copilot_service(tk: RagToolkitDep) -> CopilotService:
+    return CopilotService(tk)
+
+
+CopilotServiceDep = Annotated[CopilotService, Depends(get_copilot_service)]
+
 __all__ = [
     "AvailabilityDep",
     "CabinServiceDep",
+    "CopilotServiceDep",
     "ChunkSearcherDep",
     "ExperimentServiceDep",
     "HealthServiceDep",
     "PresetReaderDep",
     "PresetServiceDep",
     "ROSessionDep",
+    "RagToolkitDep",
     "RankingServiceDep",
     "SessionDep",
     "StatsReaderDep",

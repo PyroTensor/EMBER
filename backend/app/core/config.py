@@ -124,6 +124,7 @@ class Settings(BaseSettings):
     RAG_TOP_K: int = Field(default=5, ge=1, le=50)
     RAG_MAX_REWRITES: int = Field(default=2, ge=0, le=5)
     RAG_ANSWER_EVIDENCE: int = Field(default=8, ge=1, le=50)
+    RAG_TIMEOUT_S: float = Field(default=30.0, gt=0, le=300)  # POST /api/copilot/ask -> 504 UPSTREAM_TIMEOUT
 
     # ── tracing (optional, extra "tracing") ──────────────────────────
     LANGSMITH_API_KEY: SecretStr = SecretStr("")
