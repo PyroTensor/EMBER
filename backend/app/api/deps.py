@@ -43,6 +43,7 @@ from app.services.experiment_service import ExperimentService
 from app.services.health_service import HealthService
 from app.services.preset_service import PresetService
 from app.services.ranking_service import RankingService
+from app.services.telemetry_service import TelemetryService
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 ROSessionDep = Annotated[AsyncSession, Depends(get_readonly_session)]
@@ -136,6 +137,13 @@ def get_ranking_service(reader: TestRunReaderDep) -> RankingService:
 
 RankingServiceDep = Annotated[RankingService, Depends(get_ranking_service)]
 
+
+def get_telemetry_service(reader: TelemetryReaderDep) -> TelemetryService:
+    return TelemetryService(reader)
+
+
+TelemetryServiceDep = Annotated[TelemetryService, Depends(get_telemetry_service)]
+
 __all__ = [
     "AvailabilityDep",
     "CabinServiceDep",
@@ -149,6 +157,7 @@ __all__ = [
     "SessionDep",
     "StatsReaderDep",
     "TelemetryReaderDep",
+    "TelemetryServiceDep",
     "TestRunReaderDep",
     "get_availability",
     "get_cabin_service",
@@ -160,5 +169,6 @@ __all__ = [
     "get_ranking_service",
     "get_stats_reader",
     "get_telemetry_reader",
+    "get_telemetry_service",
     "get_test_run_reader",
 ]
