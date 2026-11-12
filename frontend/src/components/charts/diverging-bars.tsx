@@ -76,7 +76,7 @@ export function DivergingBars({
   const stacked = width < STACK_BELOW;
   const row = stacked ? 42 : 30;
   const maxAbs = Math.max(...rows.map((r) => Math.abs(r.value)), 0);
-  const tickCount = stacked ? 2 : 4;
+  const tickCount = stacked ? 2 : 6; // more intervals → tighter nice domain (e.g. ±60 instead of ±100 for 57.3)
   const domain = niceDomain([-maxAbs, maxAbs], tickCount);
   const ticks = niceTicks(domain, tickCount);
 
@@ -95,13 +95,14 @@ export function DivergingBars({
     : [[0, plotH]];
 
   return (
-    <div ref={ref} className={cn("w-full", className)}>
+    <div ref={ref} className={cn("w-full min-w-0", className)}>
       {rows.length === 0 ? (
         <p role="img" aria-label={summary} className="py-6 text-center text-xs text-muted">
           {emptyText}
         </p>
       ) : (
-        <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={summary} className="block">
+        // width="100%" (not the measured px) so the SVG never forces its container wider than it is.
+        <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={summary} className="block">
           <title>{summary}</title>
 
           {/* Grid lines + axis ticks */}
