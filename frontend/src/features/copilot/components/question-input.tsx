@@ -83,9 +83,7 @@ export function QuestionInput({ onSubmit, pending, useScenario, onUseScenarioCha
             onChange={(e) => onUseScenarioChange(e.target.checked)}
             className="size-4 accent-accent"
           />
-          <span>
-            Use current scenario <span className="text-muted/80">(ISS Standard: 21 % O₂, 101.3 kPa, 0 g)</span>
-          </span>
+          <span>Use current scenario (ISS Standard: 21 % O₂, 101.3 kPa, 0 g)</span>
         </label>
         <Button type="submit" disabled={!canSubmit}>
           {pending ? (

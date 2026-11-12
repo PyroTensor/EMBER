@@ -79,7 +79,9 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
 
   const req = useMemo<RankRequest>(() => ({ config: cfg, weights, limit: RANK_LIMIT }), [cfg, weights]);
   const ranking = useRanking(req);
-  const results = ranking.data?.results ?? [];
+  // Never show a previous ranking next to an error: the error wins.
+  const rankData = ranking.isError ? undefined : ranking.data;
+  const results = rankData?.results ?? [];
 
   // Keep the user's pick while it is still in the list; otherwise the first row is selected.
   const effectiveId =
@@ -87,7 +89,7 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
       ? selectedId
       : (results[0]?.experiment_id ?? null);
   const selectedRun = results.find((r) => r.experiment_id === effectiveId);
-  const updating = ranking.isFetching && !!ranking.data;
+  const updating = ranking.isFetching && !!rankData;
 
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] [&>*]:min-w-0">
@@ -125,7 +127,7 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
             subtitle={`Top ${RANK_LIMIT} of all test runs for this scenario`}
             action={updating ? <Spinner size="sm" label="Updating…" /> : null}
           />
-          {ranking.isError && !ranking.data ? (
+          {ranking.isError ? (
             <CardBody>
               <ErrorState
                 title="Couldn't rank the runs"
@@ -149,11 +151,11 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
           )}
         </Card>
 
-        {selectedRun && ranking.data?.weights ? (
+        {selectedRun && rankData?.weights ? (
           <Card>
             <CardHeader title="Score breakdown" subtitle="Total = Σ weight share × component score" />
             <CardBody>
-              <ScoreBreakdown run={selectedRun} weights={ranking.data.weights} />
+              <ScoreBreakdown run={selectedRun} weights={rankData.weights} />
             </CardBody>
           </Card>
         ) : null}

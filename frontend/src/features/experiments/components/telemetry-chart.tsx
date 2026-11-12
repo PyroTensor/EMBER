@@ -77,6 +77,16 @@ export function TelemetryChart({ experimentId }: { experimentId: string }) {
 
   const t = telemetry.data;
   const series = toSeries(t);
+  const hasPoints = (t.time_s?.length ?? 0) > 0 && series.some((s) => s.values?.some((v) => v !== null));
+  if (!hasPoints) {
+    return (
+      <EmptyState
+        icon={Activity}
+        title={`Empty telemetry for ${experimentId}`}
+        description="The API returned a series with no data points."
+      />
+    );
+  }
   const leftUnits = series.filter((s) => s.axis === "left" && s.values?.some((v) => v !== null)).map((s) => s.unit);
 
   return (

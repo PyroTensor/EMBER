@@ -44,7 +44,7 @@ export function EvidenceList({ evidence }: { evidence: readonly Evidence[] }) {
             <h4 className="flex items-center gap-1.5 font-mono text-[11px] tracking-wide text-muted uppercase">
               <Icon aria-hidden className="size-3.5" />
               {meta?.label ?? source}
-              <span className="text-muted/70">({items.length})</span>
+              <span>({items.length})</span>
             </h4>
             <ul className="space-y-2">
               {items.map((ev, i) => {

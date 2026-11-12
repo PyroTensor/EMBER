@@ -22,7 +22,7 @@ export function Textarea({ label, hideLabel, hint, className, ...props }: Textar
         id={id}
         aria-describedby={hint ? hintId : undefined}
         className={cn(
-          "min-h-24 w-full resize-y rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-fg placeholder:text-muted/70",
+          "min-h-24 w-full resize-y rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-fg placeholder:text-muted",
           "disabled:cursor-not-allowed disabled:opacity-50",
           className,
         )}

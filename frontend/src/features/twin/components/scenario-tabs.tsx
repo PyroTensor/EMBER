@@ -10,15 +10,14 @@ interface ScenarioTabsProps {
 
 export function ScenarioTabs({ value, onSelect }: ScenarioTabsProps) {
   return (
-    <div className="flex flex-wrap gap-1.5" role="tablist" aria-label="Gravity scenarios">
+    <div className="flex flex-wrap gap-1.5" role="group" aria-label="Gravity scenarios">
       {SCENARIOS.map((s) => {
         const active = s.id === value;
         return (
           <button
             key={s.id}
             type="button"
-            role="tab"
-            aria-selected={active}
+            aria-pressed={active}
             onClick={() => onSelect(s.id)}
             className={cn(
               "rounded-md border px-2.5 py-1 font-mono text-xs transition-colors",

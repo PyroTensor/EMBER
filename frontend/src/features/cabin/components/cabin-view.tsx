@@ -68,7 +68,8 @@ function CabinWorkspace({ presets }: { presets: Preset[] }) {
   const [cfg, setCfg] = useState<CabinConfig>(() => toConfig(first));
   const [selected, setSelected] = useState<string | null>(presetId(first, 0));
   const evaluation = useCabinEvaluation(cfg);
-  const data = evaluation.data;
+  // Never show a previous result next to an error: the error wins.
+  const data = evaluation.isError ? undefined : evaluation.data;
 
   const updating = evaluation.isFetching && !!data;
 
@@ -103,7 +104,7 @@ function CabinWorkspace({ presets }: { presets: Preset[] }) {
             action={updating ? <Spinner size="sm" label="Updating…" /> : null}
           />
           <CardBody>
-            {evaluation.isError && !data ? (
+            {evaluation.isError ? (
               <ErrorState
                 title="Couldn't evaluate this cabin"
                 error={evaluation.error}

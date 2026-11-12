@@ -17,8 +17,7 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    // Read-only reference code and generated files:
-    "src_legacy/**",
+    // Generated files:
     "public/mockServiceWorker.js",
   ]),
   // Mocks are loaded only through providers.tsx.
