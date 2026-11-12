@@ -11,7 +11,7 @@ from app.core.constants import SCHEMA_VERSION
 from app.core.error_handlers import register_error_handlers
 from app.core.lifespan import lifespan
 from app.core.logging import setup_logging
-from app.core.middleware import REQUEST_ID_HEADER, RequestIDMiddleware
+from app.core.middleware import REQUEST_ID_HEADER, BodySizeLimitMiddleware, RequestIDMiddleware
 
 
 def create_app() -> FastAPI:
@@ -25,6 +25,8 @@ def create_app() -> FastAPI:
         lifespan=lifespan,
     )
 
+    # Innermost first: the body limit runs inside the request-id/access-log and CORS layers.
+    app.add_middleware(BodySizeLimitMiddleware)
     app.add_middleware(RequestIDMiddleware)
     # Added last → outermost, so CORS headers are present even on error responses.
     app.add_middleware(

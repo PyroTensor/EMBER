@@ -22,6 +22,7 @@ _HTTP_CODES: dict[int, str] = {
     403: "FORBIDDEN",
     404: "NOT_FOUND",
     405: "METHOD_NOT_ALLOWED",
+    413: "PAYLOAD_TOO_LARGE",
 }
 
 

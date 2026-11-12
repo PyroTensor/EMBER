@@ -20,6 +20,9 @@ DEFAULT_RANK_WEIGHTS: Final[Mapping[str, float]] = MappingProxyType(
     {"similarity": 0.5, "completeness": 0.2, "criticality": 0.3}
 )
 
+# Largest accepted request body (bytes); bigger requests get a 413 PAYLOAD_TOO_LARGE envelope.
+MAX_REQUEST_BODY_BYTES: Final = 1_000_000
+
 NO_DATA_MESSAGE: Final = (
     "No data: the EMBER microgravity combustion database and NASA PSI/NTRS corpus do not contain "
     "verified evidence to answer this question."
