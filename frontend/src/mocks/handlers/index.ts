@@ -1,5 +1,6 @@
 import type { HttpHandler } from "msw";
 import { cabinHandlers } from "./cabin";
+import { copilotHandlers } from "./copilot";
 import { experimentHandlers } from "./experiments";
 import { healthHandlers } from "./health";
 import { presetHandlers } from "./presets";
@@ -12,4 +13,5 @@ export const handlers: HttpHandler[] = [
   ...cabinHandlers,
   ...experimentHandlers,
   ...telemetryHandlers,
+  ...copilotHandlers,
 ];
