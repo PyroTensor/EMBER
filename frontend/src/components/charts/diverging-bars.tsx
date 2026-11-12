@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/cn";
 import { fmtSigned } from "@/lib/format";
+import { useElementWidth } from "./use-element-width";
 import { linearScale, niceDomain, niceTicks } from "./use-linear-scale";
 
 export interface DivergingDatum {
@@ -32,22 +32,6 @@ const GAP = 8;
 /** Below this width labels go on their own line above each bar. */
 const STACK_BELOW = 480;
 
-/** Track the rendered width of an element (SVG is drawn at real pixels, so text never scales). */
-function useWidth<T extends HTMLElement>(fallback: number) {
-  const ref = useRef<T>(null);
-  const [width, setWidth] = useState(fallback);
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const ro = new ResizeObserver(([entry]) => {
-      if (entry) setWidth(Math.round(entry.contentRect.width));
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
-  return [ref, width] as const;
-}
-
 /** Compact signed axis label: +25, −12.5, 0. */
 function tickLabel(v: number): string {
   if (v === 0) return "0";
@@ -66,7 +50,7 @@ export function DivergingBars({
   emptyText = "No data",
   className,
 }: DivergingBarsProps) {
-  const [ref, width] = useWidth<HTMLDivElement>(480);
+  const [ref, width] = useElementWidth<HTMLDivElement>(480);
 
   const rows = [...data].sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
   const summary = rows.length

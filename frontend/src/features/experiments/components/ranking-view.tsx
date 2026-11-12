@@ -12,9 +12,12 @@ import { usePresets } from "@/features/presets";
 import type { CabinConfig, Preset, RankRequest, RankWeights } from "@/lib/api/types";
 import { useRanking } from "../hooks";
 import { DEFAULT_RANK_WEIGHTS } from "../lib/score-format";
+import { ExtraTelemetryTable } from "./extra-telemetry-table";
 import { RankedTable } from "./ranked-table";
+import { RunDetails } from "./run-details";
 import { ScenarioPicker } from "./scenario-picker";
 import { ScoreBreakdown } from "./score-breakdown";
+import { TelemetryChart } from "./telemetry-chart";
 import { WeightSliders } from "./weight-sliders";
 
 const RANK_LIMIT = 10;
@@ -153,6 +156,36 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
               <ScoreBreakdown run={selectedRun} weights={ranking.data.weights} />
             </CardBody>
           </Card>
+        ) : null}
+
+        {selectedRun?.experiment_id ? (
+          <>
+            <Card>
+              <CardHeader
+                title="Telemetry"
+                subtitle={`${selectedRun.experiment_id}: flame radius vs radiative heat flux over time`}
+              />
+              <CardBody>
+                <TelemetryChart experimentId={selectedRun.experiment_id} />
+              </CardBody>
+            </Card>
+            {selectedRun.record ? (
+              <div className="grid gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+                <Card>
+                  <CardHeader title="Run details" subtitle={`${selectedRun.experiment_id} · schema v1 record`} />
+                  <CardBody>
+                    <RunDetails run={selectedRun.record} />
+                  </CardBody>
+                </Card>
+                <Card>
+                  <CardHeader title="Extra telemetry" subtitle="Unmapped source columns, kept as-is" />
+                  <CardBody>
+                    <ExtraTelemetryTable extra={selectedRun.record.extra_telemetry} />
+                  </CardBody>
+                </Card>
+              </div>
+            ) : null}
+          </>
         ) : null}
       </div>
     </div>
