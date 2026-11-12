@@ -33,7 +33,7 @@ export default function Home() {
   const [question, setQuestion] = useState("");
 
   return (
-    <main className="mx-auto max-w-5xl space-y-6 p-4 sm:p-8">
+    <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-8">
       <header className="space-y-1">
         <h1 className="text-xl font-semibold">UI kit</h1>
         <p className="text-sm text-muted">Temporary showcase of design tokens and components.</p>
@@ -143,6 +143,6 @@ export default function Home() {
         error={new ApiError(422, "VALIDATION_ERROR", "oxygen_pct must be <= 40")}
         onRetry={() => undefined}
       />
-    </main>
+    </div>
   );
 }
