@@ -39,6 +39,7 @@ from app.repositories.snapshot.store import SnapshotStore, get_snapshot_store
 from app.repositories.telemetry_repo import PgTelemetryRepository
 from app.repositories.test_run_repo import PgTestRunRepository
 from app.services.health_service import HealthService
+from app.services.preset_service import PresetService
 
 SessionDep = Annotated[AsyncSession, Depends(get_session)]
 ROSessionDep = Annotated[AsyncSession, Depends(get_readonly_session)]
@@ -104,11 +105,19 @@ async def get_health_service(availability: AvailabilityDep, stats: StatsReaderDe
 
 HealthServiceDep = Annotated[HealthService, Depends(get_health_service)]
 
+
+def get_preset_service(reader: PresetReaderDep) -> PresetService:
+    return PresetService(reader)
+
+
+PresetServiceDep = Annotated[PresetService, Depends(get_preset_service)]
+
 __all__ = [
     "AvailabilityDep",
     "ChunkSearcherDep",
     "HealthServiceDep",
     "PresetReaderDep",
+    "PresetServiceDep",
     "ROSessionDep",
     "SessionDep",
     "StatsReaderDep",
@@ -118,6 +127,7 @@ __all__ = [
     "get_chunk_searcher",
     "get_health_service",
     "get_preset_reader",
+    "get_preset_service",
     "get_stats_reader",
     "get_telemetry_reader",
     "get_test_run_reader",
