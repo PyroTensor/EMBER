@@ -1,4 +1,5 @@
-"""LangGraph state definition for the EMBER Grounded RAG pipeline."""
+"""LangGraph state definition for the EMBER Grounded RAG pipeline (copied from legacy ``rag/state.py``)."""
+
 from __future__ import annotations
 
 from typing import Any, Literal, TypedDict
@@ -39,3 +40,6 @@ class GraphState(TypedDict, total=False):
     citations: list[CitationItem]
     dropped_claims: list[str]
     trace_id: str
+
+
+__all__ = ["CitationItem", "EvidenceItem", "GraphState", "RouteKind"]

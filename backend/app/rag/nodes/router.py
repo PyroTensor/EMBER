@@ -1,37 +1,28 @@
 """LangGraph Node 1 - Router: classifies question into facts | search | compare | out_of_scope."""
+
 from __future__ import annotations
 
 import re
+from typing import Any, Final
 
-from app.llm.provider import get_llm_provider
+from app.rag.prompts import load_prompt
+from app.rag.scope import DOMAIN_KEYWORDS, OUT_OF_SCOPE_HINTS
 from app.rag.state import GraphState, RouteKind
+from app.rag.toolkit import RagToolkit
 
-DOMAIN_KEYWORDS = {
-    "flame", "fire", "burn", "combustion", "oxygen", "o2", "loi", "pressure", "kpa", "psia",
-    "flow", "ventilation", "hvac", "microgravity", "0g", "1g", "gravity", "lunar", "mars",
-    "artemis", "iss", "bass", "bass-ii", "sofie", "flex", "acme", "pmma", "nomex", "cotton",
-    "fiberglass", "sibal", "heptane", "methanol", "droplet", "cool", "radiative", "flux",
-    "extinguish", "ignition", "spread", "diluent", "co2", "helium", "argon", "nitrogen",
-    "nasa", "6001b", "spacecraft", "cabin", "habitat", "exp-", "doc-", "soot", "standoff",
-}
-
-OUT_OF_SCOPE_HINTS = {
-    "stock", "bitcoin", "weather", "recipe", "football", "soccer", "movie", "hotel", "flight ticket",
-    "tax", "kubernetes", "react", "javascript", "poem", "joke", "capital of",
-}
-
-COMPARE_PATTERNS = re.compile(
+COMPARE_PATTERNS: Final = re.compile(
     r"\b(compare|versus|vs\.?|difference between|artemis|lunar|mars|1g|0g|scenario|habitat|rank)\b",
     re.IGNORECASE,
 )
-FACTS_PATTERNS = re.compile(
+FACTS_PATTERNS: Final = re.compile(
     r"\b(exp-\d{4}|how many|count|list all|which experiment|what is the spread|what was the loi|"
     r"table of|happened in experiment)\b",
     re.IGNORECASE,
 )
+_LLM_ROUTES: Final[tuple[RouteKind, ...]] = ("out_of_scope", "compare", "facts", "search")
 
 
-def classify_question(question: str, has_scenario: bool = False) -> RouteKind:
+async def classify_question(question: str, tk: RagToolkit, has_scenario: bool = False) -> RouteKind:
     q = question.lower().strip()
     tokens = set(re.findall(r"[a-z0-9_-]+", q))
 
@@ -40,16 +31,11 @@ def classify_question(question: str, has_scenario: bool = False) -> RouteKind:
     if not (tokens & DOMAIN_KEYWORDS) and not re.search(r"exp-\d+", q):
         return "out_of_scope"
 
-    prov = get_llm_provider()
-    if prov.name != "heuristic":
-        out = prov.complete(
-            "Classify the microgravity combustion question into exactly one token: "
-            "facts, search, compare, or out_of_scope.",
-            question,
-        ).lower()
-        for r in ("out_of_scope", "compare", "facts", "search"):
+    if tk.llm.name != "heuristic":
+        out = (await tk.llm.complete(load_prompt("router"), question)).lower()
+        for r in _LLM_ROUTES:
             if r in out:
-                return r  # type: ignore[return-value]
+                return r
 
     if has_scenario or COMPARE_PATTERNS.search(q):
         return "compare"
@@ -58,11 +44,14 @@ def classify_question(question: str, has_scenario: bool = False) -> RouteKind:
     return "search"
 
 
-def router_node(state: GraphState) -> dict:
+async def router_node(state: GraphState, tk: RagToolkit) -> dict[str, Any]:
     q = state["question"]
-    route = classify_question(q, has_scenario=bool(state.get("scenario")))
+    route = await classify_question(q, tk, has_scenario=bool(state.get("scenario")))
     return {
         "original_question": state.get("original_question") or q,
         "route": route,
         "rewrites": state.get("rewrites", 0),
     }
+
+
+__all__ = ["COMPARE_PATTERNS", "FACTS_PATTERNS", "classify_question", "router_node"]

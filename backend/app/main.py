@@ -1,29 +1,46 @@
-"""EMBER FastAPI server (Squad 2)."""
+"""FastAPI application factory."""
+
 from __future__ import annotations
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.routes_cabin import router as cabin_router
-from app.api.routes_copilot import router as copilot_router
-from app.api.routes_experiments import router as experiments_router
-from app.api.routes_health import router as health_router
+from app.api.router import api_router
+from app.core.config import get_settings
+from app.core.constants import SCHEMA_VERSION
+from app.core.error_handlers import register_error_handlers
+from app.core.lifespan import lifespan
+from app.core.logging import setup_logging
+from app.core.middleware import REQUEST_ID_HEADER, BodySizeLimitMiddleware, RequestIDMiddleware
 
-app = FastAPI(
-    title="EMBER API",
-    version="0.1.0",
-    description="EMBER – Exploration of Microgravity Burning through Experimental Research (NASA Space Apps 2026)",
-)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+def create_app() -> FastAPI:
+    settings = get_settings()
+    setup_logging(settings.LOG_LEVEL, settings.LOG_JSON)
 
-app.include_router(health_router)
-app.include_router(cabin_router)
-app.include_router(experiments_router)
-app.include_router(copilot_router)
+    app = FastAPI(
+        title="EMBER API",
+        version=SCHEMA_VERSION,
+        separate_input_output_schemas=False,
+        lifespan=lifespan,
+    )
+
+    # Innermost first: the body limit runs inside the request-id/access-log and CORS layers.
+    app.add_middleware(BodySizeLimitMiddleware)
+    app.add_middleware(RequestIDMiddleware)
+    # Added last → outermost, so CORS headers are present even on error responses.
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.CORS_ORIGINS,
+        allow_credentials=False,
+        allow_methods=["GET", "POST"],
+        allow_headers=["*"],
+        expose_headers=[REQUEST_ID_HEADER],
+    )
+
+    register_error_handlers(app)
+    app.include_router(api_router)
+    return app
+
+
+app = create_app()

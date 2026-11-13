@@ -1,0 +1,84 @@
+name: backend
+
+on:
+  push:
+    paths: ["backend/**", "contracts/**", ".github/workflows/backend.yml"]
+  pull_request:
+    paths: ["backend/**", "contracts/**", ".github/workflows/backend.yml"]
+
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      db:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_USER: ember
+          POSTGRES_PASSWORD: ember
+          POSTGRES_DB: ember
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U ember -d ember"
+          --health-interval 3s
+          --health-timeout 3s
+          --health-retries 20
+
+    # Settings come from the environment (no .env in CI). Heuristic LLM: no API key needed.
+    env:
+      ENV: test
+      DB_HOST: localhost
+      DB_PORT: "5432"
+      DB_USER: ember
+      DB_PASSWORD: ember
+      DB_NAME: ember
+      LLM_PROVIDER: heuristic
+      HF_HOME: ${{ github.workspace }}/.cache/huggingface
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Cache embedding model
+        uses: actions/cache@v4
+        with:
+          path: .cache/huggingface
+          key: hf-bge-small-en-v1.5
+
+      - name: uv sync
+        run: uv sync --frozen
+
+      - name: Ruff (lint + format)
+        run: make lint
+
+      - name: Contract check
+        run: make contract-check
+
+      - name: Migrate
+        run: make migrate
+
+      - name: Seed
+        run: make seed
+
+      - name: Golden-set eval
+        run: make eval
+
+      - name: Upload eval results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results
+          path: backend/eval/results/
+          if-no-files-found: ignore

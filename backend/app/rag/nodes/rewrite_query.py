@@ -1,10 +1,17 @@
-"""LangGraph Node - Rewrite query: expands weak queries with NASA microgravity combustion synonyms."""
+"""LangGraph Node - Rewrite query: expands weak queries with NASA microgravity combustion synonyms.
+
+Never rewrites more than ``RAG_MAX_REWRITES`` times; past the limit the node is a no-op.
+"""
+
 from __future__ import annotations
 
-from app.llm.provider import get_llm_provider
-from app.rag.state import GraphState
+from typing import Any, Final
 
-EXPANSIONS = {
+from app.rag.prompts import load_prompt
+from app.rag.state import GraphState
+from app.rag.toolkit import RagToolkit
+
+EXPANSIONS: Final[dict[str, str]] = {
     "fan": "forced flow velocity ventilation",
     "airflow": "forced flow velocity ventilation BASS-II",
     "ventilation": "low-speed forced flow LOI BASS-II",
@@ -16,21 +23,24 @@ EXPANSIONS = {
 }
 
 
-def rewrite_query_node(state: GraphState) -> dict:
+async def rewrite_query_node(state: GraphState, tk: RagToolkit) -> dict[str, Any]:
+    rewrites = int(state.get("rewrites") or 0)
+    if rewrites >= tk.settings.RAG_MAX_REWRITES:
+        return {}
+
     q = state["question"]
-    prov = get_llm_provider()
-    if prov.name != "heuristic":
-        rewritten = prov.complete(
-            "Rewrite the user question using NASA microgravity combustion keywords "
-            "(BASS-II, SoFIE, FLEX, ACME, LOI, forced flow, cool flame, O2 mole fraction). "
-            "Output only the rewritten query.",
-            q,
-        )
+    if tk.llm.name != "heuristic":
+        rewritten = await tk.llm.complete(load_prompt("rewrite"), q)
     else:
         extras = [exp for k, exp in EXPANSIONS.items() if k in q.lower()]
-        rewritten = f"{q} {' '.join(extras)}".strip() if extras else f"{q} microgravity combustion LOI flame spread"
+        rewritten = (
+            f"{q} {' '.join(extras)}".strip() if extras else f"{q} microgravity combustion LOI flame spread"
+        )
 
     return {
         "question": rewritten,
-        "rewrites": int(state.get("rewrites") or 0) + 1,
+        "rewrites": rewrites + 1,
     }
+
+
+__all__ = ["EXPANSIONS", "rewrite_query_node"]

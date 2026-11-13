@@ -1,21 +1,66 @@
+# EMBER integration stack: Postgres + pgvector, FastAPI backend, Next.js frontend (live mode).
+#   docker compose up --build      → http://localhost:3000 (UI) · http://localhost:8000/docs (API)
+# Local dev runs each app on its own instead (backend/docker-compose.yml for the DB, `npm run dev` for the UI).
+# Credentials below are local-only placeholders (the backend rejects them when ENV=prod).
+name: ember
+
 services:
   db:
     image: pgvector/pgvector:pg16
-    container_name: ember-db
+    restart: unless-stopped
     environment:
       POSTGRES_USER: ember
       POSTGRES_PASSWORD: ember
       POSTGRES_DB: ember
     ports:
-      - "5432:5432"
+      - "5433:5432"
     volumes:
-      - ember_pgdata:/var/lib/postgresql/data
-      - ./backend/app/db/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ember -d ember"]
       interval: 3s
       timeout: 3s
       retries: 20
 
+  backend:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    # Schema (incl. the read-only role ember_ro) → seed data + embeddings → API. Ingestion upserts, so restarts are safe.
+    command: >-
+      sh -c "alembic upgrade head &&
+             python -m app.ingestion --source data/seed &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
+    environment:
+      DB_HOST: db
+      DB_PORT: "5432"
+      DB_USER: ember
+      DB_PASSWORD: ember
+      DB_NAME: ember
+      DB_RO_USER: ember_ro
+      DB_RO_PASSWORD: ember_ro
+      CORS_ORIGINS: http://localhost:3000
+    volumes:
+      - hf_cache:/app/.cache/huggingface  # embedding model, downloaded once
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_API_MODE: live
+        # Called from the browser, so it is the host URL, not http://backend:8000.
+        NEXT_PUBLIC_API_URL: http://localhost:8000
+        NEXT_PUBLIC_ALLOW_MODE_TOGGLE: "false"
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:3000"
+
 volumes:
-  ember_pgdata:
+  pgdata:
+  hf_cache:

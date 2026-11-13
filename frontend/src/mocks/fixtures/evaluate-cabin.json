@@ -1,0 +1,35 @@
+{
+  "risk_index": 47.8,
+  "risk_band": "ELEVATED",
+  "baseline_risk": 47.8,
+  "predicted_regime": "Sustained Burn",
+  "estimated_loi_pct": 17.26,
+  "oxygen_margin_pct": 3.74,
+  "contributions": [
+    {
+      "feature": "oxygen_enrichment",
+      "label": "Oxygen concentration",
+      "value": 0.0
+    },
+    {
+      "feature": "ventilation_coupling",
+      "label": "HVAC ventilation flow",
+      "value": 0.0
+    },
+    {
+      "feature": "gravity_buoyancy_regime",
+      "label": "Gravity / buoyancy",
+      "value": 0.0
+    },
+    {
+      "feature": "cabin_pressure_density",
+      "label": "Cabin pressure",
+      "value": 0.0
+    },
+    {
+      "feature": "material_flammability_intrinsic",
+      "label": "Material & diluent",
+      "value": 0.0
+    }
+  ]
+}

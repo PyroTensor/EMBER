@@ -1,15 +1,14 @@
-"""LangGraph Node - Answer generator: cites [DOC-XX p.Y] and [EXP-XXXX] per claim; says 'no data' when missing."""
+"""LangGraph Node - Answer generator: cites [DOC-XX p.Y] and [EXP-XXXX] per claim; 'no data' when missing."""
+
 from __future__ import annotations
 
 import re
+from typing import Any
 
-from app.llm.provider import get_llm_provider
+from app.core.constants import NO_DATA_MESSAGE
+from app.rag.prompts import load_prompt
 from app.rag.state import EvidenceItem, GraphState
-
-NO_DATA_MESSAGE = (
-    "No data: the EMBER microgravity combustion database and NASA PSI/NTRS corpus do not contain "
-    "verified evidence to answer this question."
-)
+from app.rag.toolkit import RagToolkit
 
 
 def _clean_sentence(text: str) -> str:
@@ -61,7 +60,8 @@ def _synthesize_heuristic(question: str, evidence: list[EvidenceItem]) -> tuple[
             if m:
                 eid, meta, cond, out = m.groups()
                 run_summaries.append(
-                    f"Experiment {eid.strip()} ({meta.strip()} at {cond.strip()}) recorded {out.strip()} [{r['experiment_id']}]"
+                    f"Experiment {eid.strip()} ({meta.strip()} at {cond.strip()}) recorded {out.strip()} "
+                    f"[{r['experiment_id']}]"
                 )
             else:
                 run_summaries.append(f"{r['text']} [{r['experiment_id']}]")
@@ -72,7 +72,7 @@ def _synthesize_heuristic(question: str, evidence: list[EvidenceItem]) -> tuple[
     return " ".join(claims), True
 
 
-def answer_generator_node(state: GraphState) -> dict:
+async def answer_generator_node(state: GraphState, tk: RagToolkit) -> dict[str, Any]:
     if state.get("route") == "out_of_scope":
         return {"answer": NO_DATA_MESSAGE, "supported": False}
 
@@ -80,18 +80,17 @@ def answer_generator_node(state: GraphState) -> dict:
     if not evidence:
         return {"answer": NO_DATA_MESSAGE, "supported": False}
 
-    prov = get_llm_provider()
-    if prov.name != "heuristic":
-        context = "\n".join(f"- {e['text']}" for e in evidence[:8])
-        system = (
-            "You are the EMBER NASA Microgravity Fire Safety Co-Pilot. Answer ONLY using the provided evidence. "
-            "Every single sentence MUST end with an inline citation in the exact format [DOC-XX p.Y] or [EXP-XXXX]. "
-            "If the evidence does not answer the question, reply with 'No data'."
+    if tk.llm.name != "heuristic":
+        context = "\n".join(f"- {e['text']}" for e in evidence[: tk.settings.RAG_ANSWER_EVIDENCE])
+        ans = await tk.llm.complete(
+            load_prompt("answer"), f"Question: {state['original_question']}\n\nEvidence:\n{context}"
         )
-        ans = prov.complete(system, f"Question: {state['original_question']}\n\nEvidence:\n{context}")
         if ans.lower().startswith("no data"):
             return {"answer": NO_DATA_MESSAGE, "supported": False}
         return {"answer": ans, "supported": True}
 
     ans, supported = _synthesize_heuristic(state.get("original_question") or state["question"], evidence)
     return {"answer": ans, "supported": supported}
+
+
+__all__ = ["answer_generator_node"]

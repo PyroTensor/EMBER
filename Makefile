@@ -1,36 +1,28 @@
-.PHONY: setup db-up db-down db-reset proxy ingest ingest-drill backend frontend test eval
+# EMBER root: the integration stack plus pass-through targets for the two apps.
+# On Windows use `mingw32-make` if `make` is missing.
+.PHONY: help up down logs ps backend-% frontend-%
 
-setup:            ## install python (uv) + node deps
-	uv sync
-	cd frontend && npm install
+help:
+	@echo "make up              build and start db + backend + frontend (docker compose)"
+	@echo "make down            stop the stack (data volumes are kept)"
+	@echo "make logs / ps       follow logs / list services"
+	@echo "make backend-<t>     run 'make <t>' in backend/   (e.g. backend-dev, backend-contract-check)"
+	@echo "make frontend-<s>    run 'npm run <s>' in frontend/ (e.g. frontend-dev, frontend-lint)"
 
-db-up:            ## start Postgres + pgvector
-	docker compose up -d --wait db
+up:
+	docker compose up --build
 
-db-down:
+down:
 	docker compose down
 
-db-reset:         ## wipe the database volume and re-run schema.sql
-	docker compose down -v
-	docker compose up -d --wait db
+logs:
+	docker compose logs -f
 
-proxy:            ## regenerate proxy data in contracts/mock_data
-	uv run python contracts/generate_proxy_data.py
+ps:
+	docker compose ps
 
-ingest: db-up     ## run the full offline ingestion pipeline on proxy data
-	uv run python -m ember_data.ingestion.pipeline --source contracts/mock_data
+backend-%:
+	$(MAKE) -C backend $*
 
-ingest-drill: db-up  ## rehearse the Nov 14 swap with a deliberately messy CSV
-	uv run python -m ember_data.ingestion.pipeline --source contracts/mock_data --runs-file raw_drop_example.csv --dry-run
-
-backend:          ## FastAPI on :8000
-	uv run uvicorn app.main:app --reload --port 8000 --app-dir backend
-
-frontend:         ## Next.js on :3000
-	cd frontend && npm run dev
-
-test:
-	uv run pytest data_ml/tests backend/tests -q
-
-eval:
-	uv run python backend/eval/run_eval.py
+frontend-%:
+	npm --prefix frontend run $*

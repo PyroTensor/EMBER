@@ -1,18 +1,19 @@
 """LangGraph Node - Citation check: verifies every claim against retrieved chunks & test runs.
 
-Parses sentences from `answer`. Every sentence (when `supported=True`) must contain at least
-one `[DOC-XX p.Y]` or `[EXP-XXXX]` citation, and every cited `(doc_id, page)` or `experiment_id`
-must exist in `state["evidence"]`. Unverified sentences are stripped and logged in `dropped_claims`.
+Splits ``answer`` into sentences with the bullet/newline-aware ``split_sentences``. Every sentence (when
+``supported=True``) must contain at least one ``[DOC-XX p.Y]`` or ``[EXP-XXXX]`` citation, and every cited
+``(doc_id, page)`` or ``experiment_id`` must exist in ``state["evidence"]``. Unverified sentences are stripped
+and logged in ``dropped_claims``.
 """
+
 from __future__ import annotations
 
-import re
+from typing import Any
 
-from app.rag.nodes.answer_generator import NO_DATA_MESSAGE
+from app.core.constants import NO_DATA_MESSAGE
+from app.rag.citations import DOC_CITE, EXP_CITE, split_sentences
 from app.rag.state import CitationItem, EvidenceItem, GraphState
-
-DOC_CITE = re.compile(r"\[([A-Za-z0-9_-]+)\s+p\.(\d+)\]")
-EXP_CITE = re.compile(r"\[(EXP-\d{4})\]")
+from app.rag.toolkit import RagToolkit
 
 
 def verify_and_extract_citations(
@@ -27,11 +28,11 @@ def verify_and_extract_citations(
     valid_exps: dict[str, tuple[str | None, int | None, str]] = {}
     for e in evidence:
         if e.get("doc_id") and e.get("page"):
-            valid_docs[(str(e["doc_id"]), int(e["page"]))] = e["text"][:280]
+            valid_docs[(str(e["doc_id"]), int(e["page"] or 0))] = e["text"][:280]
         if e.get("experiment_id"):
             valid_exps[str(e["experiment_id"])] = (e.get("doc_id"), e.get("page"), e["text"][:280])
 
-    sentences = [s.strip() for s in re.split(r"(?<=[.!?])\s+", answer.strip()) if s.strip()]
+    sentences = split_sentences(answer)
     kept: list[str] = []
     dropped: list[str] = []
     citations: dict[str, CitationItem] = {}
@@ -72,12 +73,12 @@ def verify_and_extract_citations(
             }
         for eid in exp_matches:
             label = f"[{eid}]"
-            doc_id, page, snippet = valid_exps[eid]
+            exp_doc_id, exp_page, snippet = valid_exps[eid]
             citations[label] = {
                 "id": label,
                 "kind": "experiment",
-                "doc_id": doc_id,
-                "page": page,
+                "doc_id": exp_doc_id,
+                "page": exp_page,
                 "experiment_id": eid,
                 "snippet": snippet,
             }
@@ -87,7 +88,7 @@ def verify_and_extract_citations(
     return " ".join(kept), True, list(citations.values()), dropped
 
 
-def citation_check_node(state: GraphState) -> dict:
+async def citation_check_node(state: GraphState, tk: RagToolkit) -> dict[str, Any]:
     ans, sup, cites, dropped = verify_and_extract_citations(
         state.get("answer", ""),
         state.get("evidence") or [],
@@ -99,3 +100,6 @@ def citation_check_node(state: GraphState) -> dict:
         "citations": cites,
         "dropped_claims": dropped,
     }
+
+
+__all__ = ["citation_check_node", "verify_and_extract_citations"]

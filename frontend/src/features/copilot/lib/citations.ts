@@ -1,0 +1,35 @@
+import type { Citation } from "@/lib/api/types";
+
+export type AnswerToken = { type: "text"; value: string } | { type: "cite"; value: string };
+
+/**
+ * Inline citation tags produced by the backend's citation_check: "[DOC-02 p.3]" (document + page) and
+ * "[EXP-0012]" (experiment). A bare "[DOC-02]" is accepted too.
+ */
+const CITE_RE = /\[(?:DOC-\d+(?:\s+p\.\s?\d+)?|EXP-\d+)\]/g;
+
+/** Split an answer into text and citation-tag tokens (in order; empty text tokens are dropped). */
+export function tokenize(answer: string): AnswerToken[] {
+  const tokens: AnswerToken[] = [];
+  let last = 0;
+  for (const m of answer.matchAll(CITE_RE)) {
+    const start = m.index ?? 0;
+    if (start > last) tokens.push({ type: "text", value: answer.slice(last, start) });
+    tokens.push({ type: "cite", value: m[0] });
+    last = start + m[0].length;
+  }
+  if (last < answer.length) tokens.push({ type: "text", value: answer.slice(last) });
+  return tokens;
+}
+
+/** "[DOC-01  p. 1]" and "[DOC-01 p.1]" compare equal. */
+const normalize = (tag: string) => tag.replace(/\s+/g, "").toUpperCase();
+
+/** The citation a tag refers to: exact id first, then whitespace/case-insensitive. */
+export function findCitation(tag: string, citations: readonly Citation[] | undefined): Citation | undefined {
+  if (!citations?.length) return undefined;
+  return citations.find((c) => c.id === tag) ?? citations.find((c) => c.id && normalize(c.id) === normalize(tag));
+}
+
+/** Chip label without brackets: "DOC-01 p.1", "EXP-0023". */
+export const tagLabel = (tag: string) => tag.replace(/^\[|\]$/g, "").replace(/\s+/g, " ");

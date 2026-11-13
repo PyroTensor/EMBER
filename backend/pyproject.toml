@@ -1,32 +1,70 @@
 [project]
 name = "ember-backend"
 version = "0.1.0"
-description = "EMBER Squad 2 - FastAPI + LangGraph grounded RAG"
-requires-python = ">=3.11"
+description = "EMBER backend: FastAPI + Postgres/pgvector + LangGraph grounded RAG"
+requires-python = ">=3.12"
 dependencies = [
-  "ember-data",
-  "fastapi>=0.115",
-  "uvicorn[standard]>=0.30",
-  "pydantic-settings>=2.4",
-  "langgraph>=0.2",
-  "google-genai>=1.0",
-  "psycopg[binary,pool]>=3.2",
-  "pgvector>=0.3",
+    "fastapi",
+    "uvicorn[standard]",
+    "pydantic>=2.7",
+    "pydantic-settings",
+    "sqlalchemy[asyncio]>=2.0.30",
+    "asyncpg",
+    "alembic",
+    "pgvector",
+    "langgraph",
+    "google-genai",
+    "numpy",
+    "pyyaml",
+    "sentence-transformers",
+    "anyio",
 ]
 
 [project.optional-dependencies]
-openai = ["openai>=1.40"]
-anthropic = ["anthropic>=0.34"]
-tracing = ["langsmith>=0.1"]
-# TODO(squad2): RAGAS evaluation
-eval = ["ragas>=0.2"]
+pdf = ["pymupdf"]
+eval = ["ragas"]
+tracing = ["langsmith"]
 
-[tool.uv.sources]
-ember-data = { workspace = true }
+[dependency-groups]
+dev = [
+    "ruff",
+    "mypy",
+    "pytest",
+    "pytest-asyncio",
+    "httpx",
+]
 
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
+[tool.uv]
+package = false
 
-[tool.hatch.build.targets.wheel]
-packages = ["app"]
+# ── ruff ──────────────────────────────────────────────────────────────
+[tool.ruff]
+line-length = 110
+target-version = "py312"
+extend-exclude = ["data", ".cache"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "ASYNC"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+# ── mypy ──────────────────────────────────────────────────────────────
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+warn_unused_configs = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["app.domain.*", "app.schemas.*", "app.services.*"]
+strict = true
+
+# ── pytest ────────────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+markers = [
+    "integration: needs a real Postgres (testcontainers / docker)",
+    "slow: long-running tests",
+]

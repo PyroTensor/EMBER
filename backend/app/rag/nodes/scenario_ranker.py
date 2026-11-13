@@ -1,12 +1,13 @@
 """LangGraph Tool Node - Scenario ranker: scores test runs vs habitat O2, pressure, flow & gravity."""
+
 from __future__ import annotations
 
 import re
 from typing import Any
 
-from app.db.session import list_test_runs
-from app.rag.state import EvidenceItem, GraphState
-from ember_data.ranking.scenario_ranker import rank_runs
+from app.domain.ranking.scenario_ranker import rank_runs
+from app.rag.state import GraphState
+from app.rag.toolkit import RagToolkit
 
 
 def _infer_scenario_from_question(question: str, explicit: dict[str, Any] | None) -> dict[str, Any]:
@@ -42,10 +43,10 @@ def _infer_scenario_from_question(question: str, explicit: dict[str, Any] | None
     return cfg
 
 
-def scenario_ranker_node(state: GraphState) -> dict:
+async def scenario_ranker_node(state: GraphState, tk: RagToolkit) -> dict[str, Any]:
     cfg = _infer_scenario_from_question(state["question"], state.get("scenario"))
-    runs = list_test_runs(readonly=True)
-    top = rank_runs(runs, cfg, limit=4)
+    runs = await tk.runs.all_for_ranking()
+    top = rank_runs(list(runs), cfg, limit=4)
 
     existing = list(state.get("evidence") or [])
     seen = {e["id"] for e in existing}
@@ -53,20 +54,26 @@ def scenario_ranker_node(state: GraphState) -> dict:
         if r.experiment_id in seen:
             continue
         rec = r.record
-        existing.append({
-            "id": r.experiment_id,
-            "kind": "ranked_run",
-            "source": "scenario_ranker",
-            "score": round(r.total_score / 100.0, 3),
-            "text": (
-                f"{r.experiment_id} (rank #{r.rank}, score={r.total_score:.1f} [sim={r.similarity:.0f}, "
-                f"comp={r.completeness:.0f}, crit={r.criticality:.0f}]): {rec['program']} {rec['fuel_material']} "
-                f"at {rec['gravity_g']}g, {rec['oxygen_pct']}% O2, {rec['pressure_kpa']} kPa, "
-                f"{rec['flow_velocity_cm_s']} cm/s -> {rec['combustion_regime']} "
-                f"(LOI={rec.get('limiting_oxygen_index_pct')}%, rate={rec.get('spread_or_burn_rate')})"
-            ),
-            "doc_id": rec.get("source_doc_id"),
-            "page": rec.get("source_page"),
-            "experiment_id": r.experiment_id,
-        })
+        existing.append(
+            {
+                "id": r.experiment_id,
+                "kind": "ranked_run",
+                "source": "scenario_ranker",
+                "score": round(r.total_score / 100.0, 3),
+                "text": (
+                    f"{r.experiment_id} (rank #{r.rank}, score={r.total_score:.1f} [sim={r.similarity:.0f}, "
+                    f"comp={r.completeness:.0f}, crit={r.criticality:.0f}]): {rec['program']} "
+                    f"{rec['fuel_material']} at {rec['gravity_g']}g, {rec['oxygen_pct']}% O2, "
+                    f"{rec['pressure_kpa']} kPa, {rec['flow_velocity_cm_s']} cm/s -> "
+                    f"{rec['combustion_regime']} "
+                    f"(LOI={rec.get('limiting_oxygen_index_pct')}%, rate={rec.get('spread_or_burn_rate')})"
+                ),
+                "doc_id": rec.get("source_doc_id"),
+                "page": rec.get("source_page"),
+                "experiment_id": r.experiment_id,
+            }
+        )
     return {"evidence": existing}
+
+
+__all__ = ["scenario_ranker_node"]

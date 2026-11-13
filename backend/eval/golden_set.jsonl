@@ -6,3 +6,25 @@
 {"id": "Q06", "question": "What happened in experiment EXP-0001 and what was its combustion regime?", "expected_supported": true, "expected_exps": ["EXP-0001"]}
 {"id": "Q07", "question": "What is the current stock price of Bitcoin and the weather in Tokyo?", "expected_supported": false, "expected_docs": []}
 {"id": "Q08", "question": "How do you bake a sourdough pizza in a brick oven?", "expected_supported": false, "expected_docs": []}
+{"id": "Q09", "question": "What was the combustion regime of EXP-0031?", "expected_supported": true, "expected_exps": ["EXP-0031"]}
+{"id": "Q10", "question": "What happened in experiment EXP-0019 at 34% O2 and 56.5 kPa?", "expected_supported": true, "expected_exps": ["EXP-0019"]}
+{"id": "Q11", "question": "What LOI and spread rate were recorded in EXP-0012?", "expected_supported": true, "expected_exps": ["EXP-0012"]}
+{"id": "Q12", "question": "Which diluent gas was used in EXP-0039 and did the methanol droplet ignite?", "expected_supported": true, "expected_exps": ["EXP-0039"]}
+{"id": "Q13", "question": "Describe the ACME heptane flame in experiment EXP-0045.", "expected_supported": true, "expected_exps": ["EXP-0045"]}
+{"id": "Q14", "question": "How many Nomex runs were tested at Lunar 0.16g gravity in SoFIE?", "expected_supported": true, "expected_docs": []}
+{"id": "Q15", "question": "Why can a cabin ventilation fan keep alive a flame that would otherwise go out?", "expected_supported": true, "expected_docs": ["DOC-01"]}
+{"id": "Q16", "question": "How does the d-squared law describe droplet burning in FLEX?", "expected_supported": true, "expected_docs": ["DOC-03"]}
+{"id": "Q17", "question": "What role does soot play in the extinction limits of ACME spherical diffusion flames?", "expected_supported": true, "expected_docs": ["DOC-04"]}
+{"id": "Q18", "question": "Which spacecraft materials pass NASA-STD-6001B upward flammability screening?", "expected_supported": true, "expected_docs": ["DOC-05"]}
+{"id": "Q19", "question": "How do helium and CO2 diluents affect droplet flame extinction?", "expected_supported": true, "expected_docs": ["DOC-03"]}
+{"id": "Q20", "question": "What is the effective velocity concept for partial gravity flammability?", "expected_supported": true, "expected_docs": ["DOC-05"]}
+{"id": "Q21", "question": "How does PMMA flame spread differ between opposed and concurrent flow?", "expected_supported": true, "expected_docs": ["DOC-01"]}
+{"id": "Q22", "question": "What did SoFIE recommend for material selection in exploration atmospheres?", "expected_supported": true, "expected_docs": ["DOC-02"]}
+{"id": "Q23", "question": "Compare flammability risk in an Artemis 34% O2 56.5 kPa habitat versus the ISS cabin atmosphere.", "expected_supported": true, "expected_docs": ["DOC-02"]}
+{"id": "Q24", "question": "How does Mars 0.38g gravity change cotton-fiberglass flammability compared with 1g?", "expected_supported": true, "expected_docs": ["DOC-05"]}
+{"id": "Q25", "question": "Rank the test runs most similar to a Lunar habitat at 30% O2 and 65 kPa.", "expected_supported": true, "expected_docs": []}
+{"id": "Q26", "question": "Compare Nomex flammability at Lunar gravity with microgravity in SoFIE.", "expected_supported": true, "expected_docs": ["DOC-02"]}
+{"id": "Q27", "question": "Who won the football world cup in 2018?", "expected_supported": false, "expected_docs": []}
+{"id": "Q28", "question": "Write me a poem about autumn leaves.", "expected_supported": false, "expected_docs": []}
+{"id": "Q29", "question": "What is the capital of Australia?", "expected_supported": false, "expected_docs": []}
+{"id": "Q30", "question": "How do I deploy a React app on Kubernetes?", "expected_supported": false, "expected_docs": []}
