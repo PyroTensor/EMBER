@@ -119,13 +119,17 @@ def read_rows(path: Path) -> list[dict[str, Any]]:
     path = Path(path)
     suffix = path.suffix.lower()
     if suffix == ".csv":
-        with path.open(newline="", encoding="utf-8-sig") as fh:
-            rows: list[dict[str, Any]] = []
-            for r in csv.DictReader(fh):
-                cleaned = {k: v for k, v in r.items() if k is not None}
-                if any(v is not None and str(v).strip() != "" for v in cleaned.values()):
-                    rows.append(cleaned)
-            return rows
+        raw_bytes = path.read_bytes()
+        try:
+            text = raw_bytes.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            text = raw_bytes.decode("cp1252")
+        rows: list[dict[str, Any]] = []
+        for r in csv.DictReader(text.splitlines()):
+            cleaned = {k: v for k, v in r.items() if k is not None}
+            if any(v is not None and str(v).strip() != "" for v in cleaned.values()):
+                rows.append(cleaned)
+        return rows
     if suffix == ".json":
         data = json.loads(path.read_text(encoding="utf-8"))
         return data if isinstance(data, list) else data.get("records", [])

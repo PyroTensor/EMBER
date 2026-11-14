@@ -4,6 +4,12 @@ title: "ISS Investigation: Flame Extinguishment Experiment (FLEX / FLEX-2)"
 source_type: iss_page
 investigation: FLEX
 proxy: true
+url: "/papers/nasa_glenn_flex.pdf"
+sources:
+  - "/papers/nasa_glenn_flex.pdf"
+  - "/papers/iss_researchers_guide_combustion_science.pdf"
+  - "https://psi.nasa.gov/physci/repo/search?q=FLEX"
+  - "https://www.nasa.gov/missions/station/a-researchers-guide-to-combustion-science/"
 ---
 <!-- page: 1 -->
 # Flame Extinguishment Experiment (FLEX / FLEX-2)

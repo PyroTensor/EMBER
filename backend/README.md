@@ -64,7 +64,7 @@ loaded first; real environment variables win.
 | `DB_PROBE_TTL_S` | `15` | how long the DB availability decision is cached |
 | `SNAPSHOT_PATH` / `SEED_DIR` / `CACHE_DIR` | `data/.cache/store.json` / `data/seed` / `data/.cache` | relative to `backend/` |
 | `CORS_ORIGINS` | `["http://localhost:3000"]` | JSON list or CSV; never `*` |
-| `LLM_PROVIDER` | `heuristic` | `heuristic` (no key) / `gemini` / `openai` (not implemented: falls back with a warning) |
+| `LLM_PROVIDER` | `heuristic` | `heuristic` (no key) / `gemini` / `openai` |
 | `LLM_MODEL` | `gemini-2.5-flash` | |
 | `GEMINI_API_KEY` / `OPENAI_API_KEY` | empty | required for the matching provider |
 | `EMBED_ENABLED` | `true` | `false` = keyword-only retrieval, no model download |

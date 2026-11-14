@@ -111,6 +111,7 @@ UNIT_CONVERTERS: dict[str, Callable[[Any], Any]] = {
     "kpa": _num,
     "psia": lambda v: None if (n := _num(v)) is None else n * 6.894757,
     "atm": lambda v: None if (n := _num(v)) is None else n * 101.325,
+    "mmhg": lambda v: None if (n := _num(v)) is None else n * 0.1333223684,
     "cm_s": _num,
     "ft_min": lambda v: None if (n := _num(v)) is None else n * 0.508,
     "mm_s": lambda v: None if (n := _num(v)) is None else n / 10.0,
@@ -192,6 +193,13 @@ def normalize_row(
             extra = {**value, **extra}
             continue
         aliased_val = _alias(field, value, aliases)
+        if (
+            field == "program"
+            and aliased_val is not None
+            and raw_val is not None
+            and str(raw_val).strip().lower() != str(aliased_val).strip().lower()
+        ):
+            extra.setdefault("psi_investigation_code", str(raw_val).strip())
         if (
             field == "fuel_material"
             and aliased_val is not None

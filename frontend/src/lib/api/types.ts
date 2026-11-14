@@ -18,6 +18,10 @@ export type AskRequest = Schemas["AskRequest"];
 export type AskResponse = Schemas["AskResponse"];
 export type Citation = Schemas["Citation"];
 export type Evidence = Schemas["Evidence"];
+export type DocumentSection = Schemas["DocumentSection"];
+export type DocumentPage = Schemas["DocumentPage"];
+export type DocumentSummary = Schemas["DocumentSummary"];
+export type DocumentDetail = Schemas["DocumentDetail"];
 export type ErrorResponse = Schemas["ErrorResponse"];
 export type EvidenceSource = Schemas["EvidenceSource"];
 
@@ -33,4 +37,6 @@ export type RiskBand = NonNullable<CabinEvaluation["risk_band"]>;
 export type Route = NonNullable<AskResponse["route"]>;
 
 /** Optional query params for GET /api/experiments (gravity_g is matched within ±0.01 g). */
-export type ExperimentFilters = NonNullable<paths["/api/experiments"]["get"]["parameters"]["query"]>;
+export type ExperimentFilters = NonNullable<
+  paths["/api/experiments"]["get"]["parameters"]["query"]
+>;

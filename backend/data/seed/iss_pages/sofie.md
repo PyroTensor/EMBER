@@ -4,6 +4,12 @@ title: "ISS Investigation: Solid Fuel Ignition and Extinction (SoFIE)"
 source_type: iss_page
 investigation: SoFIE
 proxy: true
+url: "/papers/nasa_glenn_saffire.pdf"
+sources:
+  - "/papers/nasa_glenn_saffire.pdf"
+  - "/papers/iss_researchers_guide_combustion_science.pdf"
+  - "https://www.nasa.gov/glenn/glenn-expertise-space-exploration/physical-sciences-program/combustion-science/"
+  - "https://psi.nasa.gov/physci/repo/search?q=combustion"
 ---
 <!-- page: 1 -->
 # Solid Fuel Ignition and Extinction (SoFIE)

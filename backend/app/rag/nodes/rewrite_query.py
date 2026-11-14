@@ -20,6 +20,11 @@ EXPANSIONS: Final[dict[str, str]] = {
     "artemis": "exploration atmosphere 34% O2 56.5 kPa SoFIE",
     "fabric": "Cotton-Fiberglass SIBAL Nomex solid fuel",
     "plastic": "PMMA solid fuel spread rate",
+    "apollo": "Apollo 1 Apollo 13 pure oxygen cabin fire lessons learned",
+    "mir": "Space Station Mir 1997 Vika oxygen generator fire smoke",
+    "saffire": "Saffire large-scale spacecraft fire safety SoFIE",
+    "smoke": "SAME DAFT smoke detector aerosol dust discrimination",
+    "spinoff": "firefighter SCBA air tank turnout gear smoke detector spinoff",
 }
 
 

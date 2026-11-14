@@ -48,6 +48,11 @@ class SnapshotStore:
         presets: list[dict[str, Any]] = self.data.get("presets", [])
         return presets
 
+    @property
+    def documents(self) -> list[dict[str, Any]]:
+        docs: list[dict[str, Any]] = self.data.get("documents", [])
+        return docs
+
     @cached_property
     def bm25(self) -> BM25:
         """BM25 index over chunks (same text fields as legacy: doc_id, section, title, text)."""

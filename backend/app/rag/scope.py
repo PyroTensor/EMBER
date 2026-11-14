@@ -11,6 +11,10 @@ DOMAIN_KEYWORDS: Final[frozenset[str]] = frozenset({
     "fiberglass", "sibal", "heptane", "methanol", "droplet", "cool", "radiative", "flux",
     "extinguish", "ignition", "spread", "diluent", "co2", "helium", "argon", "nitrogen",
     "nasa", "6001b", "spacecraft", "cabin", "habitat", "exp-", "doc-", "soot", "standoff",
+    "apollo", "mir", "spice", "slice", "same", "same-r", "daft", "daft-2", "bre",
+    "cfi", "cfi-g", "e-field", "luci", "fm2", "cir", "msg", "mdca", "spacesuit", "suit",
+    "rover", "firefighter", "firefighting", "spinoff", "smoke", "detector", "alarm", "dust",
+    "aerosol", "scba", "canister", "perchlorate", "vika", "turnout", "pbi",
 })  # fmt: skip
 
 OUT_OF_SCOPE_HINTS: Final[frozenset[str]] = frozenset({

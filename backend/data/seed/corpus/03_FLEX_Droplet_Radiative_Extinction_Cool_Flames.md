@@ -8,6 +8,13 @@ o2_range: [15, 25]
 pressure_kpa: [50, 101.3]
 gravity: [0.0]
 proxy: true
+url: "https://psi.nasa.gov/physci/repo/search?q=FLEX"
+sources:
+  - "/papers/nasa_glenn_flex.pdf"
+  - "/papers/iss_researchers_guide_combustion_science.pdf"
+  - "https://psi.nasa.gov/physci/repo/search?q=FLEX"
+  - "https://www.nasa.gov/missions/station/a-researchers-guide-to-combustion-science/"
+  - "https://www.youtube.com/watch?v=W1oXykoz9zg"
 ---
 <!-- page: 1 -->
 # Droplet Combustion, Radiative Extinction and Cool Flames in Microgravity

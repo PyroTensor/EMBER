@@ -190,7 +190,7 @@ async def run(
     )
 
     # 5. validate
-    report = validate.validate_rows(rows, write_queue=not dry_run)
+    report = validate.validate_rows(rows, write_queue=True)
     investigations = load.deduplicate_investigations(investigations, report.valid)
     log("validate", f"{report.summary()} -> {_rel(validate.review_queue_path())}")
     for rej in report.rejected[:5]:
