@@ -159,8 +159,24 @@ async def run(
     *,
     llm_max_pages: int | None = None,
     no_llm_cache: bool = False,
+    fetch: Path | None = None,
 ) -> int:
     t0 = time.time()
+
+    # 0. optional network fetch: downloads land INSIDE --source, so stage 1 stays the source of truth
+    if fetch is not None:
+        try:
+            fetched = await fetch_cache.fetch_sources(fetch, source)
+        except (OSError, ValueError) as exc:
+            log("fetch", f"ERROR reading {fetch}: {exc.__class__.__name__}: {exc}")
+            return 1
+        log(
+            "fetch",
+            f"downloaded {fetched.downloaded}, skipped {fetched.skipped} (unchanged), "
+            f"failed {fetched.failed}",
+        )
+        for err in fetched.errors[:5]:
+            log("fetch", f"  {err}")
 
     # 1. fetch & cache
     files = fetch_cache.fetch(source)

@@ -6,6 +6,8 @@ Usage (from backend/):
         --runs-file raw_drop_example.csv --dry-run                          # make ingest-drill (no DB writes)
     uv run python -m app.ingestion --source /path/to/nov14_drop \
         --runs-file official.csv --column-map my_map.yaml                   # the real thing
+    uv run python -m app.ingestion --source data/drill \
+        --fetch data/sources.example.yaml --dry-run --skip-embed            # download NTRS PDFs first
 """
 
 from __future__ import annotations
@@ -46,6 +48,13 @@ def main(argv: list[str] | None = None) -> int:
         help="LLM page budget for this run (overrides EXTRACT_MAX_PAGES)",
     )
     ap.add_argument("--no-llm-cache", action="store_true", help="ignore cached LLM extractions")
+    ap.add_argument(
+        "--fetch",
+        type=Path,
+        default=None,
+        metavar="SOURCES_YAML",
+        help="download NTRS PDFs / URLs listed in this YAML into --source before stage 1",
+    )
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--skip-embed", action="store_true")
     a = ap.parse_args(argv)
@@ -60,6 +69,7 @@ def main(argv: list[str] | None = None) -> int:
             a.extractor,
             llm_max_pages=a.llm_max_pages,
             no_llm_cache=a.no_llm_cache,
+            fetch=a.fetch,
         )
     )
 

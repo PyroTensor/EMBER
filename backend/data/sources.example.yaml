@@ -1,0 +1,21 @@
+# Sources for `python -m app.ingestion --fetch data/sources.example.yaml --source <drop dir> ...`
+# Copy this file, edit it, and pass your copy to --fetch. Downloads land INSIDE --source, so the normal
+# stage-1 cache / sha256 manifest still applies. Re-runs skip files whose ETag / Last-Modified did not
+# change (state in <CACHE_DIR>/downloads.json).
+#
+# Politeness: generic User-Agent, <= 1 request/s per host, 429 Retry-After honoured, robots.txt respected.
+# PSI datasets need a login: download those by hand (login is never automated); direct CSV URLs work below.
+
+# NTRS citation ids (https://ntrs.nasa.gov/citations/<id>). Each PDF is saved as corpus/<id>.pdf,
+# so doc_id = citation id and citations stay stable. Placeholders: replace with the ids you need.
+ntrs:
+  - "20205004657"   # placeholder: Effects of Confinement on Flame Spread in Microgravity (ICES 2020)
+  - "20150008962"   # placeholder: Concurrent flame growth/spread over composite fabric (Saffire)
+
+# Direct URLs. `to` is where the file goes inside --source:
+#   corpus     -> NTRS-style documents (pdf / md / txt)
+#   iss_pages  -> ISS investigation pages (md / txt)
+#   .          -> the --source root (e.g. a run CSV; then pass --runs-file <its name>)
+urls:
+  - url: "https://example.org/path/to/official_runs.csv"   # placeholder
+    to: .
