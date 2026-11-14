@@ -7,7 +7,6 @@ import {
   FileText,
   FlaskConical,
   Search,
-  Sparkles,
   X,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -160,7 +159,6 @@ export function ResourcesView() {
           {/* Suggested keyword pills */}
           <div className="space-y-1.5">
             <span className="text-muted inline-flex items-center gap-1 font-mono text-[11px] uppercase">
-              <Sparkles aria-hidden className="text-accent size-3" />
               Popular keywords:
             </span>
             <div className="flex flex-wrap gap-1.5">
@@ -216,18 +214,26 @@ export function ResourcesView() {
             </div>
 
             <p role="status" className="text-muted font-mono text-xs">
-              {isPending
-                ? "Loading resource catalog…"
-                : hasKeywords
-                  ? `${results.length} relevant ${results.length === 1 ? "resource" : "resources"} for “${query.trim()}”`
-                  : `Showing all ${results.length} resources in catalog`}
+              {!hasKeywords
+                ? "Type keywords above to search resources"
+                : isPending
+                  ? "Searching resources…"
+                  : `${results.length} relevant ${results.length === 1 ? "resource" : "resources"} for “${query.trim()}”`}
             </p>
           </div>
         </CardBody>
       </Card>
 
       {/* Results list */}
-      {isPending ? (
+      {!hasKeywords ? (
+        <Card>
+          <EmptyState
+            icon={Search}
+            title="Start searching resources"
+            description="Type keywords in the search bar above or pick a popular keyword to view relevant resources."
+          />
+        </Card>
+      ) : isPending ? (
         <div className="space-y-4" aria-busy="true">
           {[1, 2, 3].map((n) => (
             <Card key={n}>

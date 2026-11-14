@@ -133,8 +133,8 @@ function countOccurrences(haystackLower: string, term: string): number {
 
 /**
  * Filter and rank corpus documents against user-typed keywords.
- * When the query has no keywords, returns all documents (filtered by sourceFilter)
- * with a default overview snippet from page 1.
+ * Returns an empty list when the query contains no keywords so no resources are
+ * shown until the user types a search query.
  */
 export function searchResources(
   docs: readonly DocumentSummary[],
@@ -150,27 +150,7 @@ export function searchResources(
   const normalizedPhrase = query.trim().toLowerCase();
 
   if (terms.length === 0) {
-    return pool.map((doc) => {
-      const firstPage = doc.pages?.[0];
-      const firstSec = firstPage?.sections?.[0];
-      const pageSnippets: PageMatchSnippet[] = firstSec
-        ? [
-            {
-              page: firstPage.page,
-              section: firstSec.section,
-              snippet: buildSnippet(firstSec.text, [], 220),
-              matchCount: 0,
-            },
-          ]
-        : [];
-      return {
-        doc,
-        score: 0,
-        matchedTerms: [],
-        matchedFields: [],
-        pageSnippets,
-      };
-    });
+    return [];
   }
 
   const results: ResourceSearchResult[] = [];
