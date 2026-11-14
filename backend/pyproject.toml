@@ -18,6 +18,7 @@ dependencies = [
     "pyyaml",
     "sentence-transformers",
     "anyio",
+    "openai",
 ]
 
 [project.optional-dependencies]
