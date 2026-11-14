@@ -17,6 +17,8 @@ mkdir -p data/official_drop/corpus
 # copy the official test matrices, telemetry and NTRS PDFs into data/official_drop/
 ```
 Rehearse first with the deliberately messy proxy file: `make ingest-drill` (psia, ft/min, extra columns, dry run).
+The drop folder `backend/data/seed/` is empty by default; copying the drop there lets `make seed` and the Docker stack
+pick it up. Full reference: [INGESTION_GUIDE.md](INGESTION_GUIDE.md).
 
 ## Step 2: Map headers in `column_map.yaml` (`T+5 min`)
 Inspect the headers of the official CSV:

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import Any
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 if str(BACKEND_DIR) not in sys.path:
@@ -15,9 +16,11 @@ from app.rag.scope import DOMAIN_KEYWORDS  # noqa: E402
 from app.repositories.snapshot.repos import SnapshotDocumentRepo  # noqa: E402
 from app.repositories.snapshot.store import get_snapshot_store  # noqa: E402
 
+PROXY_DIR = BACKEND_DIR / "tests" / "fixtures" / "proxy"
+
 
 def test_challenge_corpus_documents_parse_cleanly() -> None:
-    corpus_dir = BACKEND_DIR / "data" / "seed" / "corpus"
+    corpus_dir = PROXY_DIR / "corpus"
     paths = sorted(corpus_dir.glob("*.md"))
     docs = parse_documents(paths)
     doc_ids = {d.doc_id for d in docs}
@@ -53,8 +56,21 @@ def test_scope_includes_challenge_resource_keywords() -> None:
         assert kw in DOMAIN_KEYWORDS
 
 
-def test_snapshot_document_repo_returns_full_pages_and_links() -> None:
-    repo = SnapshotDocumentRepo(get_snapshot_store())
+def test_snapshot_document_repo_returns_full_pages_and_links(tmp_path: Path, monkeypatch: Any) -> None:
+    # Build the snapshot from the proxy fixtures, independent of any local data/.cache/store.json.
+    from app.core.config import get_settings
+
+    monkeypatch.setenv("SNAPSHOT_PATH", str(tmp_path / "missing_store.json"))
+    monkeypatch.setenv("SEED_DIR", str(PROXY_DIR))
+    get_settings.cache_clear()
+    get_snapshot_store.cache_clear()
+    try:
+        store = get_snapshot_store()
+    finally:
+        get_settings.cache_clear()
+        get_snapshot_store.cache_clear()
+    assert store.source == "seed"
+    repo = SnapshotDocumentRepo(store)
     summaries = asyncio.run(repo.list_all())
     assert len(summaries) >= 8
     doc3 = asyncio.run(repo.get_detail("DOC-03"))

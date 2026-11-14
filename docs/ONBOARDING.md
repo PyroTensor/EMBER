@@ -30,7 +30,8 @@ cd backend
 cp .env.example .env            # DB credentials, LLM provider (heuristic needs no key), CORS origins
 make setup                      # uv sync
 make db-up && make migrate      # Postgres + pgvector, schema via Alembic
-make seed                       # ingest data/seed → Postgres + data/.cache/store.json
+make seed-proxy                 # synthetic demo data → Postgres + data/.cache/store.json
+                                # (real data: drop it in backend/data/seed, then `make seed`; see INGESTION_GUIDE.md)
 make dev                        # :8000 with reload
 ```
 If Postgres is down, the API falls back to the local snapshot `data/.cache/store.json`, so you can keep working.

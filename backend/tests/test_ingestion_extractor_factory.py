@@ -22,7 +22,7 @@ from app.ingestion.stages.llm_extract import (  # noqa: E402
 )
 from app.schemas.enums import Program  # noqa: E402
 
-BASS_II_MD = BACKEND_DIR / "data" / "seed" / "iss_pages" / "bass_ii.md"
+BASS_II_MD = BACKEND_DIR / "tests" / "fixtures" / "proxy" / "iss_pages" / "bass_ii.md"
 
 
 @pytest.fixture(autouse=True)

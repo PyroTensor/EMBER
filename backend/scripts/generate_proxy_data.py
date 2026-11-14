@@ -1,6 +1,7 @@
 """Generate EMBER proxy data (Phase 1, pre-Nov 14).
 
-Outputs (all in backend/data/seed/):
+Outputs (all in backend/tests/fixtures/proxy/: the synthetic dataset for tests, CI, eval, `make seed-proxy`;
+backend/data/seed/ is kept empty as the drop folder for real data):
   experiments_proxy.csv / .json   50 schema_v1 test runs (BASS-II, SoFIE, FLEX, ACME)
   telemetry_proxy.json            time-series curves per run
   raw_drop_example.csv            deliberately messy "official-looking" file to rehearse the Nov 14 adapter
@@ -26,7 +27,7 @@ from pathlib import Path
 from typing import Any
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
-OUT = BACKEND_DIR / "data" / "seed"
+OUT = BACKEND_DIR / "tests" / "fixtures" / "proxy"
 SCHEMA = BACKEND_DIR.parent / "contracts" / "schema_v1.json"
 SEED = 1114  # Nov 14 :)
 

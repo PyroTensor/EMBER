@@ -200,7 +200,14 @@ async def run(
             log("parse", f"  skipped {Path(path).name}: {reason}")
     run_paths = _resolve_run_files(runs_file, files, cached, telemetry_file)
     if not run_paths:
-        log("parse", f"ERROR runs file '{runs_file}' not found in {source}")
+        if runs_file == DEFAULT_RUNS_FILE:
+            log(
+                "parse",
+                f"ERROR no runs file (CSV/JSON) found in {source}. Put a data drop there or pass --source / "
+                "--runs-file (synthetic demo data: `make seed-proxy`)",
+            )
+        else:
+            log("parse", f"ERROR runs file '{runs_file}' not found in {source}")
         return 1
     raw_rows: list[dict[str, Any]] = []
     row_origins: list[tuple[str, int]] = []  # (run file name, 1-based data row) per raw row (I10 findings)
