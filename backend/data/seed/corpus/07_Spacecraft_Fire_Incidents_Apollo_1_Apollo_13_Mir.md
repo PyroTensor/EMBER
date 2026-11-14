@@ -7,6 +7,7 @@ fuel: [Cotton-Fiberglass, Nomex, PMMA]
 o2_range: [21, 100]
 pressure_kpa: [29.6, 115.1]
 gravity: [0.0, 1.0]
+url: "https://sma.nasa.gov/sma-disciplines/accllp/apollo-1"
 sources:
   - "https://sma.nasa.gov/sma-disciplines/accllp/apollo-1"
   - "https://sma.nasa.gov/sma-disciplines/accllp/apollo-13"

@@ -7,6 +7,7 @@ fuel: [Nomex, Cotton-Fiberglass]
 o2_range: [21, 100]
 pressure_kpa: [101.3]
 gravity: [0.0, 1.0]
+url: "https://spinoff.nasa.gov/node/9582"
 sources:
   - "https://spinoff.nasa.gov/node/9582"
   - "https://spinoff.nasa.gov/node/9407"

@@ -22,8 +22,10 @@ from app.embeddings.factory import get_embedder
 from app.llm.factory import get_llm_provider
 from app.rag.toolkit import RagToolkit
 from app.repositories.chunk_repo import PgChunkRepository
+from app.repositories.document_repo import PgDocumentRepository
 from app.repositories.interfaces import (
     ChunkSearcher,
+    DocumentReader,
     PresetReader,
     StatsReader,
     TelemetryReader,
@@ -33,6 +35,7 @@ from app.repositories.pg import PgRepos
 from app.repositories.preset_repo import PgPresetRepository
 from app.repositories.snapshot.repos import (
     SnapshotChunkRepo,
+    SnapshotDocumentRepo,
     SnapshotPresetRepo,
     SnapshotStats,
     SnapshotTelemetryRepo,
@@ -43,6 +46,7 @@ from app.repositories.telemetry_repo import PgTelemetryRepository
 from app.repositories.test_run_repo import PgTestRunRepository
 from app.services.cabin_service import CabinService
 from app.services.copilot_service import CopilotService
+from app.services.document_service import DocumentService
 from app.services.experiment_service import ExperimentService
 from app.services.health_service import HealthService
 from app.services.preset_service import PresetService
@@ -95,11 +99,18 @@ async def get_chunk_searcher(availability: AvailabilityDep, session: ROSessionDe
     return SnapshotChunkRepo(await _snapshot())
 
 
+async def get_document_reader(availability: AvailabilityDep, session: ROSessionDep) -> DocumentReader:
+    if await availability.is_up():
+        return PgDocumentRepository(session)
+    return SnapshotDocumentRepo(await _snapshot())
+
+
 StatsReaderDep = Annotated[StatsReader, Depends(get_stats_reader)]
 PresetReaderDep = Annotated[PresetReader, Depends(get_preset_reader)]
 TestRunReaderDep = Annotated[TestRunReader, Depends(get_test_run_reader)]
 TelemetryReaderDep = Annotated[TelemetryReader, Depends(get_telemetry_reader)]
 ChunkSearcherDep = Annotated[ChunkSearcher, Depends(get_chunk_searcher)]
+DocumentReaderDep = Annotated[DocumentReader, Depends(get_document_reader)]
 
 
 async def get_health_service(availability: AvailabilityDep, stats: StatsReaderDep) -> HealthService:
@@ -148,6 +159,13 @@ def get_telemetry_service(reader: TelemetryReaderDep) -> TelemetryService:
 TelemetryServiceDep = Annotated[TelemetryService, Depends(get_telemetry_service)]
 
 
+def get_document_service(reader: DocumentReaderDep) -> DocumentService:
+    return DocumentService(reader)
+
+
+DocumentServiceDep = Annotated[DocumentService, Depends(get_document_service)]
+
+
 def get_rag_toolkit(runs: TestRunReaderDep, chunks: ChunkSearcherDep) -> RagToolkit:
     return RagToolkit(
         runs=runs,
@@ -172,6 +190,8 @@ __all__ = [
     "CabinServiceDep",
     "CopilotServiceDep",
     "ChunkSearcherDep",
+    "DocumentReaderDep",
+    "DocumentServiceDep",
     "ExperimentServiceDep",
     "HealthServiceDep",
     "PresetReaderDep",
@@ -187,6 +207,8 @@ __all__ = [
     "get_availability",
     "get_cabin_service",
     "get_chunk_searcher",
+    "get_document_reader",
+    "get_document_service",
     "get_experiment_service",
     "get_health_service",
     "get_preset_reader",

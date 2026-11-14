@@ -4,6 +4,10 @@ title: "ISS Investigation: Burning and Suppression of Solids - II (BASS-II)"
 source_type: iss_page
 investigation: BASS-II
 proxy: true
+url: "https://psi.nasa.gov/physci/repo/search?q=BASS-II"
+sources:
+  - "https://psi.nasa.gov/physci/repo/search?q=BASS-II"
+  - "https://www.nasa.gov/missions/station/a-researchers-guide-to-combustion-science/"
 ---
 <!-- page: 1 -->
 # Burning and Suppression of Solids - II (BASS-II)

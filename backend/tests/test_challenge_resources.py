@@ -7,9 +7,13 @@ BACKEND_DIR = Path(__file__).resolve().parents[1]
 if str(BACKEND_DIR) not in sys.path:
     sys.path.insert(0, str(BACKEND_DIR))
 
+import asyncio  # noqa: E402
+
 from app.ingestion.stages.normalize import normalize_rows  # noqa: E402
 from app.ingestion.stages.parse import parse_documents  # noqa: E402
 from app.rag.scope import DOMAIN_KEYWORDS  # noqa: E402
+from app.repositories.snapshot.repos import SnapshotDocumentRepo  # noqa: E402
+from app.repositories.snapshot.store import get_snapshot_store  # noqa: E402
 
 
 def test_challenge_corpus_documents_parse_cleanly() -> None:
@@ -47,3 +51,16 @@ def test_psi_investigation_aliases_preserve_code() -> None:
 def test_scope_includes_challenge_resource_keywords() -> None:
     for kw in ("apollo", "mir", "saffire", "spice", "slice", "same", "daft", "spinoff", "firefighter"):
         assert kw in DOMAIN_KEYWORDS
+
+
+def test_snapshot_document_repo_returns_full_pages_and_links() -> None:
+    repo = SnapshotDocumentRepo(get_snapshot_store())
+    summaries = asyncio.run(repo.list_all())
+    assert len(summaries) >= 8
+    doc3 = asyncio.run(repo.get_detail("DOC-03"))
+    assert doc3 is not None
+    assert doc3["doc_id"] == "DOC-03"
+    assert doc3["url"]
+    assert len(doc3["sources"]) >= 1
+    assert len(doc3["pages"]) == 3
+    assert "EXP-0031" in doc3["related_experiment_ids"]

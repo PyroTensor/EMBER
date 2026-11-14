@@ -12,6 +12,7 @@ import builtins
 from typing import Any
 
 from app.core.constants import HYBRID_CANDIDATES, RRF_K
+from app.repositories.document_repo import build_pages, extract_doc_meta
 from app.repositories.snapshot.store import SnapshotStore
 from app.schemas.experiment import ExperimentFilters
 
@@ -144,8 +145,41 @@ class SnapshotChunkRepo:
         ]
 
 
+class SnapshotDocumentRepo:
+    def __init__(self, store: SnapshotStore) -> None:
+        self.store = store
+
+    async def list_all(self) -> list[dict[str, Any]]:
+        docs = sorted(self.store.documents, key=lambda d: str(d["doc_id"]))
+        chunks_by_doc: dict[str, list[dict[str, Any]]] = {}
+        for ch in self.store.chunks:
+            chunks_by_doc.setdefault(str(ch["doc_id"]), []).append(ch)
+        return [extract_doc_meta(d, chunks_by_doc.get(str(d["doc_id"]), [])) for d in docs]
+
+    async def get_detail(self, doc_id: str) -> dict[str, Any] | None:
+        doc_row = next((d for d in self.store.documents if str(d["doc_id"]) == doc_id), None)
+        if doc_row is None:
+            return None
+        chunks = sorted(
+            (c for c in self.store.chunks if str(c["doc_id"]) == doc_id),
+            key=lambda c: (int(c.get("page") or 1), int(c.get("id") or 0)),
+        )
+        related_runs = sorted(
+            str(r["experiment_id"])
+            for r in self.store.test_runs
+            if str(r.get("source_doc_id") or "") == doc_id
+        )
+        summary = extract_doc_meta(doc_row, chunks)
+        return {
+            **summary,
+            "pages": build_pages(chunks, summary["page_count"]),
+            "related_experiment_ids": related_runs,
+        }
+
+
 __all__ = [
     "SnapshotChunkRepo",
+    "SnapshotDocumentRepo",
     "SnapshotPresetRepo",
     "SnapshotStats",
     "SnapshotTelemetryRepo",

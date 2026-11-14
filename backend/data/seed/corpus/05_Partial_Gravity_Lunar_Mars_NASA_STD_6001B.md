@@ -8,6 +8,11 @@ o2_range: [21, 40]
 pressure_kpa: [48, 101.3]
 gravity: [0.16, 0.38]
 proxy: true
+url: "https://www.nasa.gov/missions/station/a-researchers-guide-to-combustion-science/"
+sources:
+  - "https://www.nasa.gov/missions/station/a-researchers-guide-to-combustion-science/"
+  - "https://www.nasa.gov/glenn/glenn-expertise-space-exploration/physical-sciences-program/combustion-science/"
+  - "https://psi.nasa.gov/physci/repo/search?q=combustion"
 ---
 <!-- page: 1 -->
 # Partial Gravity Flammability and NASA-STD-6001B Material Screening

@@ -8,6 +8,11 @@ o2_range: [18, 30]
 pressure_kpa: [60, 101.3]
 gravity: [0.0]
 proxy: true
+url: "https://psi.nasa.gov/physci/repo/search?q=ACME"
+sources:
+  - "https://psi.nasa.gov/physci/repo/search?q=ACME"
+  - "https://www.nasa.gov/glenn/glenn-expertise-space-exploration/physical-sciences-program/combustion-science/"
+  - "https://www.nasa.gov/missions/station/a-researchers-guide-to-combustion-science/"
 ---
 <!-- page: 1 -->
 # Spherical Gaseous Diffusion Flames, Soot and Extinction Limits

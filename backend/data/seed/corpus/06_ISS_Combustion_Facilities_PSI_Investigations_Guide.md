@@ -7,6 +7,7 @@ fuel: [PMMA, Cotton-Fiberglass, Nomex, Heptane, Methanol]
 o2_range: [15, 85]
 pressure_kpa: [29.6, 101.3]
 gravity: [0.0, 0.16, 0.38]
+url: "https://www.nasa.gov/missions/station/a-researchers-guide-to-combustion-science/"
 sources:
   - "https://psi.nasa.gov/physci/repo/search?q=combustion"
   - "https://www.nasa.gov/glenn/glenn-expertise-space-exploration/physical-sciences-program/combustion-science/"

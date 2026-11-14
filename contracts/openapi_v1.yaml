@@ -94,6 +94,31 @@ paths:
         "404": { description: Unknown experiment, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
         "422": { description: Validation error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
         "500": { description: Internal server error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+  /api/documents:
+    get:
+      summary: All source documents and papers in the corpus
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/DocumentSummary" }
+        "422": { description: Validation error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+        "500": { description: Internal server error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+  /api/documents/{doc_id}:
+    get:
+      summary: Full multi-page content and metadata for one source document
+      parameters:
+        - { name: doc_id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DocumentDetail" }
+        "404": { description: Unknown document, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+        "422": { description: Validation error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+        "500": { description: Internal server error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
   /api/copilot/ask:
     post:
       summary: Grounded RAG question answering (LangGraph)
@@ -223,6 +248,48 @@ components:
           items: { type: number }
         radiative_heat_flux_kw_m2: { type: array, items: { type: number } }
         flame_temp_k: { type: array, items: { type: number } }
+
+    DocumentSection:
+      type: object
+      required: [section, text]
+      properties:
+        section: { type: string }
+        text: { type: string }
+
+    DocumentPage:
+      type: object
+      required: [page]
+      properties:
+        page: { type: integer }
+        sections:
+          type: array
+          items: { $ref: "#/components/schemas/DocumentSection" }
+
+    DocumentSummary:
+      type: object
+      required: [doc_id, title, source_type, page_count]
+      properties:
+        doc_id: { type: string }
+        title: { type: string }
+        source_type: { type: string }
+        investigation: { type: ["string", "null"] }
+        url: { type: ["string", "null"] }
+        sources:
+          type: array
+          items: { type: string }
+        page_count: { type: integer }
+
+    DocumentDetail:
+      allOf:
+        - $ref: "#/components/schemas/DocumentSummary"
+        - type: object
+          properties:
+            pages:
+              type: array
+              items: { $ref: "#/components/schemas/DocumentPage" }
+            related_experiment_ids:
+              type: array
+              items: { type: string }
 
     AskRequest:
       type: object
