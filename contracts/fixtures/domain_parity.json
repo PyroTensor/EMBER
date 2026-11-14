@@ -1410,7 +1410,7 @@
         "diluent_gas": "N2"
       },
       "evaluation": {
-        "risk_index": 97.5,
+        "risk_index": 97.48,
         "risk_band": "CRITICAL",
         "baseline_risk": 47.8,
         "predicted_regime": "Sustained Burn",
@@ -1420,7 +1420,7 @@
           {
             "feature": "oxygen_enrichment",
             "label": "Oxygen concentration",
-            "value": 57.3
+            "value": 57.29
           },
           {
             "feature": "cabin_pressure_density",
@@ -1493,7 +1493,7 @@
         "diluent_gas": "N2"
       },
       "evaluation": {
-        "risk_index": 97.5,
+        "risk_index": 97.45,
         "risk_band": "CRITICAL",
         "baseline_risk": 47.8,
         "predicted_regime": "Sustained Burn",
@@ -1503,7 +1503,7 @@
           {
             "feature": "oxygen_enrichment",
             "label": "Oxygen concentration",
-            "value": 59.36
+            "value": 59.35
           },
           {
             "feature": "cabin_pressure_density",
@@ -1586,7 +1586,7 @@
           {
             "feature": "oxygen_enrichment",
             "label": "Oxygen concentration",
-            "value": 39.35
+            "value": 39.34
           },
           {
             "feature": "cabin_pressure_density",
@@ -1659,7 +1659,7 @@
         "diluent_gas": "N2"
       },
       "evaluation": {
-        "risk_index": 73.1,
+        "risk_index": 73.07,
         "risk_band": "HIGH",
         "baseline_risk": 47.8,
         "predicted_regime": "Sustained Burn",
@@ -1742,7 +1742,7 @@
         "diluent_gas": "N2"
       },
       "evaluation": {
-        "risk_index": 25.3,
+        "risk_index": 25.31,
         "risk_band": "ELEVATED",
         "baseline_risk": 47.8,
         "predicted_regime": "Sustained Burn",
@@ -1752,7 +1752,7 @@
           {
             "feature": "ventilation_coupling",
             "label": "HVAC ventilation flow",
-            "value": -29.52
+            "value": -29.53
           },
           {
             "feature": "material_flammability_intrinsic",
@@ -1825,7 +1825,7 @@
         "diluent_gas": "N2"
       },
       "evaluation": {
-        "risk_index": 56.6,
+        "risk_index": 56.56,
         "risk_band": "HIGH",
         "baseline_risk": 47.8,
         "predicted_regime": "Sustained Burn",
@@ -1835,7 +1835,7 @@
           {
             "feature": "material_flammability_intrinsic",
             "label": "Material & diluent",
-            "value": 8.3
+            "value": 8.29
           },
           {
             "feature": "ventilation_coupling",
@@ -1908,7 +1908,7 @@
         "diluent_gas": "N2"
       },
       "evaluation": {
-        "risk_index": 39.7,
+        "risk_index": 39.73,
         "risk_band": "ELEVATED",
         "baseline_risk": 47.8,
         "predicted_regime": "Sustained Burn",
@@ -1918,7 +1918,7 @@
           {
             "feature": "ventilation_coupling",
             "label": "HVAC ventilation flow",
-            "value": -16.04
+            "value": -16.05
           },
           {
             "feature": "material_flammability_intrinsic",
@@ -1991,7 +1991,7 @@
         "diluent_gas": "N2"
       },
       "evaluation": {
-        "risk_index": 56.2,
+        "risk_index": 56.25,
         "risk_band": "HIGH",
         "baseline_risk": 47.8,
         "predicted_regime": "Cool Flame",
@@ -2001,7 +2001,7 @@
           {
             "feature": "material_flammability_intrinsic",
             "label": "Material & diluent",
-            "value": 35.91
+            "value": 35.9
           },
           {
             "feature": "ventilation_coupling",
@@ -2074,7 +2074,7 @@
         "diluent_gas": "CO2"
       },
       "evaluation": {
-        "risk_index": 13.3,
+        "risk_index": 13.33,
         "risk_band": "LOW",
         "baseline_risk": 47.8,
         "predicted_regime": "Self-Extinguished",
@@ -2157,7 +2157,7 @@
         "diluent_gas": "He"
       },
       "evaluation": {
-        "risk_index": 78.2,
+        "risk_index": 78.21,
         "risk_band": "CRITICAL",
         "baseline_risk": 47.8,
         "predicted_regime": "Sustained Burn",
@@ -2167,7 +2167,7 @@
           {
             "feature": "oxygen_enrichment",
             "label": "Oxygen concentration",
-            "value": 39.35
+            "value": 39.33
           },
           {
             "feature": "cabin_pressure_density",
@@ -2240,7 +2240,7 @@
         "diluent_gas": "Ar"
       },
       "evaluation": {
-        "risk_index": 45.2,
+        "risk_index": 45.17,
         "risk_band": "ELEVATED",
         "baseline_risk": 47.8,
         "predicted_regime": "Sustained Burn",
@@ -2250,7 +2250,7 @@
           {
             "feature": "gravity_buoyancy_regime",
             "label": "Gravity / buoyancy",
-            "value": -10.8
+            "value": -10.81
           },
           {
             "feature": "material_flammability_intrinsic",
@@ -2323,7 +2323,7 @@
         "diluent_gas": "N2"
       },
       "evaluation": {
-        "risk_index": 20.8,
+        "risk_index": 20.83,
         "risk_band": "LOW",
         "baseline_risk": 47.8,
         "predicted_regime": "Self-Extinguished",
@@ -2333,7 +2333,7 @@
           {
             "feature": "oxygen_enrichment",
             "label": "Oxygen concentration",
-            "value": -26.96
+            "value": -26.97
           },
           {
             "feature": "ventilation_coupling",

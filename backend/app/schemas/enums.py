@@ -12,6 +12,7 @@ class Program(StrEnum):
     SOFIE = "SoFIE"
     FLEX = "FLEX"
     ACME = "ACME"
+    SAFFIRE = "Saffire"
 
 
 class FuelMaterial(StrEnum):

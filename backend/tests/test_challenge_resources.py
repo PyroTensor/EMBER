@@ -38,7 +38,7 @@ def test_psi_investigation_aliases_preserve_code() -> None:
     ]
     normalized = normalize_rows(rows)
 
-    assert normalized[0]["program"] == "SoFIE"
+    assert normalized[0]["program"] == "Saffire"
     assert normalized[0]["extra_telemetry"]["psi_investigation_code"] == "Saffire-II"
     assert normalized[1]["program"] == "ACME"
     assert normalized[1]["extra_telemetry"]["psi_investigation_code"] == "CFI-G"

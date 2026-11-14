@@ -19,7 +19,7 @@
     "program": {
       "type": "string",
       "description": "Parent NASA investigation.",
-      "enum": ["BASS-II", "SoFIE", "FLEX", "ACME"]
+      "enum": ["BASS-II", "SoFIE", "FLEX", "ACME", "Saffire"]
     },
     "fuel_material": {
       "type": "string",
@@ -35,11 +35,11 @@
       "description": "Gravity level in Earth g. Canonical values: 0.0 (microgravity), 0.16 (Lunar), 0.38 (Mars), 1.0 (Earth)."
     },
     "oxygen_pct": {
-      "type": "number", "minimum": 15.0, "maximum": 40.0,
+      "type": "number", "minimum": 10.0, "maximum": 60.0,
       "description": "Ambient O2 mole fraction in percent."
     },
     "pressure_kpa": {
-      "type": "number", "minimum": 40.0, "maximum": 101.3,
+      "type": "number", "minimum": 20.0, "maximum": 150.0,
       "description": "Ambient absolute pressure in kPa."
     },
     "flow_velocity_cm_s": {
