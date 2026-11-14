@@ -24,9 +24,6 @@ export function CabinView() {
     <div className="mx-auto max-w-6xl space-y-4 p-4 sm:p-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-1">
-          <p className="text-muted font-mono text-[11px] tracking-wide">
-            MODULE 01
-          </p>
           <h1 className="text-xl font-semibold">Cabin Configurator</h1>
           <p className="text-muted max-w-2xl text-sm">
             Tune the habitat atmosphere and see the fire-risk index, the
@@ -45,14 +42,14 @@ export function CabinView() {
 
       {presets.isPending ? (
         <div
-          className="grid gap-4 md:grid-cols-2"
+          className="grid gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]"
           role="status"
           aria-busy="true"
         >
           <span className="sr-only">Loading presets…</span>
+          <Skeleton className="h-[40rem] lg:row-span-2" />
           <Skeleton className="h-64" />
-          <Skeleton className="h-64" />
-          <Skeleton className="h-72 md:col-span-2" />
+          <Skeleton className="h-72" />
         </div>
       ) : presets.isError ? (
         <ErrorState
@@ -88,19 +85,40 @@ function CabinWorkspace({ presets }: { presets: Preset[] }) {
   const updating = evaluation.isFetching && !!data;
 
   return (
-    <div className="space-y-4">
-      <div
-        className="grid items-start gap-4 lg:grid-cols-2 [&>*]:min-w-0"
-        aria-live="polite"
-        aria-busy={evaluation.isFetching}
-      >
-        <Card>
+    <div
+      className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] [&>*]:min-w-0"
+      aria-live="polite"
+      aria-busy={evaluation.isFetching}
+    >
+      <Card>
+        <CardHeader
+          title="Configuration"
+          subtitle="Preset or hand-tuned cabin atmosphere"
+        />
+        <CardBody className="space-y-4">
+          <PresetPicker
+            presets={presets}
+            value={selected}
+            onSelect={(p) => {
+              selectPreset(p, presetId(p, presets.indexOf(p)));
+            }}
+          />
+          <CabinControls
+            cfg={cfg}
+            onChange={(field, value) => {
+              updateField(field, value);
+            }}
+          />
+        </CardBody>
+      </Card>
+      <div className="grid min-w-0 gap-4 lg:grid-rows-[auto_1fr]">
+        <Card className="flex flex-col">
           <CardHeader
             title="Fire risk"
             subtitle="Spacecraft Fire Risk Index (0–100)"
             action={updating ? <Spinner size="sm" label="Updating…" /> : null}
           />
-          <CardBody>
+          <CardBody className="flex-1">
             {evaluation.isError ? (
               <ErrorState
                 title="Couldn't evaluate this cabin"
@@ -151,27 +169,6 @@ function CabinWorkspace({ presets }: { presets: Preset[] }) {
           </CardBody>
         </Card>
       </div>
-      <Card>
-        <CardHeader
-          title="Configuration"
-          subtitle="Preset or hand-tuned cabin atmosphere"
-        />
-        <CardBody className="space-y-4">
-          <PresetPicker
-            presets={presets}
-            value={selected}
-            onSelect={(p) => {
-              selectPreset(p, presetId(p, presets.indexOf(p)));
-            }}
-          />
-          <CabinControls
-            cfg={cfg}
-            onChange={(field, value) => {
-              updateField(field, value);
-            }}
-          />
-        </CardBody>
-      </Card>
     </div>
   );
 }

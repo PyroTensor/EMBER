@@ -65,9 +65,6 @@ export function RankingView() {
   return (
     <div className="mx-auto max-w-7xl space-y-4 p-4 sm:p-6">
       <header className="space-y-1">
-        <p className="text-muted font-mono text-[11px] tracking-wide">
-          MODULE 03
-        </p>
         <h1 className="text-xl font-semibold">Ranking &amp; Telemetry</h1>
         <p className="text-muted max-w-2xl text-sm">
           Score every test run against a habitat scenario. Tune how much

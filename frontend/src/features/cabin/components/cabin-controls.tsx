@@ -22,7 +22,7 @@ interface CabinControlsProps {
 /** Sliders for the 4 numeric fields and selects for material / diluent, all driven by field-meta. */
 export function CabinControls({ cfg, onChange }: CabinControlsProps) {
   return (
-    <div className="grid gap-x-6 gap-y-4 md:grid-cols-2">
+    <div className="grid gap-y-4">
       {NUMERIC_FIELDS.map((field: NumericField) => {
         const meta = FIELD_META[field];
         return (
@@ -40,7 +40,7 @@ export function CabinControls({ cfg, onChange }: CabinControlsProps) {
           />
         );
       })}
-      <div className="grid gap-4 sm:grid-cols-2 md:col-span-2">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
         <Select<FuelMaterial>
           label="Fuel material"
           value={cfg.fuel_material as FuelMaterial}
