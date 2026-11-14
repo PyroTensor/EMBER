@@ -21,6 +21,7 @@ class DocumentSummary(APIModel):
     doc_id: str
     title: str
     source_type: str
+    is_proxy: bool | None = None
     investigation: str | None = None
     url: str | None = None
     sources: list[str] = Field(default_factory=list)

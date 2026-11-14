@@ -274,6 +274,7 @@ components:
         doc_id: { type: string }
         title: { type: string }
         source_type: { type: string }
+        is_proxy: { type: ["boolean", "null"] }
         investigation: { type: ["string", "null"] }
         url: { type: ["string", "null"] }
         sources:

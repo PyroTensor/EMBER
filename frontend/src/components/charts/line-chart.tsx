@@ -29,6 +29,9 @@ interface LineChartProps {
   xFormat?: (value: number) => string;
   leftLabel?: string;
   rightLabel?: string;
+  /** Optional shared domains for side-by-side comparisons. */
+  xDomain?: Domain;
+  yDomain?: Domain;
   height?: number;
   className?: string;
 }
@@ -79,6 +82,8 @@ export function LineChart({
   xFormat = shortTick,
   leftLabel,
   rightLabel,
+  xDomain,
+  yDomain,
   height = 280,
   className,
 }: LineChartProps) {
@@ -96,12 +101,12 @@ export function LineChart({
   const plotT = M.top;
   const plotB = height - M.bottom;
 
-  const xExtent: Domain = x.length ? [Math.min(...x), Math.max(...x)] : [0, 1];
+  const xExtent: Domain = xDomain ?? (x.length ? [Math.min(...x), Math.max(...x)] : [0, 1]);
   const xScale = linearScale(xExtent, [plotL, plotR]);
   const xTicks = niceTicks(xExtent, Math.max(2, Math.floor((plotR - plotL) / 80)));
 
   const yCount = Math.max(2, Math.floor((plotB - plotT) / 50));
-  const leftDomain = niceDomain(extent(left) ?? [0, 1], yCount);
+  const leftDomain = niceDomain(yDomain ?? extent(left) ?? [0, 1], yCount);
   const rightDomain = niceDomain(extent(right) ?? [0, 1], yCount);
   const yLeft = linearScale(leftDomain, [plotB, plotT]);
   const yRight = linearScale(rightDomain, [plotB, plotT]);
