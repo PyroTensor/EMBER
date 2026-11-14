@@ -110,7 +110,7 @@ export function ResourcesView() {
     <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-8">
       <header className="space-y-1">
         <p className="text-muted font-mono text-[11px] tracking-wide">
-          MODULE 05
+          MODULE 04
         </p>
         <h1 className="text-xl font-semibold">Search Resources</h1>
         <p className="text-muted max-w-2xl text-sm">

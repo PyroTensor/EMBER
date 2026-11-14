@@ -73,7 +73,7 @@ export function CopilotView() {
     <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-8">
       <header className="space-y-1">
         <p className="text-muted font-mono text-[11px] tracking-wide">
-          MODULE 04
+          MODULE 05
         </p>
         <h1 className="text-xl font-semibold">SI Co-Pilot</h1>
         <p className="text-muted max-w-2xl text-sm">

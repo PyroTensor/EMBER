@@ -21,8 +21,8 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/cabin", label: "Cabin Configurator", icon: SlidersHorizontal, module: "01" },
   { href: "/twin", label: "Flame Twin", icon: Flame, module: "02" },
   { href: "/ranking", label: "Ranking & Telemetry", icon: ChartLine, module: "03" },
-  { href: "/copilot", label: "SI Co-Pilot", icon: BotMessageSquare, module: "04" },
-  { href: "/resources", label: "Search Resources", icon: Search, module: "05" },
+  { href: "/resources", label: "Search Resources", icon: Search, module: "04" },
+  { href: "/copilot", label: "SI Co-Pilot", icon: BotMessageSquare, module: "05" },
 ];
 
 export function isActive(href: string, pathname: string): boolean {
