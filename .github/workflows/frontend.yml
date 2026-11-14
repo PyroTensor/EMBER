@@ -35,6 +35,8 @@ jobs:
 
       - name: Generated API types match the contract
         run: |
+          cp src/lib/api/schema.d.ts /tmp/schema.before.d.ts
+          npx prettier --write /tmp/schema.before.d.ts
           npm run gen:api
           git show HEAD:frontend/src/lib/api/schema.d.ts \
             | npx prettier --parser typescript > /tmp/schema.tracked.d.ts
