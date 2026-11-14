@@ -38,8 +38,10 @@ jobs:
           cp src/lib/api/schema.d.ts /tmp/schema.before.d.ts
           npx prettier --write /tmp/schema.before.d.ts
           npm run gen:api
-          npx prettier --write src/lib/api/schema.d.ts
-          diff -u /tmp/schema.before.d.ts src/lib/api/schema.d.ts
+          git show HEAD:frontend/src/lib/api/schema.d.ts \
+            | npx prettier --parser typescript > /tmp/schema.tracked.d.ts
+          npx prettier --parser typescript src/lib/api/schema.d.ts > /tmp/schema.generated.d.ts
+          diff -u /tmp/schema.tracked.d.ts /tmp/schema.generated.d.ts
 
       - name: Lint
         run: npm run lint

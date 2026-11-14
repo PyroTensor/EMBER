@@ -4,6 +4,10 @@ title: "ISS Investigation: Advanced Combustion via Microgravity Experiments (ACM
 source_type: iss_page
 investigation: ACME
 proxy: true
+url: "https://psi.nasa.gov/physci/repo/search?q=ACME"
+sources:
+  - "https://psi.nasa.gov/physci/repo/search?q=ACME"
+  - "https://www.nasa.gov/glenn/glenn-expertise-space-exploration/physical-sciences-program/combustion-science/"
 ---
 <!-- page: 1 -->
 # Advanced Combustion via Microgravity Experiments (ACME)

@@ -8,6 +8,11 @@ o2_range: [16, 24]
 pressure_kpa: [101.3]
 gravity: [0.0]
 proxy: true
+url: "https://psi.nasa.gov/physci/repo/search?q=BASS-II"
+sources:
+  - "https://psi.nasa.gov/physci/repo/search?q=BASS-II"
+  - "https://www.nasa.gov/missions/station/a-researchers-guide-to-combustion-science/"
+  - "https://www.nasa.gov/glenn/glenn-expertise-space-exploration/physical-sciences-program/combustion-science/"
 ---
 <!-- page: 1 -->
 # Flame Spread over Thin Solids in Opposed and Concurrent Low-Speed Flow

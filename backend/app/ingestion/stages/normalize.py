@@ -133,7 +133,10 @@ def normalize_row(
         if field == "extra_telemetry":
             extra = {**value, **extra}
             continue
-        out[field] = _alias(field, value, aliases)
+        mapped = _alias(field, value, aliases)
+        if field == "program" and value is not None and mapped != value:
+            extra.setdefault("psi_investigation_code", str(value))
+        out[field] = mapped
 
     for f in ("oxygen_pct", "pressure_kpa", "flow_velocity_cm_s"):
         if isinstance(out.get(f), float):

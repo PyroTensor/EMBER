@@ -44,4 +44,16 @@ class ChunkSearcher(Protocol):
     ) -> list[dict[str, Any]]: ...
 
 
-__all__ = ["ChunkSearcher", "PresetReader", "StatsReader", "TelemetryReader", "TestRunReader"]
+class DocumentReader(Protocol):
+    async def list_all(self) -> list[dict[str, Any]]: ...
+    async def get_detail(self, doc_id: str) -> dict[str, Any] | None: ...
+
+
+__all__ = [
+    "ChunkSearcher",
+    "DocumentReader",
+    "PresetReader",
+    "StatsReader",
+    "TelemetryReader",
+    "TestRunReader",
+]

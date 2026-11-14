@@ -74,7 +74,24 @@ aliases:
   program:
     "BASS": BASS-II
     "BASS 2": BASS-II
+    "SPICE": BASS-II
+    "SLICE": BASS-II
+    "Saffire": SoFIE
+    "Saffire-I": SoFIE
+    "Saffire-II": SoFIE
+    "Saffire-III": SoFIE
+    "LUCI": SoFIE
+    "FM2": SoFIE
     "FLEX-2": FLEX
+    "CFI": FLEX
+    "BRE": ACME
+    "CFI-G": ACME
+    "E-FIELD": ACME
+    "E-FIELD Flames": ACME
+    "SAME": ACME
+    "SAME-R": ACME
+    "DAFT": ACME
+    "DAFT-2": ACME
   fuel_material:
     "SIBAL": Cotton-Fiberglass
     "cotton/fiberglass": Cotton-Fiberglass

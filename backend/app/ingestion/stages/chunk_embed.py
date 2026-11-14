@@ -17,7 +17,7 @@ from app.schemas.ingestion import Chunk, Document
 
 MAX_CHARS = 1100
 HEADING = re.compile(r"^(#{1,6})\s+(.+)$", re.MULTILINE)
-CHUNK_META_KEYS = ("investigation", "fuel", "o2_range", "pressure_kpa", "gravity", "proxy")
+CHUNK_META_KEYS = ("investigation", "fuel", "o2_range", "pressure_kpa", "gravity", "proxy", "url", "sources")
 
 
 def _split_sections(page_text: str, carry_section: str) -> list[tuple[str, str]]:
