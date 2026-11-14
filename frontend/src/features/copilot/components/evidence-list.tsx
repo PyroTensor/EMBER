@@ -92,7 +92,10 @@ export function EvidenceList({
                 const docMeta = docTarget
                   ? documentsById?.get(docTarget.docId)
                   : undefined;
-                const primaryUrl = docMeta?.url ?? docMeta?.sources?.[0];
+                const allSources =
+                  docMeta?.sources ?? (docMeta?.url ? [docMeta.url] : []);
+                const primaryUrl =
+                  allSources.find((s) => s.startsWith("http")) ?? allSources[0];
 
                 return (
                   <li

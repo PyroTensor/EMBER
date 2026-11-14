@@ -1,6 +1,6 @@
 "use client";
 
-import { BookOpen, ExternalLink, FileText } from "lucide-react";
+import { BookOpen, Download, ExternalLink, FileText } from "lucide-react";
 import type { AskResponse, DocumentSummary } from "@/lib/api/types";
 import { parseDocTag, tokenize } from "../lib/citations";
 import type { DocumentReaderTarget } from "./document-reader";
@@ -101,7 +101,9 @@ export function RelevantPapers({
         {refs.map(({ docId, citedPages, citedByAnswer }) => {
           const meta = documentsById.get(docId);
           const firstPage = citedPages[0];
-          const primaryUrl = meta?.url ?? meta?.sources?.[0];
+          const allSources = meta?.sources ?? (meta?.url ? [meta.url] : []);
+          const localPdf = allSources.find((s) => s.startsWith("/papers/"));
+          const primaryUrl = allSources.find((s) => s.startsWith("http"));
 
           return (
             <li
@@ -149,6 +151,18 @@ export function RelevantPapers({
                     <BookOpen aria-hidden className="size-3.5" />
                     Read paper
                   </button>
+                  {localPdf ? (
+                    <a
+                      href={localPdf}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      title="Open downloaded NASA PDF"
+                      className="inline-flex items-center gap-1 rounded border border-emerald-400/30 bg-emerald-400/10 px-2.5 py-1 font-mono text-xs text-emerald-300 transition-colors hover:bg-emerald-400/20"
+                    >
+                      NASA PDF
+                      <Download aria-hidden className="size-3" />
+                    </a>
+                  ) : null}
                   {primaryUrl ? (
                     <a
                       href={primaryUrl}
