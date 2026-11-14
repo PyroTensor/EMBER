@@ -2,6 +2,8 @@
 
 import { Card, CardBody } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
+import { PresetPicker } from "@/features/cabin";
+import type { Preset } from "@/lib/api/types";
 import type { FlameParams } from "../lib/flame-physics";
 import {
   DILUENT_OPTIONS,
@@ -16,11 +18,22 @@ import { ParamControl } from "./param-control";
 interface FlameControlsProps {
   params: FlameParams;
   speed: number;
+  presets?: readonly Preset[];
+  presetId?: string | null;
+  onSelectPreset?: (preset: Preset) => void;
   onChange: <K extends keyof FlameParams>(key: K, value: FlameParams[K]) => void;
   onSpeedChange: (speed: number) => void;
 }
 
-export function FlameControls({ params, speed, onChange, onSpeedChange }: FlameControlsProps) {
+export function FlameControls({
+  params,
+  speed,
+  presets,
+  presetId = null,
+  onSelectPreset,
+  onChange,
+  onSpeedChange,
+}: FlameControlsProps) {
   const gravityPreset = GRAVITY_PRESETS.find((g) => Math.abs(Number(g.value) - params.gravity_g) < 1e-9);
   const gravityOptions = gravityPreset
     ? GRAVITY_PRESETS
@@ -29,6 +42,11 @@ export function FlameControls({ params, speed, onChange, onSpeedChange }: FlameC
   return (
     <Card>
       <CardBody className="space-y-5 py-5">
+        {presets && presets.length > 0 && onSelectPreset ? (
+          <div className="border-b border-border pb-4">
+            <PresetPicker presets={presets} value={presetId} onSelect={onSelectPreset} />
+          </div>
+        ) : null}
         <ParamControl
           id="flame-o2"
           label="Oxygen (O₂)"

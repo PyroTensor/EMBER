@@ -64,6 +64,12 @@ interface CabinScenarioContextValue {
     field: K,
     value: CabinConfig[K],
   ) => void;
+  updateConfig: (
+    patch: Partial<CabinConfig>,
+    presetId?: string | null,
+    presetName?: string,
+  ) => void;
+  resetToDefault: () => void;
 }
 
 const CabinScenarioContext = createContext<CabinScenarioContextValue | null>(
@@ -140,6 +146,29 @@ export function CabinScenarioProvider({
     [],
   );
 
+  const updateConfig = useCallback(
+    (
+      patch: Partial<CabinConfig>,
+      presetId: string | null = null,
+      presetName = "Custom configuration",
+    ) => {
+      setState((prev) => ({
+        config: { ...prev.config, ...patch },
+        presetId,
+        presetName,
+      }));
+    },
+    [],
+  );
+
+  const resetToDefault = useCallback(() => {
+    setState({
+      config: { ...DEFAULT_CABIN_CONFIG },
+      presetId: DEFAULT_PRESET_ID,
+      presetName: DEFAULT_PRESET_NAME,
+    });
+  }, []);
+
   const value = useMemo<CabinScenarioContextValue>(
     () => ({
       config: state.config,
@@ -147,8 +176,10 @@ export function CabinScenarioProvider({
       presetName: state.presetName,
       selectPreset,
       updateField,
+      updateConfig,
+      resetToDefault,
     }),
-    [state, selectPreset, updateField],
+    [state, selectPreset, updateField, updateConfig, resetToDefault],
   );
 
   return (

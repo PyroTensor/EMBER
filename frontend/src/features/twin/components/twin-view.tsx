@@ -3,41 +3,124 @@
 import { useCallback, useMemo, useState } from "react";
 import { Flame, Pause, Play, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { computePhysics, type FlameParams } from "../lib/flame-physics";
+import { presetId as presetKey } from "@/features/cabin";
+import { usePresets } from "@/features/presets";
+import type { CabinConfig, Preset } from "@/lib/api/types";
+import { useCabinScenario } from "@/lib/cabin-scenario/cabin-scenario-context";
+import {
+  computePhysics,
+  type FlameParams,
+  type FlowDirection,
+  type FuelGeometry,
+} from "../lib/flame-physics";
 import type { FlameStats as FlameStatsData } from "../lib/flame-renderer";
-import { DEFAULT_PARAMS, getScenario, type SceneId } from "../lib/flame-scenes";
+import { DEFAULT_PARAMS, getScenario, SCENARIOS, type SceneId } from "../lib/flame-scenes";
 import { FlameCanvas } from "./flame-canvas";
 import { FlameControls } from "./flame-controls";
 import { FlameStats } from "./flame-stats";
 import { ScenarioTabs } from "./scenario-tabs";
 import { VentilationCurve } from "./ventilation-curve";
 
+const PRESET_TO_SCENE: Readonly<Record<string, SceneId>> = {
+  iss: "iss",
+  "artemis-transit": "transit",
+  "artemis-lunar": "moon",
+  "mars-surface": "mars",
+};
+
+const SCENE_TO_PRESET: Readonly<Record<SceneId, string | undefined>> = {
+  iss: "iss",
+  transit: "artemis-transit",
+  moon: "artemis-lunar",
+  mars: "mars-surface",
+  earth: undefined,
+};
+
+function matchingSceneId(cfg: CabinConfig, activePresetId: string | null): SceneId | null {
+  if (activePresetId && PRESET_TO_SCENE[activePresetId]) {
+    return PRESET_TO_SCENE[activePresetId];
+  }
+  const match = SCENARIOS.find(
+    (s) =>
+      Math.abs(s.atmosphere.oxygen_pct - cfg.oxygen_pct) < 1e-6 &&
+      Math.abs(s.atmosphere.pressure_kpa - cfg.pressure_kpa) < 1e-6 &&
+      Math.abs(s.atmosphere.flow_velocity_cm_s - cfg.flow_velocity_cm_s) < 1e-6 &&
+      Math.abs(s.atmosphere.gravity_g - cfg.gravity_g) < 1e-6,
+  );
+  return match?.id ?? null;
+}
+
 export function TwinView() {
-  const [params, setParams] = useState<FlameParams>(DEFAULT_PARAMS);
-  const [sceneId, setSceneId] = useState<SceneId | null>(null);
+  const presets = usePresets();
+  const {
+    config,
+    presetId,
+    presetName,
+    selectPreset,
+    updateField,
+    updateConfig,
+    resetToDefault,
+  } = useCabinScenario();
+  const [geometry, setGeometry] = useState<FuelGeometry>(DEFAULT_PARAMS.geometry);
+  const [flowDirection, setFlowDirection] = useState<FlowDirection>(DEFAULT_PARAMS.flowDirection);
   const [speed, setSpeed] = useState(1);
   const [paused, setPaused] = useState(false);
   const [igniteSignal, setIgniteSignal] = useState(0);
   const [stats, setStats] = useState<FlameStatsData>({ vitality: 1, fps: 60 });
 
+  const params = useMemo<FlameParams>(
+    () => ({ ...config, geometry, flowDirection }),
+    [config, geometry, flowDirection],
+  );
   const physics = useMemo(() => computePhysics(params), [params]);
+  const sceneId = useMemo(() => matchingSceneId(config, presetId), [config, presetId]);
   const scenario = sceneId ? getScenario(sceneId) : null;
   const ignite = () => setIgniteSignal((n) => n + 1);
 
   const update = <K extends keyof FlameParams>(key: K, value: FlameParams[K]) => {
-    setSceneId(null);
-    setParams((prev) => ({ ...prev, [key]: value }));
+    if (key === "geometry") {
+      setGeometry(value as FuelGeometry);
+      return;
+    }
+    if (key === "flowDirection") {
+      setFlowDirection(value as FlowDirection);
+      return;
+    }
+    updateField(key as keyof CabinConfig, value as CabinConfig[keyof CabinConfig]);
+  };
+
+  const handleSelectPreset = (preset: Preset) => {
+    const list = presets.data ?? [];
+    const idx = list.indexOf(preset);
+    selectPreset(preset, presetKey(preset, idx >= 0 ? idx : 0));
+    ignite();
   };
 
   const selectScenario = (id: SceneId) => {
-    setSceneId(id);
-    setParams((prev) => ({ ...prev, ...getScenario(id).atmosphere }));
+    const targetPresetId = SCENE_TO_PRESET[id];
+    const list = presets.data ?? [];
+    const matchedPreset = targetPresetId
+      ? list.find((p, i) => presetKey(p, i) === targetPresetId)
+      : undefined;
+    if (matchedPreset) {
+      handleSelectPreset(matchedPreset);
+      return;
+    }
+    const chosen = getScenario(id);
+    updateConfig(chosen.atmosphere, null, `${chosen.label} (${chosen.gLabel})`);
     ignite();
   };
 
   const reset = () => {
-    setParams(DEFAULT_PARAMS);
-    setSceneId(null);
+    const list = presets.data ?? [];
+    const issPreset = list.find((p, i) => presetKey(p, i) === "iss");
+    if (issPreset) {
+      selectPreset(issPreset, "iss");
+    } else {
+      resetToDefault();
+    }
+    setGeometry(DEFAULT_PARAMS.geometry);
+    setFlowDirection(DEFAULT_PARAMS.flowDirection);
     ignite();
   };
 
@@ -66,7 +149,15 @@ export function TwinView() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         <div className="lg:col-span-5">
-          <FlameControls params={params} speed={speed} onChange={update} onSpeedChange={setSpeed} />
+          <FlameControls
+            params={params}
+            speed={speed}
+            presets={presets.data}
+            presetId={presetId}
+            onSelectPreset={handleSelectPreset}
+            onChange={update}
+            onSpeedChange={setSpeed}
+          />
         </div>
 
         <div className="min-w-0 space-y-4 lg:col-span-7">
@@ -96,7 +187,7 @@ export function TwinView() {
                 </p>
               ) : (
                 <p>
-                  <span className="font-mono font-medium text-fg">Custom conditions:</span>{" "}
+                  <span className="font-mono font-medium text-fg">{presetName}:</span>{" "}
                   <span className="text-muted">
                     {params.oxygen_pct} % O₂ · {params.pressure_kpa} kPa · {params.flow_velocity_cm_s} cm/s ·{" "}
                     {params.gravity_g} g
