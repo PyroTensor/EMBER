@@ -50,8 +50,17 @@ class PageRunsExtraction(BaseModel):
     runs: list[RunExtraction]
 
 
+OCR_PROMPT_VERSION = "ocr-v1"
+
+
+class PageTranscription(BaseModel):
+    text: str  # plain-text transcription of a scanned page image
+
+
 __all__ = [
     "INV_PROMPT_VERSION",
+    "OCR_PROMPT_VERSION",
+    "PageTranscription",
     "RUNS_PROMPT_VERSION",
     "InvestigationExtraction",
     "PageRunsExtraction",

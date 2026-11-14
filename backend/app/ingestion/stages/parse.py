@@ -89,6 +89,7 @@ def markdown_tables(page_no: int, text: str) -> list[PageTable]:
 
 
 VALID_SOURCE_TYPES = frozenset({"ntrs", "iss_page", "psi_dataset"})
+IMAGE_PAGE_MAX_CHARS = 40  # PDF pages with fewer extracted chars are treated as scanned images
 DOC_SUFFIXES = frozenset({".md", ".pdf", ".txt"})
 
 
@@ -190,10 +191,13 @@ def parse_pdf(path: Path, doc_id: str | None = None) -> Document:
         logger.warning(
             "PDF '%s' extracted < 50 chars across %d pages (likely scanned image PDF)", path, len(pages)
         )
-    # TODO(squad1-A): pull investigation / fuel / O2 / gravity metadata via llm_extract
+    # investigation / fuel / O2 / gravity metadata: filled in stage 4 (LLMExtractor, --extractor llm).
+    # Image-only (scanned) pages: the LLM extractor transcribes them through vision (I8).
+    image_pages = [i for i, p in enumerate(pages, start=1) if len(p.strip()) < IMAGE_PAGE_MAX_CHARS]
     return Document(
         doc_id=doc_id or Path(path).stem,
         title=title,
+        metadata={"image_pages": image_pages} if image_pages else {},
         source_type="ntrs",
         path=str(path),
         pages=pages,

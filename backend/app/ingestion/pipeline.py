@@ -247,7 +247,8 @@ async def run(
         log(
             "extract",
             f"  run pages {stats.run_pages}, runs {stats.runs_extracted}, "
-            f"discarded_sparse {stats.discarded_sparse}, budget_skipped {stats.budget_skipped}",
+            f"discarded_sparse {stats.discarded_sparse}, budget_skipped {stats.budget_skipped}, "
+            f"ocr_pages {stats.ocr_pages}",
         )
     if dup_csv:
         log("extract", f"  {dup_csv} extracted runs duplicated CSV ids (CSV kept)")

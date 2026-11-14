@@ -17,19 +17,25 @@ LLM, so the seed corpus stays free. Other documents (NTRS PDFs) get an investiga
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import logging
 import re
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any, Protocol
+
+import anyio.to_thread
 
 from app.core.config import get_settings
 from app.ingestion.extractors import ExtractionCache, StructuredLLMChain, build_chain, cache_key
 from app.ingestion.extractors.schemas import (
     INV_PROMPT_VERSION,
+    OCR_PROMPT_VERSION,
     RUNS_PROMPT_VERSION,
     InvestigationExtraction,
     PageRunsExtraction,
+    PageTranscription,
     RunExtraction,
 )
 from app.ingestion.stages import normalize
@@ -190,11 +196,31 @@ class ExtractorStats:
     runs_extracted: int = 0
     discarded_sparse: int = 0
     budget_skipped: int = 0  # candidate pages skipped because the page budget ran out
+    ocr_pages: int = 0  # scanned pages whose text was replaced by a vision transcription (I8)
 
     def provider_mix(self) -> str:
         keys = ["openai", "gemini", "cache", "heuristic"]
         keys += sorted(k for k in self.by_provider if k not in keys)
         return ", ".join(f"{k} {self.by_provider[k]}" for k in keys)
+
+
+OCR_SYSTEM_PROMPT = (
+    "You transcribe ONE scanned page of a NASA combustion research document. "
+    "Return the page's text exactly as printed, in reading order: keep numbers, units, symbols and "
+    "table rows (write tables as markdown pipe tables). "
+    "Do not summarise, translate, correct or add anything. "
+    'If the page has no readable text, return {"text": ""}.'
+)
+OCR_DPI = 150
+
+
+def render_page_png(path: str, page_no: int, dpi: int = OCR_DPI) -> bytes:
+    """Render one 1-based PDF page to PNG with PyMuPDF (blocking: call through a worker thread)."""
+    import fitz  # PyMuPDF, extra "pdf"
+
+    with fitz.open(path) as pdf:
+        png: bytes = pdf[page_no - 1].get_pixmap(dpi=dpi).tobytes("png")
+    return png
 
 
 def _first_pages_text(doc: Document) -> str:
@@ -225,6 +251,7 @@ class LLMExtractor:
         min_confidence: float = 0.6,
         concurrency: int = 4,
         aliases: dict[str, Any] | None = None,
+        renderer: Callable[[str, int], bytes] = render_page_png,
     ) -> None:
         self.chain = chain
         self.cache = cache
@@ -237,6 +264,80 @@ class LLMExtractor:
         self.stats = ExtractorStats()
         self._pages_used = 0  # shared LLM page budget across the whole run
         self._budget_warned = False
+        self._renderer = renderer
+        self._ocr_locks: dict[str, asyncio.Lock] = {}
+        self._ocr_done: set[str] = set()
+
+    # ── scanned pages (I8) ────────────────────────────────────────────
+
+    async def _ensure_transcribed(self, doc: Document) -> None:
+        """Once per document: replace the text of image-only pages with a vision transcription.
+
+        Runs before investigation and run extraction, so both (and chunking, stage 6) see the text.
+        Every transcription call counts against the shared page budget; cache hits are free.
+        """
+        if doc.doc_id in self._ocr_done:
+            return
+        lock = self._ocr_locks.setdefault(doc.doc_id, asyncio.Lock())
+        async with lock:
+            if doc.doc_id in self._ocr_done:
+                return
+            try:
+                await self._transcribe_image_pages(doc)
+            finally:
+                self._ocr_done.add(doc.doc_id)
+
+    async def _transcribe_image_pages(self, doc: Document) -> None:
+        image_pages = [int(p) for p in doc.metadata.get("image_pages", []) if 1 <= int(p) <= len(doc.pages)]
+        if not image_pages or not doc.path.lower().endswith(".pdf"):
+            return
+        try:
+            pngs = await anyio.to_thread.run_sync(
+                lambda: {p: self._renderer(doc.path, p) for p in image_pages}
+            )
+        except Exception as exc:  # missing PyMuPDF, unreadable file...
+            logger.warning("cannot render scanned pages of %s (%s); skipping vision", doc.doc_id, exc)
+            return
+
+        texts: dict[int, tuple[str, str]] = {}  # page -> (text, provider)
+        pending: list[tuple[int, str, bytes]] = []
+        for page_no, png in pngs.items():  # synchronous: budget reserved before any await
+            key = cache_key(OCR_PROMPT_VERSION, PageTranscription.__name__, hashlib.sha256(png).hexdigest())
+            entry = self.cache.get_entry(doc.doc_id, "ocr", page_no, key) if self.use_cache else None
+            if entry is not None:
+                try:
+                    texts[page_no] = (
+                        PageTranscription.model_validate(entry["parsed"]).text,
+                        str(entry.get("provider") or "cache"),
+                    )
+                    self.stats.cache_hits += 1
+                    continue
+                except ValueError:
+                    pass
+            if self._reserve_page():
+                pending.append((page_no, key, png))
+
+        async def call(page_no: int, key: str, png: bytes) -> None:
+            user = f"Transcribe page {page_no} of document {doc.doc_id}."
+            async with self._sem:
+                result = await self.chain.extract(OCR_SYSTEM_PROMPT, user, PageTranscription, image_png=png)
+            self.stats.calls += 1
+            self.cache.put(doc.doc_id, "ocr", page_no, key, prompt_version=OCR_PROMPT_VERSION, result=result)
+            if isinstance(result.parsed, PageTranscription):
+                texts[page_no] = (result.parsed.text, result.provider or "llm")
+            else:
+                self.stats.failures += 1
+                logger.warning("vision transcription failed for %s p.%d", doc.doc_id, page_no)
+
+        await asyncio.gather(*(call(*item) for item in pending))
+
+        ocr_pages = sorted(p for p, (text, _) in texts.items() if text.strip())
+        for page_no in ocr_pages:
+            doc.pages[page_no - 1] = texts[page_no][0].strip()
+        if ocr_pages:
+            self.stats.ocr_pages += len(ocr_pages)
+            doc.metadata["ocr_pages"] = ocr_pages
+            doc.metadata.setdefault("ocr", f"llm:{texts[ocr_pages[0]][1]}")
 
     def _program(self, raw: str | None) -> Program | None:
         if not raw:
@@ -295,6 +396,7 @@ class LLMExtractor:
         return h
 
     async def extract_investigation(self, doc: Document) -> Investigation | None:
+        await self._ensure_transcribed(doc)
         h = await self._heuristic.extract_investigation(doc)
         has_front_matter = bool(doc.metadata.get("investigation") or doc.metadata.get("program"))
         if has_front_matter and h is not None:
@@ -351,22 +453,23 @@ class LLMExtractor:
         if values.get("program") is None and doc.metadata.get("investigation"):
             values["program"] = doc.metadata["investigation"]  # the page rarely restates the program
         quote = run.evidence_quote.strip()[:200]
+        extraction: dict[str, Any] = {
+            "provider": meta["provider"],
+            "model": meta["model"],
+            "prompt_version": RUNS_PROMPT_VERSION,
+            "confidence": run.confidence,
+            "evidence_quote": quote,
+            "quote_found": bool(quote) and _normalise_text(quote) in _normalise_text(page_text),
+        }
+        if page_no in doc.metadata.get("ocr_pages", []):
+            extraction["from_image"] = True  # page text came from a vision transcription
         return {
             "experiment_id": eid or f"{doc.doc_id}-p{page_no:03d}-r{idx:02d}",
             **{k: v for k, v in values.items() if v is not None},
             # provenance is ALWAYS set by code, never by the LLM
             "source_doc_id": doc.doc_id,
             "source_page": page_no,
-            "extra_telemetry": {
-                "extraction": {
-                    "provider": meta["provider"],
-                    "model": meta["model"],
-                    "prompt_version": RUNS_PROMPT_VERSION,
-                    "confidence": run.confidence,
-                    "evidence_quote": quote,
-                    "quote_found": bool(quote) and _normalise_text(quote) in _normalise_text(page_text),
-                }
-            },
+            "extra_telemetry": {"extraction": extraction},
         }
 
     async def _page_runs(self, doc: Document, page_no: int, key: str) -> list[dict[str, Any]]:
@@ -392,6 +495,7 @@ class LLMExtractor:
         return kept
 
     async def extract_test_runs(self, doc: Document) -> list[dict[str, Any]]:
+        await self._ensure_transcribed(doc)  # no-op if extract_investigation already did it
         rows: list[dict[str, Any]] = []
         pending: list[tuple[int, str]] = []
         # synchronous pass: cache hits are free; misses reserve budget BEFORE any await, so the budget is

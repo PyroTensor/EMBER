@@ -69,6 +69,8 @@ def extraction_flags(run: TestRunRecord) -> list[str]:
         flags.append("extraction:low_confidence")
     if not ext.get("quote_found"):
         flags.append("extraction:quote_not_found")
+    if ext.get("from_image"):
+        flags.append("extraction:from_image")
     return flags
 
 

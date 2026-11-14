@@ -13,6 +13,7 @@ Logging: provider, model and failure reason only - never the prompt, page text o
 from __future__ import annotations
 
 import asyncio
+import base64
 import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
@@ -43,8 +44,10 @@ class StructuredLLM(Protocol):
     name: str
     model: str
 
-    async def extract(self, system: str, user: str, schema: type[T]) -> tuple[T, str]:
-        """Return ``(parsed, raw_json)`` or raise ``ExtractionError``."""
+    async def extract(
+        self, system: str, user: str, schema: type[T], image_png: bytes | None = None
+    ) -> tuple[T, str]:
+        """Return ``(parsed, raw_json)`` or raise ``ExtractionError``. ``image_png``: optional page image."""
         ...
 
 
@@ -72,13 +75,22 @@ class OpenAIStructured:
             api_key=api_key, timeout=timeout_s, max_retries=max_retries, http_client=http_client
         )
 
-    async def extract(self, system: str, user: str, schema: type[T]) -> tuple[T, str]:
+    async def extract(
+        self, system: str, user: str, schema: type[T], image_png: bytes | None = None
+    ) -> tuple[T, str]:
         import openai
 
+        user_content: Any = user
+        if image_png is not None:
+            data_url = "data:image/png;base64," + base64.b64encode(image_png).decode("ascii")
+            user_content = [
+                {"type": "text", "text": user},
+                {"type": "image_url", "image_url": {"url": data_url}},
+            ]
         try:
             completion = await self._client.chat.completions.parse(
                 model=self.model,
-                messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+                messages=[{"role": "system", "content": system}, {"role": "user", "content": user_content}],
                 response_format=schema,
                 temperature=0,
             )
@@ -134,7 +146,9 @@ class GeminiStructured:
             client = genai.Client(api_key=api_key)
         self._client: Any = client
 
-    async def _call(self, system: str, user: str, schema: type[BaseModel]) -> Any:
+    async def _call(
+        self, system: str, user: str, schema: type[BaseModel], image_png: bytes | None = None
+    ) -> Any:
         from google.genai import types
 
         config = types.GenerateContentConfig(
@@ -143,18 +157,23 @@ class GeminiStructured:
             response_mime_type="application/json",
             response_schema=schema,
         )
+        contents: Any = user
+        if image_png is not None:
+            contents = [types.Part.from_bytes(data=image_png, mime_type="image/png"), user]
         return await asyncio.wait_for(
-            self._client.aio.models.generate_content(model=self.model, contents=user, config=config),
+            self._client.aio.models.generate_content(model=self.model, contents=contents, config=config),
             timeout=self._timeout_s,
         )
 
-    async def extract(self, system: str, user: str, schema: type[T]) -> tuple[T, str]:
+    async def extract(
+        self, system: str, user: str, schema: type[T], image_png: bytes | None = None
+    ) -> tuple[T, str]:
         from google.genai import errors
 
         attempt = 0
         while True:
             try:
-                resp = await self._call(system, user, schema)
+                resp = await self._call(system, user, schema, image_png)
                 break
             except (TimeoutError, errors.APIError) as exc:
                 code = getattr(exc, "code", None)
@@ -206,11 +225,16 @@ class StructuredLLMChain:
     def providers(self) -> list[str]:
         return [c.name for c in self.clients]
 
-    async def extract(self, system: str, user: str, schema: type[BaseModel]) -> ChainResult:
+    async def extract(
+        self, system: str, user: str, schema: type[BaseModel], image_png: bytes | None = None
+    ) -> ChainResult:
         attempts: list[dict[str, str]] = []
         for client in self.clients:
             try:
-                parsed, raw = await client.extract(system, user, schema)
+                if image_png is None:  # text-only call: same signature as before I8
+                    parsed, raw = await client.extract(system, user, schema)
+                else:
+                    parsed, raw = await client.extract(system, user, schema, image_png=image_png)
             except ExtractionError as exc:
                 error = exc.reason
             except ValidationError as exc:
