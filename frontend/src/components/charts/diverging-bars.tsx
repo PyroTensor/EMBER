@@ -30,13 +30,15 @@ const AXIS = 22;
 const VALUE_COL = 60;
 const GAP = 8;
 /** Below this width labels go on their own line above each bar. */
-const STACK_BELOW = 480;
+const STACK_BELOW = 420;
 
 /** Compact signed axis label: +25, −12.5, 0. */
 function tickLabel(v: number): string {
   if (v === 0) return "0";
   const abs = Math.abs(v);
-  const text = Number.isInteger(abs) ? String(abs) : String(Number(abs.toPrecision(3)));
+  const text = Number.isInteger(abs)
+    ? String(abs)
+    : String(Number(abs.toPrecision(3)));
   return v > 0 ? `+${text}` : `−${text}`;
 }
 
@@ -81,12 +83,23 @@ export function DivergingBars({
   return (
     <div ref={ref} className={cn("w-full min-w-0", className)}>
       {rows.length === 0 ? (
-        <p role="img" aria-label={summary} className="py-6 text-center text-xs text-muted">
+        <p
+          role="img"
+          aria-label={summary}
+          className="text-muted py-6 text-center text-xs"
+        >
           {emptyText}
         </p>
       ) : (
         // width="100%" (not the measured px) so the SVG never forces its container wider than it is.
-        <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} role="img" aria-label={summary} className="block">
+        <svg
+          width="100%"
+          height={height}
+          viewBox={`0 0 ${width} ${height}`}
+          role="img"
+          aria-label={summary}
+          className="block"
+        >
           <title>{summary}</title>
 
           {/* Grid lines + axis ticks */}
@@ -103,7 +116,12 @@ export function DivergingBars({
                   strokeDasharray={t === 0 ? undefined : "2 3"}
                 />
               ))}
-              <text x={x(t)} y={plotH + 14} textAnchor="middle" className="fill-muted font-mono text-[10px]">
+              <text
+                x={x(t)}
+                y={plotH + 14}
+                textAnchor="middle"
+                className="fill-muted font-mono text-[10px]"
+              >
                 {tickLabel(t)}
               </text>
             </g>
@@ -114,7 +132,12 @@ export function DivergingBars({
             const end = x(r.value);
             const w = Math.abs(end - zero);
             const positive = r.value >= 0;
-            const color = r.value === 0 ? "var(--color-muted)" : positive ? positiveColor : negativeColor;
+            const color =
+              r.value === 0
+                ? "var(--color-muted)"
+                : positive
+                  ? positiveColor
+                  : negativeColor;
             return (
               <g key={r.key}>
                 <title>{`${r.label}: ${format(r.value)}`}</title>
@@ -152,7 +175,15 @@ export function DivergingBars({
 
           {/* Zero line on top */}
           {lineSegments.map(([y1, y2]) => (
-            <line key={y1} x1={zero} x2={zero} y1={y1} y2={y2} stroke="var(--color-muted)" strokeWidth={1.5} />
+            <line
+              key={y1}
+              x1={zero}
+              x2={zero}
+              y1={y1}
+              y2={y2}
+              stroke="var(--color-muted)"
+              strokeWidth={1.5}
+            />
           ))}
         </svg>
       )}

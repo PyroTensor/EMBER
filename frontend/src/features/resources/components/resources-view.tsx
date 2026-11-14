@@ -31,14 +31,26 @@ import {
 } from "../lib/search-resources";
 
 const SUGGESTED_KEYWORDS: readonly { label: string; query: string }[] = [
-  { label: "BASS-II Ventilation Paradox", query: "BASS-II ventilation paradox" },
+  {
+    label: "BASS-II Ventilation Paradox",
+    query: "BASS-II ventilation paradox",
+  },
   { label: "SoFIE Artemis 34% O2", query: "SoFIE Artemis 34% O2" },
   { label: "FLEX Cool Flames", query: "FLEX cool flames droplet" },
   { label: "Apollo 1, Apollo 13 & Mir", query: "Apollo 1 Apollo 13 Mir" },
-  { label: "NASA-STD-6001B Lunar", query: "NASA-STD-6001B Lunar partial gravity" },
-  { label: "Firefighting Spinoffs", query: "spinoff SCBA detector turnout gear" },
+  {
+    label: "NASA-STD-6001B Lunar",
+    query: "NASA-STD-6001B Lunar partial gravity",
+  },
+  {
+    label: "Firefighting Spinoffs",
+    query: "spinoff SCBA detector turnout gear",
+  },
   { label: "Saffire & ISS Facilities", query: "Saffire CIR MSG SPICE SLICE" },
-  { label: "Smoke Detection (SAME / DAFT)", query: "SAME DAFT smoke detector aerosol" },
+  {
+    label: "Smoke Detection (SAME / DAFT)",
+    query: "SAME DAFT smoke detector aerosol",
+  },
 ];
 
 const SOURCE_FILTERS: readonly { id: SourceFilter; label: string }[] = [
@@ -108,9 +120,6 @@ export function ResourcesView() {
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-8">
       <header className="space-y-1">
-        <p className="text-muted font-mono text-[11px] tracking-wide">
-          MODULE 04
-        </p>
         <h1 className="text-xl font-semibold">Search Resources</h1>
         <p className="text-muted max-w-2xl text-sm">
           Type keywords below to search across NASA NTRS &amp; PSI combustion
@@ -169,9 +178,7 @@ export function ResourcesView() {
                   <button
                     key={item.label}
                     type="button"
-                    onClick={() =>
-                      setQuery(isSelected ? "" : item.query)
-                    }
+                    onClick={() => setQuery(isSelected ? "" : item.query)}
                     className={cn(
                       "rounded-full border px-2.5 py-1 font-mono text-[11px] transition-colors",
                       isSelected
@@ -309,16 +316,12 @@ function ResourceResultCard({
   onOpenDocument: (target: DocumentReaderTarget) => void;
 }) {
   const { doc, matchedTerms, pageSnippets } = result;
-  const sources = doc.sources?.length
-    ? doc.sources
-    : doc.url
-      ? [doc.url]
-      : [];
+  const sources = doc.sources?.length ? doc.sources : doc.url ? [doc.url] : [];
   const primaryUrl = sources[0];
   const firstMatchedPage = pageSnippets[0]?.page;
 
   return (
-    <article className="rounded-card border-border bg-surface hover:border-sky-400/40 space-y-4 border p-5 transition-colors">
+    <article className="rounded-card border-border bg-surface space-y-4 border p-5 transition-colors hover:border-sky-400/40">
       {/* Header row */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1 space-y-1.5">

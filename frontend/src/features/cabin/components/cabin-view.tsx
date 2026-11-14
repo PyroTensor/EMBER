@@ -21,19 +21,19 @@ export function CabinView() {
   const presets = usePresets();
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-8">
+    <div className="mx-auto max-w-6xl space-y-4 p-4 sm:p-6">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-1">
-          <p className="font-mono text-[11px] tracking-wide text-muted">MODULE 01</p>
           <h1 className="text-xl font-semibold">Cabin Configurator</h1>
-          <p className="max-w-2xl text-sm text-muted">
-            Tune the habitat atmosphere and see the fire-risk index, the limiting oxygen index and which factors drive the
-            risk compared with the ISS baseline.
+          <p className="text-muted max-w-2xl text-sm">
+            Tune the habitat atmosphere and see the fire-risk index, the
+            limiting oxygen index and which factors drive the risk compared with
+            the ISS baseline.
           </p>
         </div>
         <Link
           href="/copilot"
-          className="inline-flex items-center gap-2 rounded-md border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/20"
+          className="border-accent/40 bg-accent/10 text-accent hover:bg-accent/20 inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors"
         >
           <MessagesSquare aria-hidden className="size-3.5" />
           Ask SI Co-Pilot about this cabin →
@@ -41,10 +41,15 @@ export function CabinView() {
       </header>
 
       {presets.isPending ? (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,380px)_1fr]" role="status" aria-busy="true">
+        <div
+          className="grid gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)]"
+          role="status"
+          aria-busy="true"
+        >
           <span className="sr-only">Loading presets…</span>
-          <Skeleton className="h-[560px]" />
-          <Skeleton className="h-[560px]" />
+          <Skeleton className="h-[40rem] lg:row-span-2" />
+          <Skeleton className="h-64" />
+          <Skeleton className="h-72" />
         </div>
       ) : presets.isError ? (
         <ErrorState
@@ -54,7 +59,11 @@ export function CabinView() {
           retrying={presets.isFetching}
         />
       ) : !presets.data[0] ? (
-        <EmptyState icon={SlidersHorizontal} title="No presets available" description="The API returned no cabin presets." />
+        <EmptyState
+          icon={SlidersHorizontal}
+          title="No presets available"
+          description="The API returned no cabin presets."
+        />
       ) : (
         <CabinWorkspace presets={presets.data} />
       )}
@@ -63,7 +72,12 @@ export function CabinView() {
 }
 
 function CabinWorkspace({ presets }: { presets: Preset[] }) {
-  const { config: cfg, presetId: selected, selectPreset, updateField } = useCabinScenario();
+  const {
+    config: cfg,
+    presetId: selected,
+    selectPreset,
+    updateField,
+  } = useCabinScenario();
   const evaluation = useCabinEvaluation(cfg);
   // Never show a previous result next to an error: the error wins.
   const data = evaluation.isError ? undefined : evaluation.data;
@@ -71,10 +85,17 @@ function CabinWorkspace({ presets }: { presets: Preset[] }) {
   const updating = evaluation.isFetching && !!data;
 
   return (
-    <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] [&>*]:min-w-0">
+    <div
+      className="grid items-stretch gap-4 lg:grid-cols-[minmax(0,380px)_minmax(0,1fr)] [&>*]:min-w-0"
+      aria-live="polite"
+      aria-busy={evaluation.isFetching}
+    >
       <Card>
-        <CardHeader title="Configuration" subtitle="Preset or hand-tuned cabin atmosphere" />
-        <CardBody className="space-y-6">
+        <CardHeader
+          title="Configuration"
+          subtitle="Preset or hand-tuned cabin atmosphere"
+        />
+        <CardBody className="space-y-4">
           <PresetPicker
             presets={presets}
             value={selected}
@@ -90,15 +111,14 @@ function CabinWorkspace({ presets }: { presets: Preset[] }) {
           />
         </CardBody>
       </Card>
-
-      <div className="space-y-6" aria-live="polite" aria-busy={evaluation.isFetching}>
-        <Card>
+      <div className="grid min-w-0 gap-4 lg:grid-rows-[auto_1fr]">
+        <Card className="flex flex-col">
           <CardHeader
             title="Fire risk"
             subtitle="Spacecraft Fire Risk Index (0–100)"
             action={updating ? <Spinner size="sm" label="Updating…" /> : null}
           />
-          <CardBody>
+          <CardBody className="flex-1">
             {evaluation.isError ? (
               <ErrorState
                 title="Couldn't evaluate this cabin"
@@ -107,13 +127,19 @@ function CabinWorkspace({ presets }: { presets: Preset[] }) {
                 retrying={evaluation.isFetching}
               />
             ) : data ? (
-              <div className={updating ? "opacity-80 transition-opacity" : "transition-opacity"}>
+              <div
+                className={
+                  updating
+                    ? "opacity-80 transition-opacity"
+                    : "transition-opacity"
+                }
+              >
                 <RiskPanel evaluation={data} />
               </div>
             ) : (
-              <div className="grid gap-6 sm:grid-cols-[260px_1fr]">
-                <Skeleton className="h-44" />
-                <Skeleton className="h-44" />
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Skeleton className="h-40" />
+                <Skeleton className="h-40" />
               </div>
             )}
           </CardBody>
@@ -126,11 +152,17 @@ function CabinWorkspace({ presets }: { presets: Preset[] }) {
           />
           <CardBody>
             {data ? (
-              <div className={updating ? "opacity-80 transition-opacity" : "transition-opacity"}>
+              <div
+                className={
+                  updating
+                    ? "opacity-80 transition-opacity"
+                    : "transition-opacity"
+                }
+              >
                 <ShapleyPanel evaluation={data} />
               </div>
             ) : evaluation.isError ? (
-              <p className="text-sm text-muted">No attribution available.</p>
+              <p className="text-muted text-sm">No attribution available.</p>
             ) : (
               <Skeleton className="h-52" />
             )}

@@ -63,16 +63,26 @@ export function CopilotView() {
 
   useEffect(() => {
     const id = scrollToAnswerId.current;
-    if (id === null || turns.find((turn) => turn.id === id)?.status !== "success") return;
+    if (
+      id === null ||
+      turns.find((turn) => turn.id === id)?.status !== "success"
+    )
+      return;
 
     const answer = document.getElementById(`copilot-answer-${id}`);
     if (!answer) return;
     const appHeader = document.querySelector<HTMLElement>("[data-app-header]");
     const headerHeight = appHeader?.getBoundingClientRect().height ?? 0;
-    const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    const maxY = Math.max(
+      0,
+      document.documentElement.scrollHeight - window.innerHeight,
+    );
     const targetY = Math.min(
       maxY,
-      Math.max(0, window.scrollY + answer.getBoundingClientRect().top - headerHeight - 12),
+      Math.max(
+        0,
+        window.scrollY + answer.getBoundingClientRect().top - headerHeight - 12,
+      ),
     );
     const startY = window.scrollY;
 
@@ -84,10 +94,14 @@ export function CopilotView() {
 
     let frame = 0;
     const startedAt = performance.now();
-    const duration = Math.min(2400, Math.max(1500, Math.abs(targetY - startY) * 1.8));
+    const duration = Math.min(
+      2400,
+      Math.max(1500, Math.abs(targetY - startY) * 1.8),
+    );
     const step = (now: number) => {
       const progress = Math.min(1, (now - startedAt) / duration);
-      const eased = progress < 0.5 ? 4 * progress ** 3 : 1 - (-2 * progress + 2) ** 3 / 2;
+      const eased =
+        progress < 0.5 ? 4 * progress ** 3 : 1 - (-2 * progress + 2) ** 3 / 2;
       window.scrollTo(0, startY + (targetY - startY) * eased);
       if (progress < 1) frame = requestAnimationFrame(step);
       else if (scrollToAnswerId.current === id) scrollToAnswerId.current = null;
@@ -165,9 +179,6 @@ export function CopilotView() {
     <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-1">
-          <p className="text-muted font-mono text-[11px] tracking-wide">
-            MODULE 05
-          </p>
           <h1 className="text-xl font-semibold">SI Co-Pilot</h1>
           <p className="text-muted max-w-2xl text-sm">
             Ask grounded questions about the experiments and documents. Every
@@ -235,7 +246,10 @@ export function CopilotView() {
           />
         </Card>
       ) : (
-        <ol aria-label="Conversation, newest first" className="min-h-screen space-y-6">
+        <ol
+          aria-label="Conversation, newest first"
+          className="min-h-screen space-y-6"
+        >
           {turns.map((turn) => (
             <li key={turn.id}>
               <TurnView

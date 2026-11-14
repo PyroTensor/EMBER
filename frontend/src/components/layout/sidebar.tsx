@@ -15,15 +15,23 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
   const pathname = usePathname();
 
   return (
-    <div className={cn("flex h-full flex-col bg-surface", className)}>
-      <Link href="/" onClick={onNavigate} className="flex items-baseline gap-2 px-5 py-5">
-        <span className="font-mono text-lg font-semibold tracking-[0.2em] text-fg">EMBER</span>
-        <span className="text-[10px] tracking-wide text-muted uppercase">Mission control</span>
+    <div className={cn("bg-surface flex h-full flex-col", className)}>
+      <Link
+        href="/"
+        onClick={onNavigate}
+        className="flex items-baseline gap-2 px-5 py-5"
+      >
+        <span className="text-fg font-mono text-lg font-semibold tracking-[0.2em]">
+          EMBER
+        </span>
+        <span className="text-muted text-[10px] tracking-wide uppercase">
+          Mission control
+        </span>
       </Link>
 
       <nav aria-label="Main" className="flex-1 px-3">
         <ul className="space-y-1">
-          {NAV_ITEMS.map(({ href, label, icon: Icon, module }) => {
+          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
             const active = isActive(href, pathname);
             return (
               <li key={href}>
@@ -33,12 +41,16 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors",
-                    active ? "bg-surface-2 text-fg" : "text-muted hover:bg-surface-2/60 hover:text-fg",
+                    active
+                      ? "bg-surface-2 text-fg"
+                      : "text-muted hover:bg-surface-2/60 hover:text-fg",
                   )}
                 >
-                  <Icon aria-hidden className={cn("size-4 shrink-0", active && "text-accent")} />
+                  <Icon
+                    aria-hidden
+                    className={cn("size-4 shrink-0", active && "text-accent")}
+                  />
                   <span className="flex-1 truncate">{label}</span>
-                  {module ? <span className="font-mono text-[10px] text-muted">{module}</span> : null}
                 </Link>
               </li>
             );
@@ -46,7 +58,7 @@ export function Sidebar({ onNavigate, className }: SidebarProps) {
         </ul>
       </nav>
 
-      <p className="px-5 py-4 text-[10px] leading-relaxed text-muted">
+      <p className="text-muted px-5 py-4 text-[10px] leading-relaxed">
         Exploration of Microgravity Burning through Experimental Research
       </p>
     </div>
