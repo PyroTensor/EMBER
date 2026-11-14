@@ -17,6 +17,7 @@ dependencies = [
     "numpy",
     "pyyaml",
     "sentence-transformers",
+    "torch",  # already required by sentence-transformers; listed so [tool.uv.sources] can pin the CPU build
     "anyio",
     "openai",
 ]
@@ -37,6 +38,15 @@ dev = [
 
 [tool.uv]
 package = false
+
+# CPU-only torch: it only runs the small bge embedding model, and the default CUDA build adds several GB.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = [{ index = "pytorch-cpu" }]
 
 # ── ruff ──────────────────────────────────────────────────────────────
 [tool.ruff]
