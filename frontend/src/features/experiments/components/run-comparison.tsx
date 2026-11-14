@@ -2,7 +2,7 @@
 
 import { useQueries } from "@tanstack/react-query";
 import { Activity, X } from "lucide-react";
-import type { Domain } from "@/components/charts/use-linear-scale";
+import { LineChart, type LineSeries } from "@/components/charts/line-chart";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
@@ -31,7 +31,6 @@ import {
   TELEMETRY_CHANNELS,
   TELEMETRY_OPTIONS,
   telemetryValues,
-  TelemetryPlot,
   type TelemetryChannel,
 } from "./telemetry-chart";
 
@@ -45,21 +44,45 @@ interface RunComparisonProps {
   onOpenSource: (docId: string, page?: number) => void;
 }
 
-function sharedDomains(
-  telemetry: readonly Telemetry[],
+const RUN_COLORS = ["#fb923c", "#38bdf8", "#c084fc"];
+
+/** Align different sample times on one axis without drawing across missing measurements. */
+function valuesOnTimeline(
+  telemetry: Telemetry,
   channel: TelemetryChannel,
-) {
-  const times = telemetry.flatMap((run) => run.time_s.filter(Number.isFinite));
-  const values = telemetry.flatMap((run) =>
-    (telemetryValues(run, channel) ?? []).filter(Number.isFinite),
-  );
-  const xDomain: Domain | undefined = times.length
-    ? [Math.min(...times), Math.max(...times)]
-    : undefined;
-  const yDomain: Domain | undefined = values.length
-    ? [Math.min(...values), Math.max(...values)]
-    : undefined;
-  return { xDomain, yDomain };
+  timeline: readonly number[],
+): (number | null)[] {
+  const values = telemetryValues(telemetry, channel);
+  if (!values) return timeline.map(() => null);
+  const samples = telemetry.time_s
+    .map((time, index) => ({ time, value: values[index] ?? null }))
+    .filter((sample) => Number.isFinite(sample.time))
+    .sort((a, b) => a.time - b.time);
+  let cursor = 0;
+  return timeline.map((time) => {
+    while (cursor + 1 < samples.length && samples[cursor + 1]!.time < time)
+      cursor++;
+    const before = samples[cursor];
+    const after = samples[cursor + 1];
+    if (before?.time === time)
+      return Number.isFinite(before.value) ? before.value : null;
+    if (after?.time === time)
+      return Number.isFinite(after.value) ? after.value : null;
+    if (
+      !before ||
+      !after ||
+      before.time > time ||
+      !Number.isFinite(before.value) ||
+      !Number.isFinite(after.value) ||
+      after.time === before.time
+    )
+      return null;
+    return (
+      before.value! +
+      ((after.value! - before.value!) * (time - before.time)) /
+        (after.time - before.time)
+    );
+  });
 }
 
 function Condition({ label, value }: { label: string; value: string }) {
@@ -73,7 +96,7 @@ function Condition({ label, value }: { label: string; value: string }) {
   );
 }
 
-/** Pinned runs use the same channel and axes for an honest visual comparison. */
+/** Checked runs share one time axis and one measured quantity. */
 export function RunComparison({
   runs,
   channel,
@@ -92,13 +115,35 @@ export function RunComparison({
     })),
   });
   const loaded = queries.flatMap((query) => (query.data ? [query.data] : []));
-  const { xDomain, yDomain } = sharedDomains(loaded, channel);
+  const timeline = Array.from(
+    new Set(
+      loaded.flatMap((telemetry) => telemetry.time_s.filter(Number.isFinite)),
+    ),
+  ).sort((a, b) => a - b);
+  const meta = TELEMETRY_CHANNELS[channel];
+  const series: LineSeries[] = runs.flatMap((run, index) => {
+    const telemetry = queries[index]?.data;
+    if (!telemetry) return [];
+    return [
+      {
+        key: run.experiment_id,
+        label: run.experiment_id,
+        values: valuesOnTimeline(telemetry, channel, timeline),
+        color: RUN_COLORS[index] ?? RUN_COLORS[0]!,
+        unit: meta.unit,
+        format: (value: number) => value.toFixed(meta.digits),
+      },
+    ];
+  });
+  const hasPlottedData = series.some((run) =>
+    run.values?.some((value) => value !== null),
+  );
 
   return (
     <Card>
       <CardHeader
         title="Compare pinned runs"
-        subtitle={`${runs.length} runs · same telemetry channel and axes`}
+        subtitle={`${runs.length} runs · overlaid on one time and measurement scale`}
       />
       <CardBody className="space-y-4">
         <div className="max-w-xs">
@@ -111,9 +156,42 @@ export function RunComparison({
         </div>
         <p className="text-muted text-xs">
           Scores use the current scenario and weights; conditions are from each
-          run. The charts share time and {TELEMETRY_CHANNELS[channel].unit}{" "}
-          scales.
+          run. Lines between measured time points are interpolated.
         </p>
+        {hasPlottedData ? (
+          <LineChart
+            label={`${meta.label} comparison for ${runs.map((run) => run.experiment_id).join(", ")}`}
+            x={timeline}
+            xLabel="Time (s)"
+            series={series}
+            leftLabel={`${meta.label} (${meta.unit})`}
+            height={320}
+          />
+        ) : queries.some((query) => query.isPending) ? (
+          <div role="status" aria-busy="true">
+            <span className="sr-only">Loading comparison telemetry…</span>
+            <Skeleton className="h-80" />
+          </div>
+        ) : (
+          <EmptyState
+            icon={Activity}
+            title={`No ${meta.label.toLowerCase()} data to compare`}
+            description="Try another telemetry channel or select runs with recorded time series."
+          />
+        )}
+        {runs.map((run, index) => {
+          const query = queries[index];
+          if (!query?.isError || isTelemetryMissing(query.error)) return null;
+          return (
+            <ErrorState
+              key={run.experiment_id}
+              title={`Couldn't load telemetry for ${run.experiment_id}`}
+              error={query.error}
+              onRetry={() => void query.refetch()}
+              retrying={query.isFetching}
+            />
+          );
+        })}
         <div className="grid items-start gap-4 lg:grid-cols-2 2xl:grid-cols-3">
           {runs.map((run, index) => {
             const query = queries[index];
@@ -243,39 +321,19 @@ export function RunComparison({
                     ))}
                   </dl>
                 </div>
-                <div className="border-border border-t pt-3">
-                  {query?.isPending ? (
-                    <div role="status" aria-busy="true">
-                      <span className="sr-only">
-                        Loading telemetry for {run.experiment_id}…
-                      </span>
-                      <Skeleton className="h-48" />
-                    </div>
-                  ) : query?.isError ? (
-                    isTelemetryMissing(query.error) ? (
-                      <EmptyState
-                        icon={Activity}
-                        title="No telemetry"
-                        description={`No stored time series for ${run.experiment_id}.`}
-                      />
-                    ) : (
-                      <ErrorState
-                        title="Couldn't load telemetry"
-                        error={query.error}
-                        onRetry={() => void query.refetch()}
-                        retrying={query.isFetching}
-                      />
-                    )
-                  ) : query?.data ? (
-                    <TelemetryPlot
-                      telemetry={query.data}
-                      channel={channel}
-                      xDomain={xDomain}
-                      yDomain={yDomain}
-                      height={210}
-                    />
-                  ) : null}
-                </div>
+                {query?.isError && isTelemetryMissing(query.error) ? (
+                  <p className="text-muted text-xs">
+                    No stored time series for this run.
+                  </p>
+                ) : null}
+                {query?.isSuccess &&
+                !telemetryValues(query.data, channel)?.some((value) =>
+                  Number.isFinite(value),
+                ) ? (
+                  <p className="text-muted text-xs">
+                    No {meta.label.toLowerCase()} measurements for this run.
+                  </p>
+                ) : null}
               </article>
             );
           })}

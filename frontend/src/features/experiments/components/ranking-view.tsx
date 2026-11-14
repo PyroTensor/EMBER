@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
-import { ListOrdered, Pin } from "lucide-react";
+import { ListOrdered } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -122,6 +122,8 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
   const [section, setSection] = useState<RankingSection>("rankings");
   const [headerHeight, setHeaderHeight] = useState(0);
   const panelStart = useRef<HTMLDivElement>(null);
+  const scoreStart = useRef<HTMLDivElement>(null);
+  const compareStart = useRef<HTMLDivElement>(null);
   const [weights, setWeights] = useState<RankWeights>({
     ...DEFAULT_RANK_WEIGHTS,
   });
@@ -225,16 +227,27 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
     const run = results.find((result) => result.experiment_id === id);
     return run ? [run] : [];
   });
-  const activeSection =
-    section === "compare" && pinnedRuns.length < 2 ? "rankings" : section;
+  const scrollToTarget = (target: { current: HTMLElement | null }) => {
+    requestAnimationFrame(() => {
+      const element = target.current;
+      const nav = document.getElementById("ranking-section-nav");
+      if (!element || !nav) return;
+      const top =
+        window.scrollY +
+        element.getBoundingClientRect().top -
+        headerHeight -
+        nav.getBoundingClientRect().height -
+        12;
+      window.scrollTo({
+        top: Math.max(0, top),
+        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+      });
+    });
+  };
   const togglePin = (id: string) => {
-    if (
-      section === "compare" &&
-      pinnedIds.includes(id) &&
-      pinnedIds.length <= 2
-    ) {
-      setSection("rankings");
-    }
+    const checking = !pinnedIds.includes(id) && pinnedIds.length < 3;
     setPins((current) => {
       const ids = current.key === pinKey ? current.ids : [];
       return {
@@ -246,6 +259,7 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
             : ids,
       };
     });
+    if (checking && pinnedIds.length >= 1) scrollToTarget(compareStart);
   };
 
   // Keep the user's pick while it is still in the list; otherwise the first row is selected.
@@ -256,6 +270,10 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
   const selectedRun = visibleResults.find(
     (r) => r.experiment_id === effectiveId,
   );
+  const selectRun = (id: string, reveal = true) => {
+    setSelectedId(id);
+    if (reveal) scrollToTarget(scoreStart);
+  };
   const selectedTelemetry = useTelemetry(selectedRun?.experiment_id ?? null);
   const selectedSourceId = selectedRun?.record?.source_doc_id?.toUpperCase();
   const selectedSource = selectedSourceId
@@ -302,9 +320,8 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
   return (
     <>
       <RankingSectionNav
-        active={activeSection}
+        active={section}
         onSelect={selectSection}
-        pinnedCount={pinnedRuns.length}
         scenarioName={scenarioId ? presetName : "Custom configuration"}
         scenarioSummary={formatCabinSummary(cfg)}
         selectedRunId={selectedRun?.experiment_id ?? null}
@@ -316,7 +333,7 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
           role="tabpanel"
           aria-labelledby="ranking-tab-scenario"
           className={
-            activeSection === "scenario"
+            section === "scenario"
               ? "grid items-start gap-6 md:grid-cols-2 [&>*]:min-w-0"
               : "hidden"
           }
@@ -355,7 +372,7 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
           id="ranking-panel-rankings"
           role="tabpanel"
           aria-labelledby="ranking-tab-rankings"
-          className={activeSection === "rankings" ? "space-y-6" : "hidden"}
+          className={section === "rankings" ? "space-y-6" : "hidden"}
           aria-busy={ranking.isFetching}
         >
           <Card>
@@ -367,51 +384,18 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
           </Card>
           <Card>
             <CardHeader
-              title="Find runs"
-              subtitle="Search and narrow the top ranked experiments"
-            />
-            <RankingFilters
-              value={filters}
-              onChange={setFilters}
-              results={results}
-              matches={filteredResults.length}
-              shown={visibleResults.length}
-              checkingTelemetry={checkingTelemetry}
-            />
-            {availabilityErrors > 0 ? (
-              <p role="alert" className="text-mock px-5 py-2 text-xs">
-                Could not check telemetry for {availabilityErrors} run
-                {availabilityErrors === 1 ? "" : "s"}; those runs are not
-                included in this filter.
-              </p>
-            ) : null}
-          </Card>
-          <Card>
-            <CardHeader
               title="Ranked runs"
               subtitle={`Top ${RANK_LIMIT} ranked runs for this scenario`}
-              action={
-                <div className="flex flex-wrap items-center gap-2">
-                  {updating ? <Spinner size="sm" label="Updating…" /> : null}
-                  {selectedRun ? (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => selectSection("telemetry")}
-                    >
-                      View selected run
-                    </Button>
-                  ) : null}
-                </div>
-              }
+              action={updating ? <Spinner size="sm" label="Updating…" /> : null}
             />
             <p
               className="border-border text-muted border-b px-5 py-3 text-xs"
               aria-live="polite"
             >
-              Pin 2 or 3 runs to compare conditions, scores, and telemetry.
+              Select a run to view its score and telemetry. Check 2 or 3 runs in
+              Compare to overlay their telemetry and compare conditions.
               {pinnedIds.length === 1
-                ? " One run pinned; select another."
+                ? " One run checked; choose another to compare."
                 : null}
             </p>
             {ranking.isError ? (
@@ -456,7 +440,7 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
                 <RankedTable
                   results={visibleResults}
                   selectedId={effectiveId}
-                  onSelect={setSelectedId}
+                  onSelect={selectRun}
                   pinnedIds={pinnedIds}
                   onTogglePin={togglePin}
                   pinDisabled={ranking.isFetching}
@@ -465,112 +449,98 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
               </div>
             )}
           </Card>
-        </section>
-
-        <section
-          id="ranking-panel-compare"
-          role="tabpanel"
-          aria-labelledby="ranking-tab-compare"
-          className={activeSection === "compare" ? "space-y-6" : "hidden"}
-        >
-          {pinnedRuns.length >= 2 ? (
-            <RunComparison
-              runs={pinnedRuns}
-              channel={channel}
-              onChannelChange={setChannel}
-              onRemove={togglePin}
-              origins={origins}
-              documents={documentsById}
-              onOpenSource={(docId, page) => setReaderTarget({ docId, page })}
+          <Card>
+            <CardHeader
+              title="Find runs"
+              subtitle="Search and narrow the top ranked experiments"
             />
-          ) : (
-            <Card>
-              <EmptyState
-                icon={Pin}
-                title="Pin two or three runs to compare"
-                description="Use the pin controls in Rankings to place experiments side by side."
-              />
-              <CardBody className="flex justify-center pt-0">
-                <Button
-                  variant="outline"
-                  onClick={() => selectSection("rankings")}
-                >
-                  Go to rankings
-                </Button>
-              </CardBody>
-            </Card>
-          )}
-        </section>
-
-        <section
-          id="ranking-panel-telemetry"
-          role="tabpanel"
-          aria-labelledby="ranking-tab-telemetry"
-          className={
-            activeSection === "telemetry"
-              ? "grid items-start gap-6 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] [&>*]:min-w-0"
-              : "hidden"
-          }
-          aria-busy={ranking.isFetching}
-        >
-          {selectedRun && rankData?.weights ? (
-            <Card>
-              <CardHeader
-                title="Score breakdown"
-                subtitle="Total = Σ weight share × component score"
-              />
-              <CardBody>
-                <ScoreBreakdown run={selectedRun} weights={rankData.weights} />
-              </CardBody>
-            </Card>
-          ) : (
-            <Card>
-              <EmptyState
-                icon={ListOrdered}
-                title="Select a run first"
-                description="Choose an experiment in Rankings to view its score."
-              />
-            </Card>
-          )}
-
-          {selectedRun?.experiment_id ? (
-            <Card>
-              <CardHeader
-                title="Telemetry"
-                subtitle={`${selectedRun.experiment_id}: choose one measured channel to view over time`}
-              />
-              <CardBody className="space-y-4">
-                <div className="max-w-xs">
-                  <Select
-                    label="Telemetry channel"
-                    value={channel}
-                    options={TELEMETRY_OPTIONS}
-                    onChange={setChannel}
-                  />
-                </div>
-                <TelemetryChart
-                  experimentId={selectedRun.experiment_id}
-                  channel={channel}
+            <RankingFilters
+              value={filters}
+              onChange={setFilters}
+              results={results}
+              matches={filteredResults.length}
+              shown={visibleResults.length}
+              checkingTelemetry={checkingTelemetry}
+            />
+            {availabilityErrors > 0 ? (
+              <p role="alert" className="text-mock px-5 py-2 text-xs">
+                Could not check telemetry for {availabilityErrors} run
+                {availabilityErrors === 1 ? "" : "s"}; those runs are not
+                included in this filter.
+              </p>
+            ) : null}
+          </Card>
+          <div
+            ref={scoreStart}
+            className="grid items-start gap-6 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] [&>*]:min-w-0"
+            aria-busy={ranking.isFetching}
+          >
+            {selectedRun && rankData?.weights ? (
+              <Card>
+                <CardHeader
+                  title="Score breakdown"
+                  subtitle="Total = Σ weight share × component score"
                 />
-              </CardBody>
-            </Card>
-          ) : (
-            <Card>
-              <EmptyState
-                icon={ListOrdered}
-                title="No telemetry selected"
-                description="Choose a run in Rankings to inspect its measured channels."
+                <CardBody>
+                  <ScoreBreakdown
+                    run={selectedRun}
+                    weights={rankData.weights}
+                  />
+                </CardBody>
+              </Card>
+            ) : (
+              <Card>
+                <EmptyState
+                  icon={ListOrdered}
+                  title="Select a run first"
+                  description="Choose an experiment above to view its score."
+                />
+              </Card>
+            )}
+            {selectedRun?.experiment_id ? (
+              <Card>
+                <CardHeader
+                  title="Telemetry"
+                  subtitle={`${selectedRun.experiment_id}: choose one measured channel to view over time`}
+                />
+                <CardBody className="space-y-4">
+                  <div className="max-w-xs">
+                    <Select
+                      label="Telemetry channel"
+                      value={channel}
+                      options={TELEMETRY_OPTIONS}
+                      onChange={setChannel}
+                    />
+                  </div>
+                  <TelemetryChart
+                    experimentId={selectedRun.experiment_id}
+                    channel={channel}
+                  />
+                </CardBody>
+              </Card>
+            ) : (
+              <Card>
+                <EmptyState
+                  icon={ListOrdered}
+                  title="No telemetry selected"
+                  description="Choose an experiment above to inspect its measured channels."
+                />
+              </Card>
+            )}
+          </div>
+          {pinnedRuns.length >= 2 ? (
+            <div ref={compareStart}>
+              <RunComparison
+                runs={pinnedRuns}
+                channel={channel}
+                onChannelChange={setChannel}
+                onRemove={togglePin}
+                origins={origins}
+                documents={documentsById}
+                onOpenSource={(docId, page) => setReaderTarget({ docId, page })}
               />
-              <CardBody className="flex justify-center pt-0">
-                <Button
-                  variant="outline"
-                  onClick={() => selectSection("rankings")}
-                >
-                  Go to rankings
-                </Button>
-              </CardBody>
-            </Card>
-          )}
+            </div>
+          ) : null}
         </section>
 
         <section
@@ -578,7 +548,7 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
           role="tabpanel"
           aria-labelledby="ranking-tab-sources"
           className={
-            activeSection === "sources"
+            section === "sources"
               ? "grid items-start gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] [&>*]:min-w-0"
               : "hidden"
           }
