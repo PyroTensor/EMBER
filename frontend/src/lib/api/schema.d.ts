@@ -427,7 +427,7 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /** @enum {string} */
-        Program: "BASS-II" | "SoFIE" | "FLEX" | "ACME";
+        Program: "BASS-II" | "SoFIE" | "FLEX" | "ACME" | "Saffire";
         /** @enum {string} */
         FuelMaterial: "PMMA" | "Cotton-Fiberglass" | "Nomex" | "Heptane" | "Methanol";
         /** @enum {string} */
@@ -571,7 +571,7 @@ export interface components {
              * @description Parent NASA investigation.
              * @enum {string}
              */
-            program: "BASS-II" | "SoFIE" | "FLEX" | "ACME";
+            program: "BASS-II" | "SoFIE" | "FLEX" | "ACME" | "Saffire";
             /** @enum {string} */
             fuel_material: "PMMA" | "Cotton-Fiberglass" | "Nomex" | "Heptane" | "Methanol";
             /** @enum {string} */

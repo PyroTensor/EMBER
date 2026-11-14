@@ -24,7 +24,8 @@ export const FEATURE_GROUPS: Readonly<Record<FeatureGroup, readonly [string, rea
 const GROUP_NAMES = Object.keys(FEATURE_GROUPS) as FeatureGroup[];
 
 function sigmoid(z: number): number {
-  return 1.0 / (1.0 + Math.exp(-z));
+  const clamped = Math.max(Math.min(z, 60.0), -60.0);
+  return 1.0 / (1.0 + Math.exp(-clamped));
 }
 
 /** Returns [oxygen_pct - LOI, LOI]. */
@@ -69,6 +70,9 @@ export function shapleyContributions(
 export function evaluateCabinMock(cfg: CabinConfig, baseline: CabinConfig = ISS_BASELINE): CabinEvaluation {
   const [margin, loi] = oxygenMargin(cfg);
   const r = risk(cfg);
+  const baseR = risk(baseline);
+  const rRounded = pyRound(r, 2);
+  const baseRounded = pyRound(baseR, 2);
   const phi = shapleyContributions(cfg, baseline);
   // Array.prototype.sort is stable, like Python's sorted().
   const contributions: Contribution[] = GROUP_NAMES.map((k) => ({
@@ -77,10 +81,25 @@ export function evaluateCabinMock(cfg: CabinConfig, baseline: CabinConfig = ISS_
     value: pyRound(phi[k], 2),
   })).sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
 
+  if (contributions.length > 0 && Math.abs(contributions[0].value) > 0) {
+    const targetDelta = pyRound(rRounded - baseRounded, 2);
+    const currentSum = pyRound(
+      contributions.reduce((acc, c) => acc + c.value, 0),
+      2,
+    );
+    const residual = pyRound(targetDelta - currentSum, 2);
+    if (residual !== 0.0) {
+      contributions[0] = {
+        ...contributions[0],
+        value: pyRound(contributions[0].value + residual, 2),
+      };
+    }
+  }
+
   return {
-    risk_index: pyRound(r, 1),
+    risk_index: rRounded,
     risk_band: riskBand(r),
-    baseline_risk: pyRound(risk(baseline), 1),
+    baseline_risk: baseRounded,
     predicted_regime: predictRegime(cfg.fuel_material, cfg.gravity_g, margin),
     estimated_loi_pct: pyRound(loi, 2),
     oxygen_margin_pct: pyRound(margin, 2),

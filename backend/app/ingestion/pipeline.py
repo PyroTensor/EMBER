@@ -8,6 +8,7 @@ Ported from legacy ``ember_data/ingestion/pipeline.py`` (same stages and stage l
 
 from __future__ import annotations
 
+import fnmatch
 import time
 from pathlib import Path
 from typing import Any
@@ -18,9 +19,11 @@ from app.core.config import BASE_DIR
 from app.embeddings.factory import get_embedder
 from app.embeddings.null import NullEmbedder
 from app.ingestion.stages import chunk_embed, fetch_cache, llm_extract, load, normalize, parse, validate
+from app.schemas.ingestion import Document, Investigation
 from app.schemas.preset import Preset
 
 PRESETS_FILE = "presets.json"
+DEFAULT_RUNS_FILE = "experiments_proxy.csv"
 
 
 def log(stage: str, msg: str) -> None:
@@ -45,6 +48,93 @@ def _read_presets(path: Path) -> list[Preset]:
     return presets
 
 
+def _build_cached_lookup(files: list[fetch_cache.SourceFile]) -> dict[str, Path]:
+    """Index cached files by relative path and basename, logging a warning on basename collisions."""
+    cached: dict[str, Path] = {}
+    seen_basenames: dict[str, str] = {}
+    for f in files:
+        rel_key = Path(f.original).as_posix()
+        name = Path(f.original).name
+        p = Path(f.path)
+        cached[rel_key] = p
+        if name in seen_basenames and seen_basenames[name] != rel_key:
+            log(
+                "fetch",
+                f"WARNING duplicate filename '{name}' in '{seen_basenames[name]}' and '{rel_key}'; "
+                "use relative path in --runs-file to disambiguate",
+            )
+        seen_basenames[name] = rel_key
+        cached[name] = p
+    return cached
+
+
+def _resolve_run_files(
+    runs_file: str,
+    files: list[fetch_cache.SourceFile],
+    cached: dict[str, Path],
+    telemetry_file: str,
+) -> list[Path]:
+    """Resolve one, comma-separated, glob, or multi-CSV NASA drop ``psi_dataset`` run files."""
+    specs = [s.strip() for s in runs_file.split(",") if s.strip()]
+    matched: list[Path] = []
+    seen: set[Path] = set()
+
+    def _add(p: Path) -> None:
+        if p not in seen:
+            seen.add(p)
+            matched.append(p)
+
+    excluded_names = {PRESETS_FILE.lower(), telemetry_file.lower(), "raw_drop_example.csv"}
+    for spec in specs:
+        norm_spec = spec.replace("\\", "/")
+        if norm_spec in ("*", "all"):
+            for f in files:
+                name = Path(f.original).name.lower()
+                if f.source_type == "psi_dataset" and name not in excluded_names:
+                    _add(Path(f.path))
+        elif any(ch in norm_spec for ch in ("*", "?", "[")):
+            for f in files:
+                rel_posix = Path(f.original).as_posix()
+                name = Path(f.original).name
+                if fnmatch.fnmatch(rel_posix, norm_spec) or fnmatch.fnmatch(name, norm_spec):
+                    _add(Path(f.path))
+        elif norm_spec in cached:
+            _add(cached[norm_spec])
+        elif spec in cached:
+            _add(cached[spec])
+
+    # Fallback: if default runs_file was not found in a custom drop folder, load all psi_dataset CSVs
+    if not matched and runs_file == DEFAULT_RUNS_FILE:
+        for f in files:
+            name = Path(f.original).name.lower()
+            if (
+                f.source_type == "psi_dataset"
+                and Path(f.path).suffix.lower() == ".csv"
+                and name not in excluded_names
+            ):
+                _add(Path(f.path))
+    return matched
+
+
+def _extract_deduped_investigations(docs: list[Document], ext: llm_extract.Extractor) -> list[Investigation]:
+    """Extract investigations from docs (iss_page prioritized before ntrs) and deduplicate by id."""
+    ordered_docs = sorted(docs, key=lambda d: 0 if d.source_type == "iss_page" else 1)
+    by_id: dict[str, tuple[str, Investigation]] = {}
+    for d in ordered_docs:
+        inv = ext.extract_investigation(d)
+        if inv is None:
+            continue
+        prev = by_id.get(inv.id)
+        if prev is None:
+            by_id[inv.id] = (d.source_type, inv)
+        else:
+            prev_type, prev_inv = prev
+            # Keep iss_page canonical record over ntrs; within same source_type keep richest summary
+            if prev_type == d.source_type and len(inv.summary) > len(prev_inv.summary):
+                by_id[inv.id] = (d.source_type, inv)
+    return [pair[1] for pair in by_id.values()]
+
+
 async def run(
     source: Path,
     runs_file: str,
@@ -61,16 +151,19 @@ async def run(
     changed = sum(f.changed for f in files)
     manifest = fetch_cache.default_cache_dir() / "manifest.json"
     log("fetch", f"{len(files)} files cached ({changed} new/changed) -> {_rel(manifest)}")
-    cached = {Path(f.original).name: Path(f.path) for f in files}
+    cached = _build_cached_lookup(files)
     checksums = {f.path: f.sha256 for f in files}
 
     # 2. parse
     doc_paths = [Path(f.path) for f in files if f.source_type in ("ntrs", "iss_page")]
     docs = parse.parse_documents(doc_paths)
-    if runs_file not in cached:
+    run_paths = _resolve_run_files(runs_file, files, cached, telemetry_file)
+    if not run_paths:
         log("parse", f"ERROR runs file '{runs_file}' not found in {source}")
         return 1
-    raw_rows = parse.read_rows(cached[runs_file])
+    raw_rows: list[dict[str, Any]] = []
+    for rp in run_paths:
+        raw_rows.extend(parse.read_rows(rp))
     telemetry = parse.read_telemetry(cached[telemetry_file]) if telemetry_file in cached else {}
     presets = _read_presets(cached[PRESETS_FILE]) if PRESETS_FILE in cached else []
     log(
@@ -87,7 +180,7 @@ async def run(
 
     # 4. LLM extraction
     ext = llm_extract.get_extractor(extractor)
-    investigations = [inv for d in docs if (inv := ext.extract_investigation(d))]
+    investigations = _extract_deduped_investigations(docs, ext)
     extracted_runs = [r for d in docs for r in ext.extract_test_runs(d)]
     rows += normalize.normalize_rows(extracted_runs, cmap) if extracted_runs else []
     log(
@@ -97,7 +190,8 @@ async def run(
     )
 
     # 5. validate
-    report = validate.validate_rows(rows, write_queue=True)
+    report = validate.validate_rows(rows, write_queue=not dry_run)
+    investigations = load.deduplicate_investigations(investigations, report.valid)
     log("validate", f"{report.summary()} -> {_rel(validate.review_queue_path())}")
     for rej in report.rejected[:5]:
         log("validate", f"  rejected {rej['row'].get('experiment_id')}: {rej['errors'][:3]}")

@@ -1,12 +1,12 @@
-"""Baseline Spacecraft Fire Risk Index (0-100) with exact Shapley attributions.
+"""Baseline Spacecraft Fire Risk Index / Relative Experimental Flammability Index (0-100) with exact Shapley attributions.
 
 risk(x) = 100 * sigmoid((O2 - LOI(x) - 4) / 3)
 
 Attributions are *exact* Shapley values over 5 feature groups, computed by enumerating all
 2^5 = 32 coalitions against the baseline (ISS standard by default), so
-    sum(contributions) == risk(x) - risk(baseline)     (to float precision)
+    sum(contributions) == risk(x) - risk(baseline)
 
-Ported from legacy ``ember_data/models/risk.py``: same math and rounding, ``CabinParams`` instead of the
+Ported from legacy ``ember_data/models/risk.py``: ``CabinParams`` instead of the
 Pydantic ``CabinConfig``.
 """
 
@@ -32,7 +32,8 @@ FEATURE_GROUPS: Final[dict[str, tuple[str, tuple[str, ...]]]] = {
 
 
 def _sigmoid(z: float) -> float:
-    return 1.0 / (1.0 + math.exp(-z))
+    clamped = max(min(z, 60.0), -60.0)
+    return 1.0 / (1.0 + math.exp(-clamped))
 
 
 def oxygen_margin(params: CabinParams) -> tuple[float, float]:
@@ -76,16 +77,26 @@ def shapley_contributions(x: CabinParams, base: CabinParams = ISS_BASELINE) -> d
 def evaluate_cabin(params: CabinParams, baseline: CabinParams = ISS_BASELINE) -> RiskResult:
     margin, loi = oxygen_margin(params)
     r = risk(params)
+    base_r = risk(baseline)
+    r_rounded = round(r, 2)
+    base_rounded = round(base_r, 2)
     phi = shapley_contributions(params, baseline)
     contribs = sorted(
         (Contribution(k, FEATURE_GROUPS[k][0], round(v, 2)) for k, v in phi.items()),
         key=lambda c: abs(c.value),
         reverse=True,
     )
+    if contribs and abs(contribs[0].value) > 0:
+        target_delta = round(r_rounded - base_rounded, 2)
+        current_sum = round(sum(c.value for c in contribs), 2)
+        residual = round(target_delta - current_sum, 2)
+        if residual != 0.0:
+            c0 = contribs[0]
+            contribs[0] = Contribution(c0.feature, c0.label, round(c0.value + residual, 2))
     return RiskResult(
-        risk_index=round(r, 1),
+        risk_index=r_rounded,
         risk_band=risk_band(r),
-        baseline_risk=round(risk(baseline), 1),
+        baseline_risk=base_rounded,
         predicted_regime=predict_regime(params.fuel_material, params.gravity_g, margin),
         estimated_loi_pct=round(loi, 2),
         oxygen_margin_pct=round(margin, 2),

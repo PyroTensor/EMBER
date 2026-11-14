@@ -16,7 +16,7 @@ from app.schemas.enums import CombustionRegime, FuelMaterial, Program
 from app.schemas.experiment import ExperimentFilters
 
 PROGRAMS: Final[dict[str, str]] = {
-    "bass-ii": "BASS-II", "bass": "BASS-II", "sofie": "SoFIE", "flex": "FLEX", "acme": "ACME",
+    "bass-ii": "BASS-II", "bass": "BASS-II", "sofie": "SoFIE", "flex": "FLEX", "acme": "ACME", "saffire": "Saffire",
 }  # fmt: skip
 MATERIALS: Final[dict[str, str]] = {
     "pmma": "PMMA",

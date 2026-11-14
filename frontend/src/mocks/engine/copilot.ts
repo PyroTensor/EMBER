@@ -13,7 +13,7 @@ export const NO_DATA_MESSAGE =
 const DOMAIN_KEYWORDS = new Set([
   "flame", "fire", "burn", "combustion", "oxygen", "o2", "loi", "pressure", "kpa", "psia",
   "flow", "ventilation", "hvac", "microgravity", "0g", "1g", "gravity", "lunar", "mars",
-  "artemis", "iss", "bass", "bass-ii", "sofie", "flex", "acme", "pmma", "nomex", "cotton",
+  "artemis", "iss", "bass", "bass-ii", "sofie", "flex", "acme", "saffire", "pmma", "nomex", "cotton",
   "fiberglass", "sibal", "heptane", "methanol", "droplet", "cool", "radiative", "flux",
   "extinguish", "ignition", "spread", "diluent", "co2", "helium", "argon", "nitrogen",
   "nasa", "6001b", "spacecraft", "cabin", "habitat", "exp-", "doc-", "soot", "standoff",
