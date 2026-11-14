@@ -225,7 +225,16 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
     const run = results.find((result) => result.experiment_id === id);
     return run ? [run] : [];
   });
+  const activeSection =
+    section === "compare" && pinnedRuns.length < 2 ? "rankings" : section;
   const togglePin = (id: string) => {
+    if (
+      section === "compare" &&
+      pinnedIds.includes(id) &&
+      pinnedIds.length <= 2
+    ) {
+      setSection("rankings");
+    }
     setPins((current) => {
       const ids = current.key === pinKey ? current.ids : [];
       return {
@@ -293,7 +302,7 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
   return (
     <>
       <RankingSectionNav
-        active={section}
+        active={activeSection}
         onSelect={selectSection}
         pinnedCount={pinnedRuns.length}
         scenarioName={scenarioId ? presetName : "Custom configuration"}
@@ -307,7 +316,7 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
           role="tabpanel"
           aria-labelledby="ranking-tab-scenario"
           className={
-            section === "scenario"
+            activeSection === "scenario"
               ? "grid items-start gap-6 md:grid-cols-2 [&>*]:min-w-0"
               : "hidden"
           }
@@ -346,7 +355,7 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
           id="ranking-panel-rankings"
           role="tabpanel"
           aria-labelledby="ranking-tab-rankings"
-          className={section === "rankings" ? "space-y-6" : "hidden"}
+          className={activeSection === "rankings" ? "space-y-6" : "hidden"}
           aria-busy={ranking.isFetching}
         >
           <Card>
@@ -462,7 +471,7 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
           id="ranking-panel-compare"
           role="tabpanel"
           aria-labelledby="ranking-tab-compare"
-          className={section === "compare" ? "space-y-6" : "hidden"}
+          className={activeSection === "compare" ? "space-y-6" : "hidden"}
         >
           {pinnedRuns.length >= 2 ? (
             <RunComparison
@@ -498,7 +507,7 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
           role="tabpanel"
           aria-labelledby="ranking-tab-telemetry"
           className={
-            section === "telemetry"
+            activeSection === "telemetry"
               ? "grid items-start gap-6 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] [&>*]:min-w-0"
               : "hidden"
           }
@@ -569,7 +578,7 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
           role="tabpanel"
           aria-labelledby="ranking-tab-sources"
           className={
-            section === "sources"
+            activeSection === "sources"
               ? "grid items-start gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] [&>*]:min-w-0"
               : "hidden"
           }

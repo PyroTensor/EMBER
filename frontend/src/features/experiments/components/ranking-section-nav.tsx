@@ -32,6 +32,10 @@ export function RankingSectionNav({
   topOffset: number;
 }) {
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
+  const sections =
+    pinnedCount >= 2
+      ? SECTIONS
+      : SECTIONS.filter((section) => section.id !== "compare");
 
   const onKeyDown = (
     event: KeyboardEvent<HTMLButtonElement>,
@@ -39,17 +43,17 @@ export function RankingSectionNav({
   ) => {
     const nextIndex =
       event.key === "ArrowRight"
-        ? (index + 1) % SECTIONS.length
+        ? (index + 1) % sections.length
         : event.key === "ArrowLeft"
-          ? (index - 1 + SECTIONS.length) % SECTIONS.length
+          ? (index - 1 + sections.length) % sections.length
           : event.key === "Home"
             ? 0
             : event.key === "End"
-              ? SECTIONS.length - 1
+              ? sections.length - 1
               : null;
     if (nextIndex === null) return;
     event.preventDefault();
-    const next = SECTIONS[nextIndex];
+    const next = sections[nextIndex];
     if (next) onSelect(next.id);
     tabs.current[nextIndex]?.focus();
   };
@@ -66,7 +70,7 @@ export function RankingSectionNav({
           aria-label="Ranking page sections"
           className="border-border flex min-w-max border-b px-2"
         >
-          {SECTIONS.map((section, index) => {
+          {sections.map((section, index) => {
             const selected = active === section.id;
             const label =
               section.id === "compare"
