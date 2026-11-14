@@ -643,6 +643,7 @@ export interface components {
             doc_id: string;
             title: string;
             source_type: string;
+            is_proxy?: boolean | null;
             investigation?: string | null;
             url?: string | null;
             sources?: string[];

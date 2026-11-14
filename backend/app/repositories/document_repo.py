@@ -49,10 +49,12 @@ def extract_doc_meta(doc_row: dict[str, Any], chunks: list[dict[str, Any]]) -> d
         url = sources[0]
     page_count = int(doc_row.get("page_count") or max((int(c.get("page") or 1) for c in chunks), default=1))
     inv = meta.get("investigation")
+    proxy = meta.get("proxy")
     return {
         "doc_id": str(doc_row["doc_id"]),
         "title": str(doc_row.get("title") or meta.get("title") or doc_row["doc_id"]),
         "source_type": str(doc_row.get("source_type") or meta.get("source_type") or "ntrs"),
+        "is_proxy": proxy if isinstance(proxy, bool) else None,
         "investigation": str(inv) if inv else None,
         "url": str(url) if url else None,
         "sources": sources,

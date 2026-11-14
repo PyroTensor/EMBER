@@ -5,6 +5,7 @@ import { respond } from "../scenarios";
 const MOCK_DOCS: DocumentDetail[] = [
   {
     doc_id: "DOC-01",
+    is_proxy: true,
     title:
       "Flame Spread over Thin Solids in Opposed and Concurrent Low-Speed Flow (BASS-II proxy summary)",
     source_type: "ntrs",
@@ -53,6 +54,7 @@ const MOCK_DOCS: DocumentDetail[] = [
   },
   {
     doc_id: "DOC-02",
+    is_proxy: true,
     title:
       "Material Flammability in Exploration Atmospheres: Elevated O2 at Reduced Pressure (SoFIE proxy summary)",
     source_type: "ntrs",
@@ -97,6 +99,7 @@ const MOCK_DOCS: DocumentDetail[] = [
   },
   {
     doc_id: "DOC-03",
+    is_proxy: true,
     title:
       "Droplet Combustion, Radiative Extinction and Cool Flames in Microgravity (FLEX proxy summary)",
     source_type: "ntrs",
@@ -141,6 +144,7 @@ const MOCK_DOCS: DocumentDetail[] = [
   },
   {
     doc_id: "DOC-04",
+    is_proxy: true,
     title:
       "Spherical Gaseous Diffusion Flames, Soot and Extinction Limits (ACME proxy summary)",
     source_type: "ntrs",
@@ -176,6 +180,7 @@ const MOCK_DOCS: DocumentDetail[] = [
   },
   {
     doc_id: "DOC-05",
+    is_proxy: true,
     title:
       "Partial Gravity (Lunar / Mars) Flammability and Implications for NASA-STD-6001B Material Screening",
     source_type: "ntrs",
