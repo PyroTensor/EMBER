@@ -60,12 +60,7 @@ def limiting_oxygen_index(
 ) -> float:
     u = effective_velocity(flow_cm_s, gravity_g, pressure_kpa)
     base_loi = MATERIAL_BASE_LOI.get(material, DEFAULT_BASE_LOI)
-    return (
-        base_loi
-        + flow_loi_shift(u)
-        + pressure_loi_shift(pressure_kpa)
-        + DILUENT_SHIFT.get(diluent, 0.0)
-    )
+    return base_loi + flow_loi_shift(u) + pressure_loi_shift(pressure_kpa) + DILUENT_SHIFT.get(diluent, 0.0)
 
 
 def predict_regime(material: str, gravity_g: float, oxygen_margin: float) -> str:

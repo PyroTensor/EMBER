@@ -1,6 +1,7 @@
-"""Baseline Spacecraft Fire Risk Index / Relative Experimental Flammability Index (0-100) with exact Shapley attributions.
+"""Baseline Spacecraft Fire Risk Index / Relative Experimental Flammability Index (0-100).
 
-risk(x) = 100 * sigmoid((O2 - LOI(x) - 4) / 3)
+With exact Shapley attributions:
+    risk(x) = 100 * sigmoid((O2 - LOI(x) - 4) / 3)
 
 Attributions are *exact* Shapley values over 5 feature groups, computed by enumerating all
 2^5 = 32 coalitions against the baseline (ISS standard by default), so

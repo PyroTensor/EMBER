@@ -82,11 +82,7 @@ def criticality(run: Mapping[str, Any]) -> float:
     flux: float = min(max(float(flux_val), 0.0) / 10.0, 1.0) if flux_val is not None else 0.0
     loi = run.get("limiting_oxygen_index_pct")
     o2 = run.get("oxygen_pct")
-    margin = (
-        0.0
-        if (loi is None or o2 is None)
-        else min(max(float(o2) - float(loi), 0.0) / 10.0, 1.0)
-    )
+    margin = 0.0 if (loi is None or o2 is None) else min(max(float(o2) - float(loi), 0.0) / 10.0, 1.0)
     return 60.0 * sev + 25.0 * flux + 15.0 * margin
 
 

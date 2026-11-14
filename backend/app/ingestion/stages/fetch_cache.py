@@ -90,11 +90,7 @@ def fetch(source_dir: Path, cache_dir: Path | None = None) -> list[SourceFile]:
         dest = raw / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
         digest = _sha256(p)
-        prev_sha = (
-            old_hashes.get(rel_key)
-            or old_hashes.get(str(rel))
-            or old_hashes.get(str(p))
-        )
+        prev_sha = old_hashes.get(rel_key) or old_hashes.get(str(rel)) or old_hashes.get(str(p))
         changed = prev_sha != digest
         if changed or not dest.exists():
             shutil.copy2(p, dest)

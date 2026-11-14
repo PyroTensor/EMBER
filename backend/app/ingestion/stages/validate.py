@@ -27,7 +27,17 @@ OPTIONAL_OUTPUTS = (
 )
 REVIEW_TOP_N = 15
 _SURROGATE_FUELS = frozenset(
-    {"cellulose", "ashless filter paper", "ultem", "ethanol", "iso-propanol", "n-octane", "decane", "n-decane", "toluene"}
+    {
+        "cellulose",
+        "ashless filter paper",
+        "ultem",
+        "ethanol",
+        "iso-propanol",
+        "n-octane",
+        "decane",
+        "n-decane",
+        "toluene",
+    }
 )
 
 

@@ -143,9 +143,7 @@ async def load_postgres(payload: dict[str, Any], *, load_chunks: bool = True) ->
             counts["chunks"] = 0
             if load_chunks:
                 chunk_repo = PgChunkRepository(session)
-                by_doc: dict[str, list[dict[str, Any]]] = {
-                    doc["doc_id"]: [] for doc in payload["documents"]
-                }
+                by_doc: dict[str, list[dict[str, Any]]] = {doc["doc_id"]: [] for doc in payload["documents"]}
                 for c in payload["chunks"]:
                     by_doc.setdefault(c["doc_id"], []).append({k: v for k, v in c.items() if k != "id"})
                 for doc_id, rows in by_doc.items():

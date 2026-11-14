@@ -81,7 +81,8 @@ export function evaluateCabinMock(cfg: CabinConfig, baseline: CabinConfig = ISS_
     value: pyRound(phi[k], 2),
   })).sort((a, b) => Math.abs(b.value) - Math.abs(a.value));
 
-  if (contributions.length > 0 && Math.abs(contributions[0].value) > 0) {
+  const c0 = contributions[0];
+  if (c0 && Math.abs(c0.value) > 0) {
     const targetDelta = pyRound(rRounded - baseRounded, 2);
     const currentSum = pyRound(
       contributions.reduce((acc, c) => acc + c.value, 0),
@@ -90,8 +91,9 @@ export function evaluateCabinMock(cfg: CabinConfig, baseline: CabinConfig = ISS_
     const residual = pyRound(targetDelta - currentSum, 2);
     if (residual !== 0.0) {
       contributions[0] = {
-        ...contributions[0],
-        value: pyRound(contributions[0].value + residual, 2),
+        feature: c0.feature,
+        label: c0.label,
+        value: pyRound(c0.value + residual, 2),
       };
     }
   }
