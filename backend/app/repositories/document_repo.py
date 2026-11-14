@@ -68,14 +68,39 @@ class PgDocumentRepository(SqlRepository[Document]):
         doc_res = await self.session.execute(select(self.table).order_by(self.table.c.doc_id))
         doc_rows = [dict(r) for r in doc_res.mappings()]
         chunk_res = await self.session.execute(
-            select(Chunk.doc_id, Chunk.page, Chunk.metadata_.label("metadata")).order_by(
-                Chunk.doc_id, Chunk.page, Chunk.id
-            )
+            select(
+                Chunk.id,
+                Chunk.doc_id,
+                Chunk.page,
+                Chunk.section,
+                Chunk.text,
+                Chunk.metadata_.label("metadata"),
+            ).order_by(Chunk.doc_id, Chunk.page, Chunk.id)
         )
         chunks_by_doc: dict[str, list[dict[str, Any]]] = {}
         for r in chunk_res.mappings():
             chunks_by_doc.setdefault(str(r["doc_id"]), []).append(dict(r))
-        return [extract_doc_meta(d, chunks_by_doc.get(str(d["doc_id"]), [])) for d in doc_rows]
+        run_res = await self.session.execute(
+            select(TestRun.source_doc_id, TestRun.experiment_id)
+            .where(TestRun.source_doc_id.is_not(None))
+            .order_by(TestRun.source_doc_id, TestRun.experiment_id)
+        )
+        runs_by_doc: dict[str, list[str]] = {}
+        for r in run_res.mappings():
+            runs_by_doc.setdefault(str(r["source_doc_id"]), []).append(str(r["experiment_id"]))
+        out: list[dict[str, Any]] = []
+        for d in doc_rows:
+            doc_id = str(d["doc_id"])
+            doc_chunks = chunks_by_doc.get(doc_id, [])
+            summary = extract_doc_meta(d, doc_chunks)
+            out.append(
+                {
+                    **summary,
+                    "pages": build_pages(doc_chunks, summary["page_count"]),
+                    "related_experiment_ids": runs_by_doc.get(doc_id, []),
+                }
+            )
+        return out
 
     async def get_detail(self, doc_id: str) -> dict[str, Any] | None:
         doc_res = await self.session.execute(select(self.table).where(self.table.c.doc_id == doc_id))

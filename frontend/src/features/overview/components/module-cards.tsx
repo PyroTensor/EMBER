@@ -7,6 +7,7 @@ const VALUE: Record<string, string> = {
   "/twin": "Watch a buoyant 1g flame turn into a spherical 0g flame, and why HVAC flow matters.",
   "/ranking": "Find the test runs closest to your scenario and inspect their telemetry.",
   "/copilot": "Ask questions about the experiments and get answers with citations.",
+  "/resources": "Search NASA combustion papers, ISS investigations, fire incident reports, and spinoff resources by keyword.",
 };
 
 const MODULES = NAV_ITEMS.filter((item) => item.module);

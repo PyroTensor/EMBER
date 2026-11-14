@@ -154,7 +154,27 @@ class SnapshotDocumentRepo:
         chunks_by_doc: dict[str, list[dict[str, Any]]] = {}
         for ch in self.store.chunks:
             chunks_by_doc.setdefault(str(ch["doc_id"]), []).append(ch)
-        return [extract_doc_meta(d, chunks_by_doc.get(str(d["doc_id"]), [])) for d in docs]
+        runs_by_doc: dict[str, list[str]] = {}
+        for r in self.store.test_runs:
+            src_doc = str(r.get("source_doc_id") or "")
+            if src_doc:
+                runs_by_doc.setdefault(src_doc, []).append(str(r["experiment_id"]))
+        out: list[dict[str, Any]] = []
+        for d in docs:
+            doc_id = str(d["doc_id"])
+            doc_chunks = sorted(
+                chunks_by_doc.get(doc_id, []),
+                key=lambda c: (int(c.get("page") or 1), int(c.get("id") or 0)),
+            )
+            summary = extract_doc_meta(d, doc_chunks)
+            out.append(
+                {
+                    **summary,
+                    "pages": build_pages(doc_chunks, summary["page_count"]),
+                    "related_experiment_ids": sorted(runs_by_doc.get(doc_id, [])),
+                }
+            )
+        return out
 
     async def get_detail(self, doc_id: str) -> dict[str, Any] | None:
         doc_row = next((d for d in self.store.documents if str(d["doc_id"]) == doc_id), None)

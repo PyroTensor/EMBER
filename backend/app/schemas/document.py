@@ -25,11 +25,12 @@ class DocumentSummary(APIModel):
     url: str | None = None
     sources: list[str] = Field(default_factory=list)
     page_count: int
+    pages: list[DocumentPage] = Field(default_factory=list)
+    related_experiment_ids: list[str] = Field(default_factory=list)
 
 
 class DocumentDetail(DocumentSummary):
-    pages: list[DocumentPage] = Field(default_factory=list)
-    related_experiment_ids: list[str] = Field(default_factory=list)
+    pass
 
 
 __all__ = ["DocumentDetail", "DocumentPage", "DocumentSection", "DocumentSummary"]

@@ -14,6 +14,7 @@ from app.ingestion.stages.parse import parse_documents  # noqa: E402
 from app.rag.scope import DOMAIN_KEYWORDS  # noqa: E402
 from app.repositories.snapshot.repos import SnapshotDocumentRepo  # noqa: E402
 from app.repositories.snapshot.store import get_snapshot_store  # noqa: E402
+from app.services.document_service import DocumentService  # noqa: E402
 
 
 def test_challenge_corpus_documents_parse_cleanly() -> None:
@@ -57,6 +58,7 @@ def test_snapshot_document_repo_returns_full_pages_and_links() -> None:
     repo = SnapshotDocumentRepo(get_snapshot_store())
     summaries = asyncio.run(repo.list_all())
     assert len(summaries) >= 8
+    assert all(len(s.get("pages", [])) >= 1 for s in summaries)
     doc3 = asyncio.run(repo.get_detail("DOC-03"))
     assert doc3 is not None
     assert doc3["doc_id"] == "DOC-03"
@@ -64,3 +66,9 @@ def test_snapshot_document_repo_returns_full_pages_and_links() -> None:
     assert len(doc3["sources"]) >= 1
     assert len(doc3["pages"]) == 3
     assert "EXP-0031" in doc3["related_experiment_ids"]
+
+    service = DocumentService(repo)
+    apollo_docs = asyncio.run(service.list_all(q="Apollo 1 Mir"))
+    assert any(d.doc_id == "DOC-07" for d in apollo_docs)
+    spinoff_docs = asyncio.run(service.list_all(q="spinoff firefighting"))
+    assert any(d.doc_id == "DOC-08" for d in spinoff_docs)

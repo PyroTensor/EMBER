@@ -19,8 +19,13 @@ export const askCopilot = (req: AskRequest, signal?: AbortSignal) =>
   });
 
 /** GET /api/documents */
-export const listDocuments = (signal?: AbortSignal) =>
-  apiFetch<DocumentSummary[]>("/api/documents", { signal });
+export const listDocuments = (signal?: AbortSignal, q?: string) =>
+  apiFetch<DocumentSummary[]>(
+    q?.trim()
+      ? `/api/documents?q=${encodeURIComponent(q.trim())}`
+      : "/api/documents",
+    { signal },
+  );
 
 /** GET /api/documents/{doc_id} */
 export const getDocument = (docId: string, signal?: AbortSignal) =>

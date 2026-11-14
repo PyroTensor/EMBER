@@ -17,8 +17,8 @@ router = APIRouter(tags=["documents"])
     summary="All source documents and papers in the corpus",
     responses=error_responses(422, 500),
 )
-async def list_documents(service: DocumentServiceDep) -> list[DocumentSummary]:
-    return await service.list_all()
+async def list_documents(service: DocumentServiceDep, q: str | None = None) -> list[DocumentSummary]:
+    return await service.list_all(q=q)
 
 
 @router.get(

@@ -97,6 +97,8 @@ paths:
   /api/documents:
     get:
       summary: All source documents and papers in the corpus
+      parameters:
+        - { name: q, in: query, required: false, schema: { anyOf: [{ type: string }, { type: "null" }] } }
       responses:
         "200":
           content:
@@ -278,6 +280,12 @@ components:
           type: array
           items: { type: string }
         page_count: { type: integer }
+        pages:
+          type: array
+          items: { $ref: "#/components/schemas/DocumentPage" }
+        related_experiment_ids:
+          type: array
+          items: { type: string }
 
     DocumentDetail:
       allOf:

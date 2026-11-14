@@ -357,7 +357,9 @@ export interface paths {
         /** All source documents and papers in the corpus */
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    q?: string | null;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -645,6 +647,8 @@ export interface components {
             url?: string | null;
             sources?: string[];
             page_count: number;
+            pages?: components["schemas"]["DocumentPage"][];
+            related_experiment_ids?: string[];
         };
         DocumentDetail: components["schemas"]["DocumentSummary"] & {
             pages?: components["schemas"]["DocumentPage"][];
