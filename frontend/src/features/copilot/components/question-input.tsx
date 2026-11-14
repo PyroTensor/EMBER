@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useId,
   useRef,
   useState,
   type FormEvent,
@@ -10,7 +11,11 @@ import {
 import Link from "next/link";
 import { LoaderCircle, SendHorizontal, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupTextarea,
+} from "@/components/ui/input-group";
 import type { CabinConfig } from "@/lib/api/types";
 import {
   DEFAULT_CABIN_CONFIG,
@@ -42,6 +47,7 @@ export function QuestionInput({
   presetName,
 }: QuestionInputProps) {
   const [value, setValue] = useState("");
+  const inputId = useId();
   const formRef = useRef<HTMLFormElement>(null);
   const refocus = useRef(false);
   const canSubmit = !pending && value.trim().length > 0;
@@ -78,19 +84,44 @@ export function QuestionInput({
 
   return (
     <form ref={formRef} onSubmit={onFormSubmit} className="space-y-3">
-      <Textarea
-        label="Your question"
-        hint="Enter to send · Shift+Enter for a new line"
-        placeholder="Ask about flame spread, oxygen limits, ventilation, gravity or a run such as EXP-0012…"
-        value={value}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={onKeyDown}
-        disabled={pending}
-        maxLength={QUESTION_MAX}
-        rows={3}
-        className="min-h-20"
-      />
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="space-y-1.5">
+        <label
+          htmlFor={inputId}
+          className="text-muted block text-xs font-medium"
+        >
+          Your question
+        </label>
+        <InputGroup>
+          <InputGroupTextarea
+            id={inputId}
+            placeholder="Ask about flame spread, oxygen limits, ventilation, gravity or a run such as EXP-0012…"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={onKeyDown}
+            disabled={pending}
+            maxLength={QUESTION_MAX}
+            rows={3}
+            className="min-h-20"
+          />
+          <InputGroupAddon>
+            <Button
+              type="submit"
+              size="icon"
+              aria-label={pending ? "Asking Co-Pilot" : "Send question"}
+              title={pending ? "Asking Co-Pilot" : "Send question"}
+              disabled={!canSubmit}
+              className="rounded-full"
+            >
+              {pending ? (
+                <LoaderCircle aria-hidden className="size-4 animate-spin" />
+              ) : (
+                <SendHorizontal aria-hidden className="size-4" />
+              )}
+            </Button>
+          </InputGroupAddon>
+        </InputGroup>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
         <div className="flex flex-wrap items-center gap-2.5">
           <label
             className={`flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
@@ -105,9 +136,7 @@ export function QuestionInput({
               onChange={(e) => onUseScenarioChange(e.target.checked)}
               className="accent-accent size-4"
             />
-            <span>
-              Use current cabin configuration ({scenarioSummary})
-            </span>
+            <span>Use current cabin configuration ({scenarioSummary})</span>
           </label>
           <Link
             href="/cabin"
@@ -118,14 +147,6 @@ export function QuestionInput({
             Configure cabin →
           </Link>
         </div>
-        <Button type="submit" disabled={!canSubmit}>
-          {pending ? (
-            <LoaderCircle aria-hidden className="size-4 animate-spin" />
-          ) : (
-            <SendHorizontal aria-hidden className="size-4" />
-          )}
-          {pending ? "Asking…" : "Ask"}
-        </Button>
       </div>
     </form>
   );

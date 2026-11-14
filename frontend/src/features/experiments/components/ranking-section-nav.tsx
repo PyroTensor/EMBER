@@ -53,7 +53,7 @@ export function RankingSectionNav({
   return (
     <div
       id="ranking-section-nav"
-      className="border-border bg-surface sticky z-20 overflow-hidden rounded-md border shadow-lg shadow-black/20"
+      className="bg-surface/65 sticky z-20 overflow-hidden rounded-md border border-white/15 shadow-xl shadow-black/30 backdrop-blur-xl backdrop-saturate-150"
       style={{ top: topOffset }}
     >
       <nav aria-label="Ranking page sections" className="overflow-x-auto">

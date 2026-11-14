@@ -13,13 +13,16 @@ import {
 
 interface CabinControlsProps {
   cfg: CabinConfig;
-  onChange: <K extends keyof CabinConfig>(field: K, value: CabinConfig[K]) => void;
+  onChange: <K extends keyof CabinConfig>(
+    field: K,
+    value: CabinConfig[K],
+  ) => void;
 }
 
 /** Sliders for the 4 numeric fields and selects for material / diluent, all driven by field-meta. */
 export function CabinControls({ cfg, onChange }: CabinControlsProps) {
   return (
-    <div className="space-y-5">
+    <div className="grid gap-y-4">
       {NUMERIC_FIELDS.map((field: NumericField) => {
         const meta = FIELD_META[field];
         return (

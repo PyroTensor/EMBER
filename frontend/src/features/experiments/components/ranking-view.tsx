@@ -63,11 +63,8 @@ export function RankingView() {
   const presets = usePresets();
 
   return (
-    <div className="mx-auto max-w-7xl space-y-6 p-4 sm:p-8">
+    <div className="mx-auto max-w-7xl space-y-4 p-4 sm:p-6">
       <header className="space-y-1">
-        <p className="text-muted font-mono text-[11px] tracking-wide">
-          MODULE 03
-        </p>
         <h1 className="text-xl font-semibold">Ranking &amp; Telemetry</h1>
         <p className="text-muted max-w-2xl text-sm">
           Score every test run against a habitat scenario. Tune how much
@@ -77,14 +74,11 @@ export function RankingView() {
       </header>
 
       {presets.isPending ? (
-        <div
-          className="grid gap-6 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)]"
-          role="status"
-          aria-busy="true"
-        >
+        <div className="space-y-4" role="status" aria-busy="true">
           <span className="sr-only">Loading scenarios…</span>
-          <Skeleton className="h-[520px]" />
-          <Skeleton className="h-[520px]" />
+          <Skeleton className="h-28" />
+          <Skeleton className="h-64" />
+          <Skeleton className="h-32" />
         </div>
       ) : presets.isError ? (
         <ErrorState
@@ -327,14 +321,14 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
         selectedRunId={selectedRun?.experiment_id ?? null}
         topOffset={headerHeight}
       />
-      <div ref={panelStart} className="pt-6">
+      <div ref={panelStart} className="pt-4">
         <section
           id="ranking-panel-scenario"
           role="tabpanel"
           aria-labelledby="ranking-tab-scenario"
           className={
             section === "scenario"
-              ? "grid items-start gap-6 md:grid-cols-2 [&>*]:min-w-0"
+              ? "grid items-start gap-4 md:grid-cols-2 [&>*]:min-w-0"
               : "hidden"
           }
         >
@@ -372,7 +366,7 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
           id="ranking-panel-rankings"
           role="tabpanel"
           aria-labelledby="ranking-tab-rankings"
-          className={section === "rankings" ? "space-y-6" : "hidden"}
+          className={section === "rankings" ? "space-y-4" : "hidden"}
           aria-busy={ranking.isFetching}
         >
           <Card>
@@ -472,7 +466,7 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
           </Card>
           <div
             ref={scoreStart}
-            className="grid items-start gap-6 lg:grid-cols-[minmax(0,360px)_minmax(0,1fr)] [&>*]:min-w-0"
+            className="space-y-4"
             aria-busy={ranking.isFetching}
           >
             {selectedRun && rankData?.weights ? (
@@ -549,7 +543,7 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
           aria-labelledby="ranking-tab-sources"
           className={
             section === "sources"
-              ? "grid items-start gap-6 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] [&>*]:min-w-0"
+              ? "grid items-start gap-4 xl:grid-cols-[minmax(0,3fr)_minmax(0,2fr)] [&>*]:min-w-0"
               : "hidden"
           }
         >

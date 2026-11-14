@@ -19,8 +19,11 @@ const DANGER = Array.from({ length: 2001 }, (_, i) => {
 }).reduce((a, b) => (b.y < a.y ? b : a));
 
 const x = (u: number) => PAD.l + (u / U_MAX) * (W - PAD.l - PAD.r);
-const y = (v: number) => PAD.t + ((Y_MAX - v) / (Y_MAX - Y_MIN)) * (H - PAD.t - PAD.b);
-const PATH = SAMPLES.map((s, i) => `${i ? "L" : "M"}${x(s.u).toFixed(1)},${y(s.y).toFixed(1)}`).join(" ");
+const y = (v: number) =>
+  PAD.t + ((Y_MAX - v) / (Y_MAX - Y_MIN)) * (H - PAD.t - PAD.b);
+const PATH = SAMPLES.map(
+  (s, i) => `${i ? "L" : "M"}${x(s.u).toFixed(1)},${y(s.y).toFixed(1)}`,
+).join(" ");
 
 interface VentilationCurveProps {
   uEff: number;
@@ -41,18 +44,41 @@ export function VentilationCurve({ uEff }: VentilationCurveProps) {
         title="Ventilation paradox"
         subtitle="Lower LOI shift = easier to burn. Some airflow helps a fire before it blows it off."
       />
-      <CardBody>
-        <svg viewBox={`0 0 ${W} ${H}`} className="block h-auto w-full" role="img" aria-label={summary}>
+      <CardBody className="grid items-center gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <svg
+          viewBox={`0 0 ${W} ${H}`}
+          className="block h-auto w-full"
+          role="img"
+          aria-label={summary}
+        >
           {[0, 10, 20, 30, 40, 50].map((t) => (
             <g key={t}>
-              <line x1={x(t)} x2={x(t)} y1={PAD.t} y2={H - PAD.b} stroke="var(--color-border)" strokeWidth={1} />
-              <text x={x(t)} y={H - 10} textAnchor="middle" className="fill-muted font-mono text-[10px]">
+              <line
+                x1={x(t)}
+                x2={x(t)}
+                y1={PAD.t}
+                y2={H - PAD.b}
+                stroke="var(--color-border)"
+                strokeWidth={1}
+              />
+              <text
+                x={x(t)}
+                y={H - 10}
+                textAnchor="middle"
+                className="fill-muted font-mono text-[10px]"
+              >
                 {t}
               </text>
             </g>
           ))}
           {[Y_MIN, 0, Y_MAX].map((v) => (
-            <text key={v} x={PAD.l - 6} y={y(v) + 3} textAnchor="end" className="fill-muted font-mono text-[10px]">
+            <text
+              key={v}
+              x={PAD.l - 6}
+              y={y(v) + 3}
+              textAnchor="end"
+              className="fill-muted font-mono text-[10px]"
+            >
               {v.toFixed(1)}
             </text>
           ))}
@@ -64,16 +90,49 @@ export function VentilationCurve({ uEff }: VentilationCurveProps) {
             stroke="var(--color-risk-critical)"
             strokeDasharray="4 4"
           />
-          <text x={x(DANGER.u) + 4} y={PAD.t + 10} className="fill-risk-critical font-mono text-[10px]">
+          <text
+            x={x(DANGER.u) + 4}
+            y={PAD.t + 10}
+            className="fill-risk-critical font-mono text-[10px]"
+          >
             ~{DANGER.u.toFixed(1)} cm/s most dangerous
           </text>
-          <path d={PATH} fill="none" stroke="var(--color-accent)" strokeWidth={2} />
-          <circle cx={x(u)} cy={y(flowLoiShift(u))} r={5} fill="var(--color-fg)" stroke="var(--color-bg)" strokeWidth={2} />
+          <path
+            d={PATH}
+            fill="none"
+            stroke="var(--color-accent)"
+            strokeWidth={2}
+          />
+          <circle
+            cx={x(u)}
+            cy={y(flowLoiShift(u))}
+            r={5}
+            fill="var(--color-fg)"
+            stroke="var(--color-bg)"
+            strokeWidth={2}
+          />
         </svg>
-        <p className="mt-2 font-mono text-[11px] text-muted">
-          u_eff {uEff.toFixed(1)} cm/s{uEff > U_MAX ? " (off chart)" : ""} · LOI shift {shift >= 0 ? "+" : ""}
-          {shift.toFixed(2)} %
-        </p>
+        <dl className="grid grid-cols-2 gap-3 text-xs lg:grid-cols-1">
+          <div>
+            <dt className="text-muted">Effective flow</dt>
+            <dd className="text-fg mt-1 font-mono">
+              {uEff.toFixed(1)} cm/s{uEff > U_MAX ? " (off chart)" : ""}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-muted">LOI shift</dt>
+            <dd className="text-fg mt-1 font-mono">
+              {shift >= 0 ? "+" : ""}
+              {shift.toFixed(2)} %
+            </dd>
+          </div>
+          <div>
+            <dt className="text-muted">Most flammable near</dt>
+            <dd className="text-fg mt-1 font-mono">
+              {DANGER.u.toFixed(1)} cm/s
+            </dd>
+          </div>
+        </dl>
       </CardBody>
     </Card>
   );
