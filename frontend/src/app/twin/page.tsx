@@ -5,11 +5,15 @@ export const metadata: Metadata = { title: "Flame Twin" };
 
 export default function Page() {
   return (
-    <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-8">
+    <div className="mx-auto max-w-6xl space-y-4 p-4 sm:p-6">
       <header className="space-y-1">
-        <p className="font-mono text-[11px] tracking-wide text-muted">MODULE 02</p>
+        <p className="text-muted font-mono text-[11px] tracking-wide">
+          MODULE 02
+        </p>
         <h1 className="text-xl font-semibold">Flame Twin</h1>
-        <p className="text-sm text-muted">Multi-gravity and atmosphere flame morphology simulator</p>
+        <p className="text-muted text-sm">
+          Multi-gravity and atmosphere flame morphology simulator
+        </p>
       </header>
       <TwinView />
     </div>
