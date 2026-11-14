@@ -8,6 +8,7 @@ Ported from legacy ``ember_data/ingestion/pipeline.py`` (same stages and stage l
 
 from __future__ import annotations
 
+import asyncio
 import fnmatch
 import time
 from pathlib import Path
@@ -116,12 +117,15 @@ def _resolve_run_files(
     return matched
 
 
-def _extract_deduped_investigations(docs: list[Document], ext: llm_extract.Extractor) -> list[Investigation]:
+async def _extract_deduped_investigations(
+    docs: list[Document], ext: llm_extract.Extractor
+) -> list[Investigation]:
     """Extract investigations from docs (iss_page prioritized before ntrs) and deduplicate by id."""
     ordered_docs = sorted(docs, key=lambda d: 0 if d.source_type == "iss_page" else 1)
+    # documents are independent: extract concurrently, then dedupe in the deterministic order above
+    results = await asyncio.gather(*(ext.extract_investigation(d) for d in ordered_docs))
     by_id: dict[str, tuple[str, Investigation]] = {}
-    for d in ordered_docs:
-        inv = ext.extract_investigation(d)
+    for d, inv in zip(ordered_docs, results, strict=True):
         if inv is None:
             continue
         prev = by_id.get(inv.id)
@@ -143,6 +147,9 @@ async def run(
     dry_run: bool,
     skip_embed: bool,
     extractor: str | None,
+    *,
+    llm_max_pages: int | None = None,
+    no_llm_cache: bool = False,
 ) -> int:
     t0 = time.time()
 
@@ -179,9 +186,10 @@ async def run(
     log("normalize", f"{len(rows)} rows mapped to schema_v1; extra_telemetry keys: {extra_keys}")
 
     # 4. LLM extraction
-    ext = llm_extract.get_extractor(extractor)
-    investigations = _extract_deduped_investigations(docs, ext)
-    extracted_runs = [r for d in docs for r in ext.extract_test_runs(d)]
+    ext = llm_extract.get_extractor(extractor, max_pages=llm_max_pages, use_cache=not no_llm_cache)
+    investigations = await _extract_deduped_investigations(docs, ext)
+    per_doc_runs = await asyncio.gather(*(ext.extract_test_runs(d) for d in docs))
+    extracted_runs = [r for runs in per_doc_runs for r in runs]
     rows += normalize.normalize_rows(extracted_runs, cmap) if extracted_runs else []
     log(
         "extract",

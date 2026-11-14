@@ -32,12 +32,35 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--runs-file", default="experiments_proxy.csv", help="file name inside --source")
     ap.add_argument("--telemetry-file", default="telemetry_proxy.json")
     ap.add_argument("--column-map", type=Path, default=None)
-    ap.add_argument("--extractor", default=None, choices=["heuristic", "gemini"], help="heuristic | gemini")
+    ap.add_argument(
+        "--extractor",
+        default=None,
+        choices=["heuristic", "llm", "gemini", "openai"],
+        help="heuristic | llm (gemini/openai are legacy aliases for llm); default: EXTRACTOR setting",
+    )
+    ap.add_argument(
+        "--llm-max-pages",
+        type=int,
+        default=None,
+        metavar="INT",
+        help="LLM page budget for this run (overrides EXTRACT_MAX_PAGES)",
+    )
+    ap.add_argument("--no-llm-cache", action="store_true", help="ignore cached LLM extractions")
     ap.add_argument("--dry-run", action="store_true")
     ap.add_argument("--skip-embed", action="store_true")
     a = ap.parse_args(argv)
     return asyncio.run(
-        run(a.source, a.runs_file, a.telemetry_file, a.column_map, a.dry_run, a.skip_embed, a.extractor)
+        run(
+            a.source,
+            a.runs_file,
+            a.telemetry_file,
+            a.column_map,
+            a.dry_run,
+            a.skip_embed,
+            a.extractor,
+            llm_max_pages=a.llm_max_pages,
+            no_llm_cache=a.no_llm_cache,
+        )
     )
 
 

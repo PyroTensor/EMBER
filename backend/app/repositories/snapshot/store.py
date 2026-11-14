@@ -77,8 +77,8 @@ def _build_from_seed(seed_dir: Path) -> dict[str, Any]:
     rows = normalize.normalize_rows(parse.read_rows(seed_dir / "experiments_proxy.csv"))
     report = validate.validate_rows(rows, write_queue=False)
     telemetry = parse.read_telemetry(seed_dir / "telemetry_proxy.json")
-    extractor = llm_extract.get_extractor()
-    investigations = [inv for d in docs if (inv := extractor.extract_investigation(d))]
+    # sync heuristic only: the in-memory fallback must stay offline and never call a paid LLM
+    investigations = [inv for d in docs if (inv := llm_extract.heuristic_investigation(d))]
     presets_file = seed_dir / "presets.json"
     presets = (
         [Preset.model_validate(p) for p in parse.read_rows(presets_file)] if presets_file.exists() else []

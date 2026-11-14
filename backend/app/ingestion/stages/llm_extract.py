@@ -1,18 +1,13 @@
 """Stage 4 - LLM extraction: Pydantic schema -> investigations + test runs, with source doc + page per field.
 
-Interface:
-    extractor.extract_investigation(doc) -> Investigation | None
-    extractor.extract_test_runs(doc)     -> list[dict]   (raw rows; normalize + validate follow)
+Interface (async, so the LLM extractor can make concurrent calls):
+    await extractor.extract_investigation(doc) -> Investigation | None
+    await extractor.extract_test_runs(doc)     -> list[dict]   (raw rows; normalize + validate follow)
 
 `HeuristicExtractor` (default, offline) reads the proxy front matter and first paragraphs.
-`GeminiExtractor` is the real thing for NTRS PDFs (Nov 14+).
-
-TODO(squad1-A): implement GeminiExtractor with google-genai structured output:
-    client.models.generate_content(model, contents=[page_text],
-        config={"response_mime_type": "application/json", "response_schema": list[TestRunExtraction]})
-  - one call per page so every extracted field carries (doc_id, page)
-  - keep temperature 0; store the raw LLM JSON in .cache/extractions/ for audit
-  - send low-confidence fields to validate.py's human review queue
+The extractor is chosen by ``settings.EXTRACTOR`` (``heuristic`` | ``llm``), independent of
+``LLM_PROVIDER`` (RAG only), so a RAG provider switch never starts paid extraction calls.
+The ``llm`` extractor (OpenAI primary, Gemini fallback) lands in I3/I4 of ingestion_plan_impl.md.
 """
 
 from __future__ import annotations
@@ -34,10 +29,13 @@ _OBJECTIVE_RE = re.compile(
     re.DOTALL | re.IGNORECASE,
 )
 
+EXTRACTOR_KINDS: tuple[str, ...] = ("heuristic", "llm")
+_LEGACY_ALIASES: dict[str, str] = {"gemini": "llm", "openai": "llm"}
+
 
 class Extractor(Protocol):
-    def extract_investigation(self, doc: Document) -> Investigation | None: ...
-    def extract_test_runs(self, doc: Document) -> list[dict[str, Any]]: ...
+    async def extract_investigation(self, doc: Document) -> Investigation | None: ...
+    async def extract_test_runs(self, doc: Document) -> list[dict[str, Any]]: ...
 
 
 def _first_paragraph(doc: Document) -> str:
@@ -49,59 +47,75 @@ def _first_paragraph(doc: Document) -> str:
     return ""
 
 
+def heuristic_investigation(doc: Document) -> Investigation | None:
+    """Synchronous heuristic investigation extraction (front matter + objective/first paragraph).
+
+    Shared by ``HeuristicExtractor`` and sync callers (the snapshot's in-memory seed fallback).
+    """
+    if doc.source_type not in ("iss_page", "ntrs"):
+        return None
+    raw_prog = doc.metadata.get("investigation") or doc.metadata.get("program")
+    if not raw_prog:
+        return None
+    prog_enum = _PROGRAM_LOOKUP.get(str(raw_prog).strip().lower())
+    if prog_enum is None:
+        return None
+    title = doc.title.split(":", 1)[-1].strip() if ":" in doc.title else doc.title.strip()
+    body = "\n".join(doc.pages)
+    summary = ""
+    m = _OBJECTIVE_RE.search(body)
+    if m:
+        summary = re.sub(r"\s+", " ", m.group(1)).strip()
+    return Investigation(
+        id=prog_enum.value,
+        program=prog_enum,
+        title=title,
+        summary=summary or _first_paragraph(doc),
+        source_doc_id=doc.doc_id,
+    )
+
+
 class HeuristicExtractor:
     """Offline extractor for the proxy corpus and NTRS markdown/PDFs."""
 
-    def extract_investigation(self, doc: Document) -> Investigation | None:
-        if doc.source_type not in ("iss_page", "ntrs"):
-            return None
-        raw_prog = doc.metadata.get("investigation") or doc.metadata.get("program")
-        if not raw_prog:
-            return None
-        prog_enum = _PROGRAM_LOOKUP.get(str(raw_prog).strip().lower())
-        if prog_enum is None:
-            return None
-        title = doc.title.split(":", 1)[-1].strip() if ":" in doc.title else doc.title.strip()
-        body = "\n".join(doc.pages)
-        summary = ""
-        m = _OBJECTIVE_RE.search(body)
-        if m:
-            summary = re.sub(r"\s+", " ", m.group(1)).strip()
-        return Investigation(
-            id=prog_enum.value,
-            program=prog_enum,
-            title=title,
-            summary=summary or _first_paragraph(doc),
-            source_doc_id=doc.doc_id,
-        )
+    async def extract_investigation(self, doc: Document) -> Investigation | None:
+        return heuristic_investigation(doc)
 
-    def extract_test_runs(self, doc: Document) -> list[dict[str, Any]]:
+    async def extract_test_runs(self, doc: Document) -> list[dict[str, Any]]:
         # Proxy test runs arrive as structured CSV; nothing to pull out of prose.
         return []
 
 
-class GeminiExtractor:  # pragma: no cover - needs API key
-    def __init__(self, model: str | None = None):
-        settings = get_settings()
-        self.model = model or settings.LLM_MODEL
-        self._fallback = HeuristicExtractor()
-        self._api_key = settings.GEMINI_API_KEY.get_secret_value()
-        if not self._api_key:
-            logger.warning("GEMINI_API_KEY not set; GeminiExtractor falling back to HeuristicExtractor")
-
-    def extract_investigation(self, doc: Document) -> Investigation | None:
-        return self._fallback.extract_investigation(doc)
-
-    def extract_test_runs(self, doc: Document) -> list[dict[str, Any]]:
-        return self._fallback.extract_test_runs(doc)
+def resolve_extractor_kind(kind: str | None = None) -> str:
+    """Map a CLI/setting value to ``heuristic`` | ``llm`` (legacy ``gemini``/``openai`` alias to ``llm``)."""
+    resolved = (kind or get_settings().EXTRACTOR).strip().lower()
+    if resolved in _LEGACY_ALIASES:
+        logger.info("extractor '%s' is a legacy alias for 'llm'", resolved)
+        resolved = _LEGACY_ALIASES[resolved]
+    if resolved not in EXTRACTOR_KINDS:
+        raise ValueError(f"unknown extractor '{kind}'; expected one of {EXTRACTOR_KINDS}")
+    return resolved
 
 
-def get_extractor(kind: str | None = None) -> Extractor:
-    resolved = (kind or str(get_settings().LLM_PROVIDER)).lower()
-    if resolved == "gemini":
-        try:
-            return GeminiExtractor()
-        except Exception as exc:
-            logger.warning("Failed to initialize GeminiExtractor (%s); using HeuristicExtractor", exc)
-            return HeuristicExtractor()
+def get_extractor(
+    kind: str | None = None, *, max_pages: int | None = None, use_cache: bool = True
+) -> Extractor:
+    """Default = ``settings.EXTRACTOR`` (NOT ``LLM_PROVIDER``).
+
+    ``max_pages`` (CLI ``--llm-max-pages``, else ``EXTRACT_MAX_PAGES``) and ``use_cache`` (CLI
+    ``--no-llm-cache``) configure the LLM extractor (I3/I4); the heuristic extractor ignores them.
+    """
+    del max_pages, use_cache  # consumed by the LLM extractor from I3 on
+    if resolve_extractor_kind(kind) == "llm":
+        logger.warning("LLM extractor not implemented yet; using HeuristicExtractor")
     return HeuristicExtractor()
+
+
+__all__ = [
+    "EXTRACTOR_KINDS",
+    "Extractor",
+    "HeuristicExtractor",
+    "get_extractor",
+    "heuristic_investigation",
+    "resolve_extractor_kind",
+]
