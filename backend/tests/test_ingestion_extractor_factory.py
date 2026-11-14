@@ -48,11 +48,26 @@ def test_legacy_aliases_resolve_to_llm(alias: str, caplog: pytest.LogCaptureFixt
     assert "legacy alias" in caplog.text
 
 
-def test_llm_not_implemented_falls_back_with_warning(caplog: pytest.LogCaptureFixture) -> None:
+def test_llm_without_keys_falls_back_with_warning(
+    monkeypatch: pytest.MonkeyPatch, caplog: pytest.LogCaptureFixture
+) -> None:
+    # real env vars win over backend/.env, so a developer's local key / RAG provider cannot leak in
+    monkeypatch.setenv("LLM_PROVIDER", "heuristic")
+    monkeypatch.setenv("OPENAI_API_KEY", "")
+    monkeypatch.setenv("GEMINI_API_KEY", "")
     with caplog.at_level(logging.WARNING, logger=llm_extract.__name__):
         ext = get_extractor("llm", max_pages=5, use_cache=False)
     assert isinstance(ext, HeuristicExtractor)
-    assert "not implemented yet" in caplog.text
+    assert "no OPENAI_API_KEY / GEMINI_API_KEY" in caplog.text
+
+
+def test_llm_with_key_builds_llm_extractor(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    monkeypatch.setenv("GEMINI_API_KEY", "")
+    ext = get_extractor("llm", max_pages=7, use_cache=False)
+    assert isinstance(ext, llm_extract.LLMExtractor)
+    assert ext.chain.providers == ["openai"]
+    assert ext.max_pages == 7 and ext.use_cache is False
 
 
 def test_extractor_setting_is_respected(monkeypatch: pytest.MonkeyPatch) -> None:

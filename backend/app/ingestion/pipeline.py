@@ -191,11 +191,15 @@ async def run(
     per_doc_runs = await asyncio.gather(*(ext.extract_test_runs(d) for d in docs))
     extracted_runs = [r for runs in per_doc_runs for r in runs]
     rows += normalize.normalize_rows(extracted_runs, cmap) if extracted_runs else []
+    stats = getattr(ext, "stats", None)
+    mix = f" ({stats.provider_mix()})" if isinstance(stats, llm_extract.ExtractorStats) else ""
     log(
         "extract",
-        f"{type(ext).__name__}: {len(investigations)} investigations, "
+        f"{type(ext).__name__}: {len(investigations)} investigations{mix}, "
         f"{len(extracted_runs)} runs from documents",
     )
+    if isinstance(stats, llm_extract.ExtractorStats):
+        log("extract", f"  llm calls {stats.calls}, cache hits {stats.cache_hits}, failures {stats.failures}")
 
     # 5. validate
     report = validate.validate_rows(rows, write_queue=True)
