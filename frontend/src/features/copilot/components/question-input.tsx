@@ -48,7 +48,6 @@ export function QuestionInput({
 }: QuestionInputProps) {
   const [value, setValue] = useState("");
   const inputId = useId();
-  const hintId = `${inputId}-hint`;
   const formRef = useRef<HTMLFormElement>(null);
   const refocus = useRef(false);
   const canSubmit = !pending && value.trim().length > 0;
@@ -95,7 +94,6 @@ export function QuestionInput({
         <InputGroup>
           <InputGroupTextarea
             id={inputId}
-            aria-describedby={hintId}
             placeholder="Ask about flame spread, oxygen limits, ventilation, gravity or a run such as EXP-0012…"
             value={value}
             onChange={(e) => setValue(e.target.value)}
@@ -106,16 +104,19 @@ export function QuestionInput({
             className="min-h-20"
           />
           <InputGroupAddon>
-            <p id={hintId} className="text-muted text-[11px]">
-              Enter to send · Shift+Enter for a new line
-            </p>
-            <Button type="submit" size="sm" disabled={!canSubmit}>
+            <Button
+              type="submit"
+              size="icon"
+              aria-label={pending ? "Asking Co-Pilot" : "Send question"}
+              title={pending ? "Asking Co-Pilot" : "Send question"}
+              disabled={!canSubmit}
+              className="rounded-full"
+            >
               {pending ? (
                 <LoaderCircle aria-hidden className="size-4 animate-spin" />
               ) : (
                 <SendHorizontal aria-hidden className="size-4" />
               )}
-              {pending ? "Asking…" : "Ask"}
             </Button>
           </InputGroupAddon>
         </InputGroup>
