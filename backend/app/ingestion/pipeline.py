@@ -19,7 +19,16 @@ from pydantic import ValidationError
 from app.core.config import BASE_DIR
 from app.embeddings.factory import get_embedder
 from app.embeddings.null import NullEmbedder
-from app.ingestion.stages import chunk_embed, fetch_cache, llm_extract, load, normalize, parse, validate
+from app.ingestion.stages import (
+    chunk_embed,
+    fetch_cache,
+    llm_extract,
+    load,
+    normalize,
+    parse,
+    table_rows,
+    validate,
+)
 from app.schemas.ingestion import Document, Investigation
 from app.schemas.preset import Preset
 
@@ -187,13 +196,19 @@ async def run(
 
     # 4. LLM extraction
     ext = llm_extract.get_extractor(extractor, max_pages=llm_max_pages, use_cache=not no_llm_cache)
+    # investigations first: they enrich doc.metadata (investigation) that table rows use for `program`
     investigations = await _extract_deduped_investigations(docs, ext)
+    # 4a. deterministic table rows BEFORE LLM run extraction (marks table_row_pages so the LLM skips them)
+    t_rows = [r for d in docs for r in table_rows.rows_from_tables(d, cmap)]
+    log("extract", f"table rows: {len(t_rows)} from {table_rows.count_tables(t_rows)} tables")
     per_doc_runs = await asyncio.gather(*(ext.extract_test_runs(d) for d in docs))
     extracted_runs = [r for runs in per_doc_runs for r in runs]
-    # CSV rows come FIRST: on a duplicate experiment_id validate keeps the first (authoritative CSV) row
+    # CSV rows come FIRST, then table rows, then LLM rows: on a duplicate experiment_id validate keeps the
+    # first one, so the authoritative CSV row (then the exact table row) wins
     csv_ids = {str(r.get("experiment_id")) for r in rows if r.get("experiment_id") is not None}
-    rows += normalize.normalize_rows(extracted_runs, cmap) if extracted_runs else []
-    dup_csv = sum(1 for r in extracted_runs if str(r.get("experiment_id")) in csv_ids)
+    doc_rows = normalize.normalize_rows(t_rows + extracted_runs, cmap) if (t_rows or extracted_runs) else []
+    rows += doc_rows
+    dup_csv = sum(1 for r in doc_rows if str(r.get("experiment_id")) in csv_ids)
     stats = getattr(ext, "stats", None)
     mix = f" ({stats.provider_mix()})" if isinstance(stats, llm_extract.ExtractorStats) else ""
     log(

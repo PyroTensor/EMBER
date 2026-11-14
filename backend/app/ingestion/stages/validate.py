@@ -63,7 +63,7 @@ def extraction_flags(run: TestRunRecord) -> list[str]:
     ext = run.extra_telemetry.get("extraction")
     if not isinstance(ext, dict):
         return []
-    flags = ["extraction:llm"]
+    flags = ["extraction:table" if ext.get("provider") == "table" else "extraction:llm"]
     confidence = ext.get("confidence")
     if isinstance(confidence, (int, float)) and confidence < get_settings().EXTRACT_MIN_CONFIDENCE:
         flags.append("extraction:low_confidence")

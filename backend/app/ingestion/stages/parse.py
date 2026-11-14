@@ -10,7 +10,11 @@ Proxy markdown convention:
     ...text...
     <!-- page: 2 -->
 
-TODO(squad1-A): Docling for tables / layout; OCR (e.g. Tesseract) for scanned NTRS PDFs.
+Tables: PDF tables (PyMuPDF ``find_tables``) and markdown pipe tables also become structured
+``Document.tables`` (``PageTable``), which stage 4 maps to test-run rows (``table_rows.py``). PDF tables are
+still appended to the page text as markdown, so chunks and the LLM keep seeing them.
+
+TODO(squad1-A): OCR for scanned NTRS PDFs.
 """
 
 from __future__ import annotations
@@ -24,12 +28,62 @@ from typing import Any
 
 import yaml
 
-from app.schemas.ingestion import Document
+from app.schemas.ingestion import Document, PageTable
 
 logger = logging.getLogger(__name__)
 
 PAGE_MARKER = re.compile(r"<!--\s*page:\s*(\d+)\s*-->")
 FRONT_MATTER = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
+_PIPE_ROW = re.compile(r"^\s*\|.*\|\s*$")
+_PIPE_SEPARATOR = re.compile(r"^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$")
+
+
+def _clean_cell(cell: Any) -> str | None:
+    """Collapse whitespace (incl. multi-line header cells) to single spaces; empty -> None."""
+    if cell is None:
+        return None
+    text = re.sub(r"\s+", " ", str(cell)).strip()
+    return text or None
+
+
+def _split_pipe_row(line: str) -> list[Any]:
+    body = line.strip()
+    body = body[1:] if body.startswith("|") else body
+    body = body[:-1] if body.endswith("|") else body
+    return body.split("|")
+
+
+def _make_table(page_no: int, raw_rows: list[list[Any]]) -> PageTable | None:
+    """First non-empty row = header; the remaining non-empty rows are padded/trimmed to its width."""
+    rows = [[_clean_cell(c) for c in r] for r in raw_rows]
+    rows = [r for r in rows if any(c is not None for c in r)]
+    if len(rows) < 2:
+        return None
+    header = [c or "" for c in rows[0]]
+    width = len(header)
+    body = [(r + [None] * width)[:width] for r in rows[1:]]
+    return PageTable(page=page_no, header=header, rows=body)
+
+
+def markdown_tables(page_no: int, text: str) -> list[PageTable]:
+    """GitHub pipe tables on one page: header row + ``|---|`` separator + body rows."""
+    tables: list[PageTable] = []
+    lines = text.splitlines()
+    i = 0
+    while i < len(lines) - 1:
+        if _PIPE_ROW.match(lines[i]) and _PIPE_SEPARATOR.match(lines[i + 1]):
+            block = [_split_pipe_row(lines[i])]
+            j = i + 2
+            while j < len(lines) and _PIPE_ROW.match(lines[j]):
+                block.append(_split_pipe_row(lines[j]))
+                j += 1
+            table = _make_table(page_no, block)
+            if table is not None:
+                tables.append(table)
+            i = j
+        else:
+            i += 1
+    return tables
 
 
 def parse_markdown(path: Path) -> Document:
@@ -65,22 +119,28 @@ def parse_markdown(path: Path) -> Document:
         path=str(path),
         metadata=meta,
         pages=pages,
+        tables=[t for i, page in enumerate(pages, start=1) for t in markdown_tables(i, page)],
     )
 
 
-def _extract_pdf_page(page: Any) -> str:
+def _extract_pdf_page(page: Any, page_no: int = 1) -> tuple[str, list[PageTable]]:
+    """Page text (tables appended as markdown) + the structured tables found on the page."""
     text: str = page.get_text("text")
+    structured: list[PageTable] = []
     if hasattr(page, "find_tables"):
         try:
-            tables = page.find_tables()
-            for tab in tables:
+            for tab in page.find_tables():
                 if hasattr(tab, "to_markdown"):
                     md = tab.to_markdown()
                     if md and md.strip():
                         text = f"{text}\n\n{md.strip()}"
+                if hasattr(tab, "extract"):
+                    table = _make_table(page_no, tab.extract())
+                    if table is not None:
+                        structured.append(table)
         except Exception:
             pass
-    return text
+    return text, structured
 
 
 def parse_pdf(path: Path, doc_id: str | None = None) -> Document:
@@ -90,15 +150,22 @@ def parse_pdf(path: Path, doc_id: str | None = None) -> Document:
     except ImportError as exc:  # pragma: no cover
         raise RuntimeError("PyMuPDF not installed: run `uv pip install pymupdf`") from exc
     with fitz.open(path) as pdf:
-        pages = [_extract_pdf_page(page) for page in pdf]
+        extracted = [_extract_pdf_page(page, i) for i, page in enumerate(pdf, start=1)]
         title = pdf.metadata.get("title") or Path(path).stem
+    pages = [text for text, _ in extracted]
+    tables = [t for _, page_tables in extracted for t in page_tables]
     if sum(len(p.strip()) for p in pages) < 50:
         logger.warning(
             "PDF '%s' extracted < 50 chars across %d pages (likely scanned image PDF)", path, len(pages)
         )
     # TODO(squad1-A): pull investigation / fuel / O2 / gravity metadata via llm_extract
     return Document(
-        doc_id=doc_id or Path(path).stem, title=title, source_type="ntrs", path=str(path), pages=pages
+        doc_id=doc_id or Path(path).stem,
+        title=title,
+        source_type="ntrs",
+        path=str(path),
+        pages=pages,
+        tables=tables,
     )
 
 

@@ -17,6 +17,14 @@ class Investigation(BaseModel):
     source_doc_id: str | None = None
 
 
+class PageTable(BaseModel):
+    """A structured table found on one page (PDF ``find_tables`` or a markdown pipe table)."""
+
+    page: int  # 1-based
+    header: list[str]
+    rows: list[list[str | None]]
+
+
 class Document(BaseModel):
     """A parsed source document (NTRS paper, ISS page): output of the parse stage."""
 
@@ -26,6 +34,7 @@ class Document(BaseModel):
     path: str
     metadata: dict[str, Any] = Field(default_factory=dict)
     pages: list[str]  # pages[i] is the text of page i+1
+    tables: list[PageTable] = Field(default_factory=list)
 
 
 class Chunk(BaseModel):
@@ -37,4 +46,4 @@ class Chunk(BaseModel):
     embedding: list[float] | None = None
 
 
-__all__ = ["Chunk", "Document", "Investigation"]
+__all__ = ["Chunk", "Document", "Investigation", "PageTable"]
