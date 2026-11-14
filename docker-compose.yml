@@ -25,6 +25,11 @@ services:
   backend:
     build: ./backend
     restart: unless-stopped
+    # Runtime settings (LLM_PROVIDER, LLM_MODEL, API keys) from backend/.env, which is kept out of the image.
+    # Keys under `environment:` below take precedence, so the container still uses the compose DB settings.
+    env_file:
+      - path: ./backend/.env
+        required: false  # without it the stack still starts, using the heuristic provider
     depends_on:
       db:
         condition: service_healthy
