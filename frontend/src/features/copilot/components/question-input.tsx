@@ -1,20 +1,24 @@
 "use client";
 
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
-import { LoaderCircle, SendHorizontal } from "lucide-react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from "react";
+import Link from "next/link";
+import { LoaderCircle, SendHorizontal, SlidersHorizontal } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import type { CabinConfig } from "@/lib/api/types";
+import {
+  DEFAULT_CABIN_CONFIG,
+  formatCabinSummary,
+} from "@/lib/cabin-scenario/cabin-scenario-context";
 
-/** ISS Standard cabin (same values as the "iss" preset); attached when "use current scenario" is on. */
-export const ISS_SCENARIO: Readonly<CabinConfig> = Object.freeze({
-  oxygen_pct: 21,
-  pressure_kpa: 101.3,
-  flow_velocity_cm_s: 10,
-  gravity_g: 0,
-  fuel_material: "Cotton-Fiberglass",
-  diluent_gas: "N2",
-});
+/** ISS Standard cabin (same values as the "iss" preset). */
+export const ISS_SCENARIO: Readonly<CabinConfig> = DEFAULT_CABIN_CONFIG;
 
 /** Backend AskRequest.question limit. */
 const QUESTION_MAX = 2000;
@@ -24,10 +28,19 @@ interface QuestionInputProps {
   pending: boolean;
   useScenario: boolean;
   onUseScenarioChange: (value: boolean) => void;
+  cabinConfig: CabinConfig;
+  presetName: string;
 }
 
 /** Question box: Enter submits, Shift+Enter adds a newline. Disabled while an answer is pending. */
-export function QuestionInput({ onSubmit, pending, useScenario, onUseScenarioChange }: QuestionInputProps) {
+export function QuestionInput({
+  onSubmit,
+  pending,
+  useScenario,
+  onUseScenarioChange,
+  cabinConfig,
+  presetName,
+}: QuestionInputProps) {
   const [value, setValue] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
   const refocus = useRef(false);
@@ -61,6 +74,8 @@ export function QuestionInput({ onSubmit, pending, useScenario, onUseScenarioCha
     }
   };
 
+  const scenarioSummary = formatCabinSummary(cabinConfig, presetName);
+
   return (
     <form ref={formRef} onSubmit={onFormSubmit} className="space-y-3">
       <Textarea
@@ -76,15 +91,33 @@ export function QuestionInput({ onSubmit, pending, useScenario, onUseScenarioCha
         className="min-h-20"
       />
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <label className="flex cursor-pointer items-center gap-2 text-xs text-muted">
-          <input
-            type="checkbox"
-            checked={useScenario}
-            onChange={(e) => onUseScenarioChange(e.target.checked)}
-            className="size-4 accent-accent"
-          />
-          <span>Use current scenario (ISS Standard: 21 % O₂, 101.3 kPa, 0 g)</span>
-        </label>
+        <div className="flex flex-wrap items-center gap-2.5">
+          <label
+            className={`flex cursor-pointer items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs transition-colors ${
+              useScenario
+                ? "border-accent/50 bg-accent/10 text-fg"
+                : "border-border bg-bg text-muted hover:text-fg"
+            }`}
+          >
+            <input
+              type="checkbox"
+              checked={useScenario}
+              onChange={(e) => onUseScenarioChange(e.target.checked)}
+              className="accent-accent size-4"
+            />
+            <span>
+              Use current cabin configuration ({scenarioSummary})
+            </span>
+          </label>
+          <Link
+            href="/cabin"
+            className="text-muted hover:text-accent inline-flex items-center gap-1 font-mono text-[11px] transition-colors"
+            title="Edit cabin atmosphere and fuel in Cabin Configurator"
+          >
+            <SlidersHorizontal aria-hidden className="size-3" />
+            Configure cabin →
+          </Link>
+        </div>
         <Button type="submit" disabled={!canSubmit}>
           {pending ? (
             <LoaderCircle aria-hidden className="size-4 animate-spin" />

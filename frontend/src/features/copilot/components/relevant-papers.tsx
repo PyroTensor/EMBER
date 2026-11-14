@@ -47,14 +47,16 @@ function collectReferencedDocs(response: AskResponse): ReferencedDoc[] {
     }
   }
 
-  // 2. Response citations array
+  // 2. Response citations array (both direct doc citations and experiment source docs)
   for (const c of response.citations ?? []) {
     if (c.doc_id) add(c.doc_id, c.page, true);
   }
 
-  // 3. Retrieved evidence items
-  for (const ev of response.evidence ?? []) {
-    if (ev.doc_id) add(ev.doc_id, ev.page, false);
+  // 3. Fallback to top chunk evidence only if no direct citations had doc_ids
+  if (byDoc.size === 0) {
+    for (const ev of response.evidence ?? []) {
+      if (ev.doc_id) add(ev.doc_id, ev.page, false);
+    }
   }
 
   return [...byDoc.entries()]
@@ -70,12 +72,13 @@ function collectReferencedDocs(response: AskResponse): ReferencedDoc[] {
     }));
 }
 
-/** Shows the papers/documents referenced by an answer or its retrieved evidence so researchers can click to read them. */
+/** Shows the papers/documents referenced by an answer so researchers can click to read them or open official NASA PDFs. */
 export function RelevantPapers({
   response,
   documentsById,
   onOpenDocument,
 }: RelevantPapersProps) {
+  if (response.supported === false) return null;
   const refs = collectReferencedDocs(response);
   if (refs.length === 0) return null;
 
@@ -91,13 +94,13 @@ export function RelevantPapers({
             Relevant papers &amp; documents ({refs.length})
           </h4>
           <p className="text-muted text-xs">
-            Click any paper or cited page below to read the full document or
-            open its official NASA source.
+            Click any paper or cited page below to read the document in full or
+            open its official NASA PDF.
           </p>
         </div>
       </header>
 
-      <ul className="space-y-2.5">
+      <ul className="grid gap-3 md:grid-cols-2">
         {refs.map(({ docId, citedPages, citedByAnswer }) => {
           const meta = documentsById.get(docId);
           const firstPage = citedPages[0];
@@ -108,15 +111,15 @@ export function RelevantPapers({
           return (
             <li
               key={docId}
-              className="group border-border bg-bg rounded-md border p-3.5 transition-colors hover:border-sky-400/50"
+              className="group border-border bg-bg flex flex-col justify-between rounded-md border p-3.5 transition-colors hover:border-sky-400/50"
             >
-              <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="space-y-2.5">
                 <button
                   type="button"
                   onClick={() => onOpenDocument({ docId, page: firstPage })}
-                  className="min-w-0 flex-1 text-left"
+                  className="w-full text-left"
                 >
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     <span className="inline-flex items-center gap-1 rounded border border-sky-400/40 bg-sky-400/10 px-1.5 py-0.5 font-mono text-[11px] font-medium text-sky-300">
                       <FileText aria-hidden className="size-3" />
                       {docId}
@@ -142,7 +145,7 @@ export function RelevantPapers({
                   </p>
                 </button>
 
-                <div className="flex shrink-0 flex-wrap items-center gap-1.5">
+                <div className="flex flex-wrap items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => onOpenDocument({ docId, page: firstPage })}

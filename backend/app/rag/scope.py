@@ -15,6 +15,8 @@ DOMAIN_KEYWORDS: Final[frozenset[str]] = frozenset({
     "cfi", "cfi-g", "e-field", "luci", "fm2", "cir", "msg", "mdca", "spacesuit", "suit",
     "rover", "firefighter", "firefighting", "spinoff", "smoke", "detector", "alarm", "dust",
     "aerosol", "scba", "canister", "perchlorate", "vika", "turnout", "pbi",
+    "flammability", "flammable", "atmosphere", "freefall", "suppressant", "smolder", "smouldering",
+    "scenario", "configuration", "experiment", "experiments", "runs",
 })  # fmt: skip
 
 OUT_OF_SCOPE_HINTS: Final[frozenset[str]] = frozenset({
