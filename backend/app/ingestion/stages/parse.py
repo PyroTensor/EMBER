@@ -1,4 +1,6 @@
-"""Stage 2 - Parse: CSV / JSON readers, markdown-with-page-markers, PDFs.
+"""Stage 2 - Parse: CSV / JSON readers, markdown-with-page-markers, PDFs, plain text (form-feed pages).
+
+One bad file (corrupt PDF, broken front matter, ...) is logged and skipped, never crashes the run.
 
 Every document becomes a `Document` with `pages[i]` = text of page i+1, so citations can
 always point at [doc_id, page] - for real PDFs and for the proxy markdown alike.
@@ -86,12 +88,42 @@ def markdown_tables(page_no: int, text: str) -> list[PageTable]:
     return tables
 
 
-def parse_markdown(path: Path) -> Document:
+VALID_SOURCE_TYPES = frozenset({"ntrs", "iss_page", "psi_dataset"})
+DOC_SUFFIXES = frozenset({".md", ".pdf", ".txt"})
+
+
+def _doc_source_type(declared: Any, fallback: str | None, path: Path) -> str:
+    """Front-matter ``source_type`` if valid, else the folder-derived type from fetch, else ``ntrs``."""
+    folder_type = fallback if fallback in VALID_SOURCE_TYPES else "ntrs"
+    if declared is None:
+        return folder_type
+    if declared not in VALID_SOURCE_TYPES:
+        logger.warning(
+            "'%s': source_type %r not in %s; using %r",
+            path,
+            declared,
+            sorted(VALID_SOURCE_TYPES),
+            folder_type,
+        )
+        return folder_type
+    return str(declared)
+
+
+def parse_markdown(path: Path, source_type: str | None = None) -> Document:
+    """``source_type`` = fetch's folder-derived type, used when front matter has none or an invalid one."""
     text = Path(path).read_text(encoding="utf-8")
     meta: dict[str, Any] = {}
     m = FRONT_MATTER.match(text)
     if m:
-        meta = yaml.safe_load(m.group(1)) or {}
+        try:
+            loaded = yaml.safe_load(m.group(1))
+        except yaml.YAMLError as exc:
+            logger.warning("'%s': invalid YAML front matter (%s); treating as no front matter", path, exc)
+            loaded = None
+        if loaded is not None and not isinstance(loaded, dict):
+            logger.warning("'%s': front matter is not a mapping; treating as no front matter", path)
+            loaded = None
+        meta = loaded or {}
         text = text[m.end() :]
 
     parts = PAGE_MARKER.split(text)
@@ -115,7 +147,7 @@ def parse_markdown(path: Path) -> Document:
     return Document(
         doc_id=doc_id,
         title=str(meta.pop("title", doc_id)),
-        source_type=meta.pop("source_type", "ntrs"),
+        source_type=_doc_source_type(meta.pop("source_type", None), source_type, Path(path)),
         path=str(path),
         metadata=meta,
         pages=pages,
@@ -169,16 +201,57 @@ def parse_pdf(path: Path, doc_id: str | None = None) -> Document:
     )
 
 
-def parse_documents(paths: list[Path]) -> list[Document]:
-    docs = []
+def parse_text(path: Path, source_type: str | None = None) -> Document:
+    """Plain text (e.g. ``pdftotext`` output): pages split on form feed ``\\f``, else one page."""
+    path = Path(path)
+    raw = path.read_bytes()
+    try:
+        text = raw.decode("utf-8-sig")
+    except UnicodeDecodeError:
+        text = raw.decode("cp1252")
+    pages = [p.strip() for p in text.split("\f")] if "\f" in text else [text.strip()]
+    while len(pages) > 1 and not pages[-1]:
+        pages.pop()  # pdftotext ends every page (including the last) with \f
+    return Document(
+        doc_id=path.stem,
+        title=path.stem,
+        source_type=_doc_source_type(None, source_type, path),
+        path=str(path),
+        pages=pages,
+    )
+
+
+def parse_documents_with_skipped(
+    paths: list[Path], source_types: dict[str, str] | None = None
+) -> tuple[list[Document], list[tuple[str, str]]]:
+    """Parse every document; a file that fails is logged and skipped instead of crashing the run.
+
+    ``source_types`` maps ``str(path)`` to fetch's folder-derived type (fallback for markdown / text).
+    Returns ``(docs, skipped)`` where ``skipped`` is ``[(path, "<ExcClass>: <message>"), ...]``.
+    """
+    docs: list[Document] = []
+    skipped: list[tuple[str, str]] = []
     for p in paths:
         p = Path(p)
         suffix = p.suffix.lower()
-        if suffix == ".md":
-            docs.append(parse_markdown(p))
-        elif suffix == ".pdf":
-            docs.append(parse_pdf(p))
-    return docs
+        folder_type = (source_types or {}).get(str(p))
+        try:
+            if suffix == ".md":
+                docs.append(parse_markdown(p, folder_type))
+            elif suffix == ".pdf":
+                docs.append(parse_pdf(p))
+            elif suffix == ".txt":
+                docs.append(parse_text(p, folder_type))
+        except Exception as exc:
+            reason = f"{type(exc).__name__}: {exc}"
+            logger.warning("skipping %s: %s", p.name, reason)
+            skipped.append((str(p), reason))
+    return docs, skipped
+
+
+def parse_documents(paths: list[Path], source_types: dict[str, str] | None = None) -> list[Document]:
+    """Like ``parse_documents_with_skipped`` but returns only the parsed documents."""
+    return parse_documents_with_skipped(paths, source_types)[0]
 
 
 def read_rows(path: Path) -> list[dict[str, Any]]:
@@ -199,10 +272,35 @@ def read_rows(path: Path) -> list[dict[str, Any]]:
         return rows
     if suffix == ".json":
         data = json.loads(path.read_text(encoding="utf-8"))
-        return data if isinstance(data, list) else data.get("records", [])
+        if isinstance(data, list):
+            return data
+        if isinstance(data, dict) and isinstance(data.get("records"), list):
+            records: list[dict[str, Any]] = data["records"]
+            return records
+        raise ValueError(
+            f"run file {path.name}: expected a JSON list of rows or an object with a 'records' list, "
+            f"got {type(data).__name__}"
+        )
     raise ValueError(f"unsupported run file: {path}")
 
 
 def read_telemetry(path: Path) -> dict[str, dict[str, Any]]:
+    """Telemetry series keyed by experiment_id. Accepts a list or ``{"records": [...]}``; entries without
+    ``experiment_id`` are skipped (counted, one WARNING) instead of raising ``KeyError``."""
     data = json.loads(Path(path).read_text(encoding="utf-8"))
-    return {d["experiment_id"]: d for d in data}
+    entries = data.get("records", []) if isinstance(data, dict) else data
+    if not isinstance(entries, list):
+        logger.warning("telemetry file %s has no list of series; ignoring it", Path(path).name)
+        return {}
+    out: dict[str, dict[str, Any]] = {}
+    missing = 0
+    for entry in entries:
+        if isinstance(entry, dict) and entry.get("experiment_id") not in (None, ""):
+            out[str(entry["experiment_id"])] = entry
+        else:
+            missing += 1
+    if missing:
+        logger.warning(
+            "telemetry file %s: skipped %d entries without experiment_id", Path(path).name, missing
+        )
+    return out

@@ -171,15 +171,25 @@ async def run(
     checksums = {f.path: f.sha256 for f in files}
 
     # 2. parse
-    doc_paths = [Path(f.path) for f in files if f.source_type in ("ntrs", "iss_page")]
-    docs = parse.parse_documents(doc_paths)
+    doc_files = [f for f in files if f.source_type in ("ntrs", "iss_page")]
+    docs, skipped_docs = parse.parse_documents_with_skipped(
+        [Path(f.path) for f in doc_files], {str(Path(f.path)): f.source_type for f in doc_files}
+    )
+    if skipped_docs:
+        log("parse", f"WARNING {len(skipped_docs)} documents skipped")
+        for path, reason in skipped_docs:
+            log("parse", f"  skipped {Path(path).name}: {reason}")
     run_paths = _resolve_run_files(runs_file, files, cached, telemetry_file)
     if not run_paths:
         log("parse", f"ERROR runs file '{runs_file}' not found in {source}")
         return 1
     raw_rows: list[dict[str, Any]] = []
     for rp in run_paths:
-        raw_rows.extend(parse.read_rows(rp))
+        try:
+            raw_rows.extend(parse.read_rows(rp))
+        except ValueError as exc:  # malformed JSON / wrong shape / unsupported type (JSONDecodeError too)
+            log("parse", f"ERROR runs file '{Path(rp).name}' unreadable: {exc}")
+            return 1
     telemetry = parse.read_telemetry(cached[telemetry_file]) if telemetry_file in cached else {}
     presets = _read_presets(cached[PRESETS_FILE]) if PRESETS_FILE in cached else []
     log(
