@@ -38,13 +38,20 @@ PAGE_MARKER = re.compile(r"<!--\s*page:\s*(\d+)\s*-->")
 FRONT_MATTER = re.compile(r"^---\s*\n(.*?)\n---\s*\n", re.DOTALL)
 _PIPE_ROW = re.compile(r"^\s*\|.*\|\s*$")
 _PIPE_SEPARATOR = re.compile(r"^\s*\|?\s*:?-{2,}:?\s*(\|\s*:?-{2,}:?\s*)*\|?\s*$")
+# C0 control chars except \t \n \f \r. PDFs with broken font encodings emit them (incl. NUL, which
+# Postgres rejects in text columns and fails the whole load).
+_CONTROL_CHARS = re.compile(r"[\x00-\x08\x0b\x0e-\x1f\x7f]")
+
+
+def _strip_control(text: str) -> str:
+    return _CONTROL_CHARS.sub("", text)
 
 
 def _clean_cell(cell: Any) -> str | None:
     """Collapse whitespace (incl. multi-line header cells) to single spaces; empty -> None."""
     if cell is None:
         return None
-    text = re.sub(r"\s+", " ", str(cell)).strip()
+    text = re.sub(r"\s+", " ", _strip_control(str(cell))).strip()
     return text or None
 
 
@@ -158,13 +165,13 @@ def parse_markdown(path: Path, source_type: str | None = None) -> Document:
 
 def _extract_pdf_page(page: Any, page_no: int = 1) -> tuple[str, list[PageTable]]:
     """Page text (tables appended as markdown) + the structured tables found on the page."""
-    text: str = page.get_text("text")
+    text: str = _strip_control(page.get_text("text"))
     structured: list[PageTable] = []
     if hasattr(page, "find_tables"):
         try:
             for tab in page.find_tables():
                 if hasattr(tab, "to_markdown"):
-                    md = tab.to_markdown()
+                    md = _strip_control(tab.to_markdown() or "")
                     if md and md.strip():
                         text = f"{text}\n\n{md.strip()}"
                 if hasattr(tab, "extract"):
@@ -184,7 +191,7 @@ def parse_pdf(path: Path, doc_id: str | None = None) -> Document:
         raise RuntimeError("PyMuPDF not installed: run `uv pip install pymupdf`") from exc
     with fitz.open(path) as pdf:
         extracted = [_extract_pdf_page(page, i) for i, page in enumerate(pdf, start=1)]
-        title = pdf.metadata.get("title") or Path(path).stem
+        title = _strip_control(pdf.metadata.get("title") or "").strip() or Path(path).stem
     pages = [text for text, _ in extracted]
     tables = [t for _, page_tables in extracted for t in page_tables]
     if sum(len(p.strip()) for p in pages) < 50:
@@ -213,6 +220,7 @@ def parse_text(path: Path, source_type: str | None = None) -> Document:
         text = raw.decode("utf-8-sig")
     except UnicodeDecodeError:
         text = raw.decode("cp1252")
+    text = _strip_control(text)
     pages = [p.strip() for p in text.split("\f")] if "\f" in text else [text.strip()]
     while len(pages) > 1 and not pages[-1]:
         pages.pop()  # pdftotext ends every page (including the last) with \f

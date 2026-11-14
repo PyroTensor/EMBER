@@ -235,6 +235,16 @@ aliases:
     "Methanol": Methanol
     "ethanol": Methanol
     "iso-propanol": Methanol
+    "Ethylene": Ethylene
+    "ethene": Ethylene
+    "C2H4": Ethylene
+    "Ethane": Ethane
+    "C2H6": Ethane
+    "Propane": Propane
+    "C3H8": Propane
+    "Butane": Butane
+    "n-butane": Butane
+    "C4H10": Butane
   fuel_geometry:
     "Flat Sheet": Flat Sheet
     "sheet": Flat Sheet
