@@ -190,7 +190,10 @@ async def run(
     investigations = await _extract_deduped_investigations(docs, ext)
     per_doc_runs = await asyncio.gather(*(ext.extract_test_runs(d) for d in docs))
     extracted_runs = [r for runs in per_doc_runs for r in runs]
+    # CSV rows come FIRST: on a duplicate experiment_id validate keeps the first (authoritative CSV) row
+    csv_ids = {str(r.get("experiment_id")) for r in rows if r.get("experiment_id") is not None}
     rows += normalize.normalize_rows(extracted_runs, cmap) if extracted_runs else []
+    dup_csv = sum(1 for r in extracted_runs if str(r.get("experiment_id")) in csv_ids)
     stats = getattr(ext, "stats", None)
     mix = f" ({stats.provider_mix()})" if isinstance(stats, llm_extract.ExtractorStats) else ""
     log(
@@ -200,6 +203,13 @@ async def run(
     )
     if isinstance(stats, llm_extract.ExtractorStats):
         log("extract", f"  llm calls {stats.calls}, cache hits {stats.cache_hits}, failures {stats.failures}")
+        log(
+            "extract",
+            f"  run pages {stats.run_pages}, runs {stats.runs_extracted}, "
+            f"discarded_sparse {stats.discarded_sparse}, budget_skipped {stats.budget_skipped}",
+        )
+    if dup_csv:
+        log("extract", f"  {dup_csv} extracted runs duplicated CSV ids (CSV kept)")
 
     # 5. validate
     report = validate.validate_rows(rows, write_queue=True)

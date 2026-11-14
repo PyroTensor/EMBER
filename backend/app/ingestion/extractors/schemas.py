@@ -24,4 +24,36 @@ class InvestigationExtraction(BaseModel):
     evidence_page: int | None  # page the program evidence came from
 
 
-__all__ = ["INV_PROMPT_VERSION", "InvestigationExtraction"]
+RUNS_PROMPT_VERSION = "runs-v1"
+
+
+class RunExtraction(BaseModel):
+    experiment_id: str | None  # ONLY if a run/test id appears verbatim in the text
+    program: str | None
+    fuel_material: str | None
+    fuel_geometry: str | None
+    gravity_g: float | None
+    oxygen_pct: float | None  # percent (mole fraction x100)
+    pressure_kpa: float | None  # converted from psia/atm/mmHg
+    flow_velocity_cm_s: float | None
+    diluent_gas: str | None
+    combustion_regime: str | None
+    spread_or_burn_rate: float | None
+    peak_radiative_flux_kw_m2: float | None
+    limiting_oxygen_index_pct: float | None
+    burn_duration_s: float | None
+    confidence: float  # 0-1, model's own confidence that this is one real measured run
+    evidence_quote: str  # <= 200 chars copied verbatim from the page (table row or sentence)
+
+
+class PageRunsExtraction(BaseModel):
+    runs: list[RunExtraction]
+
+
+__all__ = [
+    "INV_PROMPT_VERSION",
+    "RUNS_PROMPT_VERSION",
+    "InvestigationExtraction",
+    "PageRunsExtraction",
+    "RunExtraction",
+]

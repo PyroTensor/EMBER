@@ -1,9 +1,10 @@
 """Stage 5 - Validate: range checks, missing-field flags, human review of the top 15.
 
 * Hard failures (schema/range/enum violations) -> row rejected, reported.
-* Soft flags (missing optional outputs, physics inconsistencies) -> row kept with
+* Soft flags (missing optional outputs, physics inconsistencies, LLM extraction) -> row kept with
   `review_flags`; the 15 most-flagged rows are written to <CACHE_DIR>/review_queue.csv
-  for a teammate to eyeball before demo.
+  for a teammate to eyeball before demo. LLM-extracted rows carry `extraction:*` flags (non-missing flags,
+  so they sort to the top) and the queue shows `source_doc_id` / `source_page` so a reviewer can find them.
 """
 
 from __future__ import annotations
@@ -57,6 +58,20 @@ class ValidationReport:
         return f"{len(self.valid)} valid, {len(self.rejected)} rejected, {flagged} flagged for review"
 
 
+def extraction_flags(run: TestRunRecord) -> list[str]:
+    """``extraction:*`` flags for rows that came from stage-4 document extraction."""
+    ext = run.extra_telemetry.get("extraction")
+    if not isinstance(ext, dict):
+        return []
+    flags = ["extraction:llm"]
+    confidence = ext.get("confidence")
+    if isinstance(confidence, (int, float)) and confidence < get_settings().EXTRACT_MIN_CONFIDENCE:
+        flags.append("extraction:low_confidence")
+    if not ext.get("quote_found"):
+        flags.append("extraction:quote_not_found")
+    return flags
+
+
 def soft_flags(run: TestRunRecord) -> list[str]:
     flags = [f"missing:{k}" for k in OPTIONAL_OUTPUTS if getattr(run, k) is None]
     raw_mat = str(run.extra_telemetry.get("raw_fuel_material", "")).strip().lower()
@@ -80,6 +95,7 @@ def soft_flags(run: TestRunRecord) -> list[str]:
             flags.append("consistency:no_ignition_with_duration")
         if (run.peak_radiative_flux_kw_m2 or 0) > 0:
             flags.append("consistency:no_ignition_with_flux")
+    flags.extend(extraction_flags(run))
     return flags
 
 
@@ -104,6 +120,7 @@ def _load_existing_signoffs(queue: Path) -> dict[str, tuple[str, str]]:
 def validate_rows(rows: list[dict[str, Any]], write_queue: bool = True) -> ValidationReport:
     rep = ValidationReport()
     seen_ids: set[str] = set()
+    provenance: dict[str, tuple[str, str]] = {}  # experiment_id -> (source_doc_id, source_page)
     for row in rows:
         try:
             run = TestRunRecord(**row)
@@ -124,6 +141,7 @@ def validate_rows(rows: list[dict[str, Any]], write_queue: bool = True) -> Valid
             )
             continue
         seen_ids.add(run.experiment_id)
+        provenance[run.experiment_id] = (run.source_doc_id or "", str(run.source_page or ""))
         rep.valid.append(run)
         rep.flags[run.experiment_id] = soft_flags(run)
 
@@ -139,13 +157,27 @@ def validate_rows(rows: list[dict[str, Any]], write_queue: bool = True) -> Valid
         queue.parent.mkdir(parents=True, exist_ok=True)
         with queue.open("w", newline="", encoding="utf-8") as fh:
             w = csv.writer(fh)
-            w.writerow(["experiment_id", "n_flags", "flags", "reviewed_by", "decision"])
+            # signoffs are read back by column name, so queues written before these columns still merge
+            w.writerow(
+                [
+                    "experiment_id",
+                    "source_doc_id",
+                    "source_page",
+                    "n_flags",
+                    "flags",
+                    "reviewed_by",
+                    "decision",
+                ]
+            )
             for eid, fl in top:
                 if fl:
                     rev, dec = existing_signoffs.get(eid, ("", ""))
-                    w.writerow([eid, len(fl), ";".join(fl), rev, dec])
+                    doc_id, page = provenance.get(eid, ("", ""))
+                    w.writerow([eid, doc_id, page, len(fl), ";".join(fl), rev, dec])
             for rej in rep.rejected:
-                eid = str(rej["row"].get("experiment_id", "?"))
+                row = rej["row"]
+                eid = str(row.get("experiment_id", "?"))
                 rev, dec = existing_signoffs.get(eid, ("", ""))
-                w.writerow([eid, "REJECTED", ";".join(rej["errors"]), rev, dec])
+                doc_id, page = row.get("source_doc_id") or "", row.get("source_page") or ""
+                w.writerow([eid, doc_id, page, "REJECTED", ";".join(rej["errors"]), rev, dec])
     return rep

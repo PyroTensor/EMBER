@@ -25,9 +25,15 @@ from typing import Any, Protocol
 
 from app.core.config import get_settings
 from app.ingestion.extractors import ExtractionCache, StructuredLLMChain, build_chain, cache_key
-from app.ingestion.extractors.schemas import INV_PROMPT_VERSION, InvestigationExtraction
+from app.ingestion.extractors.schemas import (
+    INV_PROMPT_VERSION,
+    RUNS_PROMPT_VERSION,
+    InvestigationExtraction,
+    PageRunsExtraction,
+    RunExtraction,
+)
 from app.ingestion.stages import normalize
-from app.schemas.enums import Program
+from app.schemas.enums import CombustionRegime, DiluentGas, FuelGeometry, FuelMaterial, Program
 from app.schemas.ingestion import Document, Investigation
 
 logger = logging.getLogger(__name__)
@@ -115,12 +121,75 @@ INV_MAX_CHARS = 12_000
 _SUMMARY_MAX = 600
 
 
+def _enum_list(enum: type[Program | FuelMaterial | FuelGeometry | DiluentGas | CombustionRegime]) -> str:
+    return ", ".join(e.value for e in enum)
+
+
+RUNS_SYSTEM_PROMPT = (
+    "You extract individually reported microgravity combustion test runs from ONE page of a NASA document. "
+    "Extract ONLY individually reported experimental runs or table rows with measured conditions. "
+    "Never invent values: use null when a value is not stated for that run. "
+    "Ranges or parametric sweeps without per-run outcomes are NOT runs. "
+    'If the page has no such runs, return {"runs": []}.\n'
+    "Units (convert to these): oxygen_pct in % by volume (mole fraction x100); pressure_kpa in kPa "
+    "(1 psia = 6.895 kPa, 1 atm = 101.325 kPa, 1 mmHg = 0.1333 kPa); flow_velocity_cm_s in cm/s "
+    "(1 mm/s = 0.1 cm/s); gravity_g in g (microgravity/ISS = 0.0, Moon = 0.16, Mars = 0.38, Earth = 1.0); "
+    "peak_radiative_flux_kw_m2 in kW/m2; burn_duration_s in s; limiting_oxygen_index_pct in %.\n"
+    f"Allowed spellings - program: {_enum_list(Program)}; fuel_material: {_enum_list(FuelMaterial)}; "
+    f"fuel_geometry: {_enum_list(FuelGeometry)}; diluent_gas: {_enum_list(DiluentGas)}; "
+    f"combustion_regime: {_enum_list(CombustionRegime)}. If the text names another material/gas, copy it "
+    "verbatim.\n"
+    "experiment_id: ONLY a run/test id that appears verbatim on the page, else null. "
+    "confidence: 0-1, your confidence that this is one real measured run. "
+    "evidence_quote: at most 200 characters copied verbatim from the page (the table row or sentence)."
+)
+REQUIRED_RUN_FIELDS = (
+    "experiment_id",
+    "program",
+    "fuel_material",
+    "fuel_geometry",
+    "gravity_g",
+    "oxygen_pct",
+    "pressure_kpa",
+    "flow_velocity_cm_s",
+    "diluent_gas",
+    "combustion_regime",
+)
+MIN_REQUIRED_FIELDS = 4
+_RUN_VALUE_FIELDS = tuple(f for f in RunExtraction.model_fields if f not in ("confidence", "evidence_quote"))
+_SIGNAL_RE = re.compile(
+    r"\bO2\b|\boxygen\b|\bkPa\b|\bpsia\b|\batm\b|cm/s|mm/s|µg|μg|microgravity|\bLOI\b|extinct|ignit",
+    re.IGNORECASE,
+)
+_TABLE_ROW_RE = re.compile(r"^\s*\|.*\|", re.MULTILINE)
+_NUMBER_RE = re.compile(r"(?<![\w.])[-+]?\d+(?:\.\d+)?")
+MIN_SIGNALS = 2
+MIN_NUMBERS = 6
+
+
+def _normalise_text(text: str) -> str:
+    """Lowercase, table pipes and whitespace runs collapsed: used for verbatim-quote checks."""
+    return re.sub(r"[\s|]+", " ", text).strip().lower()
+
+
+def is_candidate_page(text: str) -> bool:
+    """>= 2 distinct condition signals AND (a markdown table row OR >= 6 numbers)."""
+    signals = {m.group(0).lower() for m in _SIGNAL_RE.finditer(text)}
+    if len(signals) < MIN_SIGNALS:
+        return False
+    return bool(_TABLE_ROW_RE.search(text)) or len(_NUMBER_RE.findall(text)) >= MIN_NUMBERS
+
+
 @dataclass
 class ExtractorStats:
     calls: int = 0  # chain calls (cache misses)
     cache_hits: int = 0
     failures: int = 0  # chain calls where every provider failed
     by_provider: Counter[str] = field(default_factory=Counter)  # investigations by source
+    run_pages: int = 0  # candidate pages sent to (or answered from the cache for) run extraction
+    runs_extracted: int = 0
+    discarded_sparse: int = 0
+    budget_skipped: int = 0  # candidate pages skipped because the page budget ran out
 
     def provider_mix(self) -> str:
         keys = ["openai", "gemini", "cache", "heuristic"]
@@ -166,6 +235,8 @@ class LLMExtractor:
         self._aliases = aliases if aliases is not None else normalize.load_column_map().get("aliases", {})
         self._heuristic = HeuristicExtractor()
         self.stats = ExtractorStats()
+        self._pages_used = 0  # shared LLM page budget across the whole run
+        self._budget_warned = False
 
     def _program(self, raw: str | None) -> Program | None:
         if not raw:
@@ -248,8 +319,107 @@ class LLMExtractor:
             source_doc_id=doc.doc_id,
         )
 
+    # ── test runs (I4) ────────────────────────────────────────────────
+
+    def _reserve_page(self) -> bool:
+        """Take one page from the shared budget (synchronous, so concurrent docs never overspend)."""
+        if self._pages_used < self.max_pages:
+            self._pages_used += 1
+            return True
+        self.stats.budget_skipped += 1
+        if not self._budget_warned:
+            logger.warning("LLM page budget exhausted (%d); remaining pages skipped", self.max_pages)
+            self._budget_warned = True
+        return False
+
+    def candidate_pages(self, doc: Document) -> list[int]:
+        """1-based pages worth an LLM call (prefilter; pages already mapped from tables are skipped)."""
+        skip = {int(p) for p in doc.metadata.get("table_row_pages", [])}
+        return [i for i, text in enumerate(doc.pages, start=1) if i not in skip and is_candidate_page(text)]
+
+    def _row(
+        self, doc: Document, page_no: int, idx: int, run: RunExtraction, page_text: str, meta: dict[str, str]
+    ) -> dict[str, Any] | None:
+        values = run.model_dump(include=set(_RUN_VALUE_FIELDS))
+        eid = (values.pop("experiment_id") or "").strip()
+        if not (eid and eid in page_text):
+            eid = ""
+        n_required = sum(1 for f in REQUIRED_RUN_FIELDS[1:] if values.get(f) is not None) + bool(eid)
+        if n_required < MIN_REQUIRED_FIELDS:
+            self.stats.discarded_sparse += 1
+            return None
+        if values.get("program") is None and doc.metadata.get("investigation"):
+            values["program"] = doc.metadata["investigation"]  # the page rarely restates the program
+        quote = run.evidence_quote.strip()[:200]
+        return {
+            "experiment_id": eid or f"{doc.doc_id}-p{page_no:03d}-r{idx:02d}",
+            **{k: v for k, v in values.items() if v is not None},
+            # provenance is ALWAYS set by code, never by the LLM
+            "source_doc_id": doc.doc_id,
+            "source_page": page_no,
+            "extra_telemetry": {
+                "extraction": {
+                    "provider": meta["provider"],
+                    "model": meta["model"],
+                    "prompt_version": RUNS_PROMPT_VERSION,
+                    "confidence": run.confidence,
+                    "evidence_quote": quote,
+                    "quote_found": bool(quote) and _normalise_text(quote) in _normalise_text(page_text),
+                }
+            },
+        }
+
+    async def _page_runs(self, doc: Document, page_no: int, key: str) -> list[dict[str, Any]]:
+        text = doc.pages[page_no - 1]
+        async with self._sem:
+            result = await self.chain.extract(RUNS_SYSTEM_PROMPT, text, PageRunsExtraction)
+        self.stats.calls += 1
+        self.cache.put(doc.doc_id, "runs", page_no, key, prompt_version=RUNS_PROMPT_VERSION, result=result)
+        if not isinstance(result.parsed, PageRunsExtraction):
+            self.stats.failures += 1
+            logger.warning("run extraction failed for %s p.%d", doc.doc_id, page_no)
+            return []
+        meta = {"provider": result.provider or "llm", "model": result.model or ""}
+        return self._rows(doc, page_no, result.parsed, meta)
+
+    def _rows(
+        self, doc: Document, page_no: int, parsed: PageRunsExtraction, meta: dict[str, str]
+    ) -> list[dict[str, Any]]:
+        text = doc.pages[page_no - 1]
+        rows = [self._row(doc, page_no, i, run, text, meta) for i, run in enumerate(parsed.runs, start=1)]
+        kept = [r for r in rows if r is not None]
+        self.stats.runs_extracted += len(kept)
+        return kept
+
     async def extract_test_runs(self, doc: Document) -> list[dict[str, Any]]:
-        return []  # I4
+        rows: list[dict[str, Any]] = []
+        pending: list[tuple[int, str]] = []
+        # synchronous pass: cache hits are free; misses reserve budget BEFORE any await, so the budget is
+        # shared deterministically across documents extracted concurrently
+        for page_no in self.candidate_pages(doc):
+            text = doc.pages[page_no - 1]
+            key = cache_key(RUNS_PROMPT_VERSION, PageRunsExtraction.__name__, text)
+            entry = self.cache.get_entry(doc.doc_id, "runs", page_no, key) if self.use_cache else None
+            if entry is not None:
+                try:
+                    parsed = PageRunsExtraction.model_validate(entry["parsed"])
+                except ValueError:
+                    parsed = None
+                if parsed is not None:
+                    self.stats.cache_hits += 1
+                    self.stats.run_pages += 1
+                    meta = {
+                        "provider": str(entry.get("provider") or "cache"),
+                        "model": str(entry.get("model") or ""),
+                    }
+                    rows.extend(self._rows(doc, page_no, parsed, meta))
+                    continue
+            if self._reserve_page():
+                self.stats.run_pages += 1
+                pending.append((page_no, key))
+        for page_rows in await asyncio.gather(*(self._page_runs(doc, p, k) for p, k in pending)):
+            rows.extend(page_rows)
+        return sorted(rows, key=lambda r: (r["source_page"], r["experiment_id"]))
 
 
 def resolve_extractor_kind(kind: str | None = None) -> str:

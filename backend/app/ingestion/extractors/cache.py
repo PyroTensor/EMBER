@@ -37,17 +37,25 @@ class ExtractionCache:
     def path(self, doc_id: str, kind: str, page: int) -> Path:
         return self.root / _safe(doc_id) / f"{_safe(kind)}_p{page:03d}.json"
 
-    def get(self, doc_id: str, kind: str, page: int, key: str) -> dict[str, Any] | None:
-        """Parsed JSON for ``key``, or ``None`` (missing, other key, failed result or unreadable file)."""
+    def get_entry(self, doc_id: str, kind: str, page: int, key: str) -> dict[str, Any] | None:
+        """The whole cache entry (provider, model, parsed, ...) on a hit, else ``None``."""
         p = self.path(doc_id, kind, page)
         try:
             entry = json.loads(p.read_text(encoding="utf-8"))
         except (OSError, ValueError):
             return None
-        if not isinstance(entry, dict) or entry.get("key") != key:
+        if (
+            not isinstance(entry, dict)
+            or entry.get("key") != key
+            or not isinstance(entry.get("parsed"), dict)
+        ):
             return None
-        parsed = entry.get("parsed")
-        return parsed if isinstance(parsed, dict) else None
+        return entry
+
+    def get(self, doc_id: str, kind: str, page: int, key: str) -> dict[str, Any] | None:
+        """Parsed JSON for ``key``, or ``None`` (missing, other key, failed result or unreadable file)."""
+        entry = self.get_entry(doc_id, kind, page, key)
+        return entry["parsed"] if entry is not None else None
 
     def put(
         self, doc_id: str, kind: str, page: int, key: str, *, prompt_version: str, result: ChainResult
