@@ -1,44 +1,43 @@
 "use client";
 
-import { useState } from "react";
-import { SlidersHorizontal } from "lucide-react";
+import Link from "next/link";
+import { MessagesSquare, SlidersHorizontal } from "lucide-react";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { usePresets } from "@/features/presets";
-import type { CabinConfig, Preset } from "@/lib/api/types";
+import type { Preset } from "@/lib/api/types";
+import { useCabinScenario } from "@/lib/cabin-scenario/cabin-scenario-context";
 import { useCabinEvaluation } from "../hooks";
 import { CabinControls } from "./cabin-controls";
 import { PresetPicker, presetId } from "./preset-picker";
 import { RiskPanel } from "./risk-panel";
 import { ShapleyPanel } from "./shapley-panel";
 
-function toConfig(p: Preset): CabinConfig {
-  return {
-    oxygen_pct: p.oxygen_pct,
-    pressure_kpa: p.pressure_kpa,
-    flow_velocity_cm_s: p.flow_velocity_cm_s,
-    gravity_g: p.gravity_g,
-    fuel_material: p.fuel_material,
-    diluent_gas: p.diluent_gas,
-  };
-}
-
-/** Cabin Configurator: waits for presets, then starts from the first one. */
+/** Cabin Configurator: waits for presets, then syncs with the shared CabinScenarioContext. */
 export function CabinView() {
   const presets = usePresets();
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-8">
-      <header className="space-y-1">
-        <p className="font-mono text-[11px] tracking-wide text-muted">MODULE 01</p>
-        <h1 className="text-xl font-semibold">Cabin Configurator</h1>
-        <p className="max-w-2xl text-sm text-muted">
-          Tune the habitat atmosphere and see the fire-risk index, the limiting oxygen index and which factors drive the
-          risk compared with the ISS baseline.
-        </p>
+      <header className="flex flex-wrap items-end justify-between gap-4">
+        <div className="space-y-1">
+          <p className="font-mono text-[11px] tracking-wide text-muted">MODULE 01</p>
+          <h1 className="text-xl font-semibold">Cabin Configurator</h1>
+          <p className="max-w-2xl text-sm text-muted">
+            Tune the habitat atmosphere and see the fire-risk index, the limiting oxygen index and which factors drive the
+            risk compared with the ISS baseline.
+          </p>
+        </div>
+        <Link
+          href="/copilot"
+          className="inline-flex items-center gap-2 rounded-md border border-accent/40 bg-accent/10 px-3 py-1.5 text-xs font-medium text-accent transition-colors hover:bg-accent/20"
+        >
+          <MessagesSquare aria-hidden className="size-3.5" />
+          Ask SI Co-Pilot about this cabin →
+        </Link>
       </header>
 
       {presets.isPending ? (
@@ -64,9 +63,7 @@ export function CabinView() {
 }
 
 function CabinWorkspace({ presets }: { presets: Preset[] }) {
-  const first = presets[0] as Preset;
-  const [cfg, setCfg] = useState<CabinConfig>(() => toConfig(first));
-  const [selected, setSelected] = useState<string | null>(presetId(first, 0));
+  const { config: cfg, presetId: selected, selectPreset, updateField } = useCabinScenario();
   const evaluation = useCabinEvaluation(cfg);
   // Never show a previous result next to an error: the error wins.
   const data = evaluation.isError ? undefined : evaluation.data;
@@ -82,15 +79,13 @@ function CabinWorkspace({ presets }: { presets: Preset[] }) {
             presets={presets}
             value={selected}
             onSelect={(p) => {
-              setCfg(toConfig(p));
-              setSelected(presetId(p, presets.indexOf(p)));
+              selectPreset(p, presetId(p, presets.indexOf(p)));
             }}
           />
           <CabinControls
             cfg={cfg}
             onChange={(field, value) => {
-              setCfg((prev) => ({ ...prev, [field]: value }));
-              setSelected(null);
+              updateField(field, value);
             }}
           />
         </CardBody>

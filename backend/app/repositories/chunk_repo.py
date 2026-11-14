@@ -18,11 +18,20 @@ from app.core.constants import EMBED_DIM, HYBRID_CANDIDATES, RRF_K
 from app.models.chunk import Chunk
 from app.repositories.base import SqlRepository
 
+_TSQ_CTE: Final = """
+q AS (
+  SELECT CASE
+    WHEN numnode(plainto_tsquery('english', :query)) > 0
+    THEN to_tsquery('english', replace(plainto_tsquery('english', :query)::text, ' & ', ' | '))
+    ELSE plainto_tsquery('english', :query)
+  END AS tsq
+)"""
+
 _KW_CTE: Final = """
 kw AS (
   SELECT c.id, row_number() OVER (ORDER BY ts_rank_cd(c.tsv, q.tsq) DESC, c.id) AS r
   FROM chunks c, q
-  WHERE c.tsv @@ q.tsq AND c.metadata @> CAST(:filter AS jsonb)
+  WHERE numnode(q.tsq) > 0 AND c.tsv @@ q.tsq AND c.metadata @> CAST(:filter AS jsonb)
   ORDER BY r LIMIT :k)"""
 
 _VEC_CTE: Final = """
@@ -33,7 +42,7 @@ vec AS (
   ORDER BY c.embedding <=> :emb LIMIT :k)"""
 
 _HYBRID_SQL: Final = f"""
-WITH q AS (SELECT websearch_to_tsquery('english', :query) AS tsq),{_KW_CTE},{_VEC_CTE}
+WITH {_TSQ_CTE},{_KW_CTE},{_VEC_CTE}
 SELECT c.id, c.doc_id, c.page, c.section, c.text, c.metadata,
        COALESCE(1.0 / (:rrf_k + kw.r), 0) + COALESCE(1.0 / (:rrf_k + vec.r), 0) AS score
 FROM chunks c
@@ -44,7 +53,7 @@ ORDER BY score DESC, c.id
 LIMIT :top_n"""
 
 _KEYWORD_SQL: Final = f"""
-WITH q AS (SELECT websearch_to_tsquery('english', :query) AS tsq),{_KW_CTE}
+WITH {_TSQ_CTE},{_KW_CTE}
 SELECT c.id, c.doc_id, c.page, c.section, c.text, c.metadata,
        1.0 / (:rrf_k + kw.r) AS score
 FROM chunks c

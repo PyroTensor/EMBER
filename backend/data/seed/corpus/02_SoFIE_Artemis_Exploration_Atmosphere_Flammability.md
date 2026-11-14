@@ -49,7 +49,9 @@ material except Nomex.
 | 34 % / 56.5 kPa | sustained, spread roughly 2-3x the 21 % rate | sustained | marginal: burns only with ventilation |
 | 40 % / 48 kPa | vigorous | vigorous | sustained |
 
-Nomex had a high LOI in microgravity at 56.5 kPa (around 28-29 %), so at 34 % O2 it burned only when
+Compared with the ISS 21 % O2 / 101.3 kPa baseline, the Artemis 34 % O2 / 56.5 kPa exploration
+atmosphere increased flame spread rates over cotton-fiberglass and PMMA to roughly 2 to 3 times the
+21 % rate. Nomex had a high LOI in microgravity at 56.5 kPa (around 28-29 %), so at 34 % O2 it burned only when
 low-speed flow was present. This leaves a margin of only a few percentage points. At 36 % O2 and above,
 Nomex burned in every flow condition tested.
 
