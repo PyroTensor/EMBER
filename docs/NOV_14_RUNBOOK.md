@@ -4,7 +4,9 @@ When NASA releases the official Space Apps dataset on **November 14**, follow th
 breaking the backend or the frontend. All commands run from `backend/` (Windows: `mingw32-make` for `make`).
 
 The ingestion CLI is `uv run python -m app.ingestion` with these flags: `--source DIR`, `--runs-file NAME` (inside
-`--source`), `--telemetry-file NAME`, `--column-map PATH`, `--extractor heuristic|gemini`, `--dry-run`, `--skip-embed`.
+`--source`), `--telemetry-file NAME`, `--column-map PATH`, `--extractor heuristic|llm`, `--llm-max-pages INT`,
+`--no-llm-cache`, `--no-findings`, `--fetch SOURCES_YAML`, `--dry-run`, `--skip-embed`.
+NTRS PDFs can be downloaded straight into the drop folder with `--fetch` (copy `data/sources.example.yaml`).
 
 ---
 
@@ -36,15 +38,29 @@ uv run python -m app.ingestion --source data/official_drop --runs-file <official
 Check `backend/data/.cache/review_queue.csv` for `REJECTED` rows or physics flags. If an enum alias is missing (a new
 material or regime spelling), add it under `aliases:` in `column_map.yaml` and dry-run again.
 
+## Step 3b: LLM extraction dry run (optional, needs `OPENAI_API_KEY` and/or `GEMINI_API_KEY`) (`T+12 min`)
+Pull test runs, PDF metadata and scanned pages out of the NTRS documents (OpenAI primary, Gemini fallback). Start
+with a small page budget, because every page is a paid call:
+```bash
+uv run python -m app.ingestion --source data/official_drop --runs-file <official_runs.csv> \
+    --extractor llm --dry-run --skip-embed --llm-max-pages 20
+# or: make ingest-llm SRC=data/official_drop RUNS=<official_runs.csv>
+```
+Before the full load, review the extracted rows at the top of `data/.cache/review_queue.csv`: every row flagged
+`extraction:low_confidence` or `extraction:quote_not_found` (check its `source_doc_id` / `source_page`), and the
+findings in `data/.cache/findings_review_queue.csv`. Results are cached in `data/.cache/extractions/`, so
+re-running only pays for new or changed pages; raise `--llm-max-pages` once the sample looks right.
+
 ## Step 4: Full ingest into Postgres + pgvector (`T+15 min`)
 Once the dry run reports `0 rejected`:
 ```bash
 make db-up && make migrate
 uv run python -m app.ingestion --source data/official_drop --runs-file <official_runs.csv>
 ```
-This upserts `investigations`, `documents`, `test_runs`, `telemetry`, `presets` and `chunks` (384-d `bge-small`
-embeddings) in one transaction and refreshes the snapshot `data/.cache/store.json`. Re-running is safe: rows are
-upserted and chunks are replaced per document.
+This upserts `investigations`, `documents`, `test_runs`, `telemetry`, `presets`, `chunks` (384-d `bge-small`
+embeddings) and `combustion_findings` in one transaction and refreshes the snapshot `data/.cache/store.json`.
+Re-running is safe: rows are upserted and chunks / findings are replaced per document. (Add `--extractor llm` here
+only if Step 3b was reviewed; cached pages cost nothing.)
 
 ## Step 5: Smoke-test (`T+20 min`)
 ```bash
