@@ -148,6 +148,7 @@ function NoDataPanel({ message }: { message: string | undefined }) {
 }
 
 interface AnswerCardProps {
+  id?: string;
   response: AskResponse;
   /** The question this answers (shown as the card heading). */
   question?: string;
@@ -158,6 +159,7 @@ interface AnswerCardProps {
 
 /** One Co-Pilot answer: route / support / rewrite badges, then the cited answer or the No-data panel. */
 export function AnswerCard({
+  id,
   response,
   question,
   documentsById,
@@ -171,6 +173,7 @@ export function AnswerCard({
 
   return (
     <article
+      id={id}
       className={cn(
         "rounded-card border-border bg-surface space-y-4 border p-5",
         className,
