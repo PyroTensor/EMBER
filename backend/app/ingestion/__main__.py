@@ -49,6 +49,11 @@ def main(argv: list[str] | None = None) -> int:
     )
     ap.add_argument("--no-llm-cache", action="store_true", help="ignore cached LLM extractions")
     ap.add_argument(
+        "--no-findings",
+        action="store_true",
+        help="do not build combustion_findings (overrides EXTRACT_FINDINGS)",
+    )
+    ap.add_argument(
         "--fetch",
         type=Path,
         default=None,
@@ -70,6 +75,7 @@ def main(argv: list[str] | None = None) -> int:
             llm_max_pages=a.llm_max_pages,
             no_llm_cache=a.no_llm_cache,
             fetch=a.fetch,
+            no_findings=a.no_findings,
         )
     )
 

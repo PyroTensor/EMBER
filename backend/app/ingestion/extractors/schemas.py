@@ -50,6 +50,39 @@ class PageRunsExtraction(BaseModel):
     runs: list[RunExtraction]
 
 
+PAGE_PROMPT_VERSION = "page-v2"  # runs + findings in ONE page call (I10)
+
+
+class FindingExtraction(BaseModel):
+    """LLM-facing fields of a combustion finding (conditions flattened: no dicts in strict schemas)."""
+
+    category: str  # flammability_limit | extinction | ignition | flame_spread | burning_rate | ...
+    gravity_context: str  # microgravity | partial_gravity | normal_g_baseline
+    statement: str  # 1 sentence, <= 400 chars: what was measured or observed
+    subject: str | None
+    program: str | None
+    quantity: str | None
+    value_num: float | None
+    value_text: str | None
+    unit: str | None
+    oxygen_pct: float | None
+    pressure_kpa: float | None
+    gravity_g: float | None
+    flow_velocity_cm_s: float | None
+    diluent_gas: str | None
+    fuel_geometry: str | None
+    temperature_k: float | None
+    evidence_quote: str  # <= 200 chars copied verbatim from the page
+    confidence: float  # 0-1
+    relevance: float  # 0-1: how clearly this is about combustion in micro-/reduced gravity
+    is_microgravity_combustion: bool
+
+
+class PageExtraction(BaseModel):
+    runs: list[RunExtraction]
+    findings: list[FindingExtraction]
+
+
 OCR_PROMPT_VERSION = "ocr-v1"
 
 
@@ -58,6 +91,9 @@ class PageTranscription(BaseModel):
 
 
 __all__ = [
+    "PAGE_PROMPT_VERSION",
+    "FindingExtraction",
+    "PageExtraction",
     "INV_PROMPT_VERSION",
     "OCR_PROMPT_VERSION",
     "PageTranscription",

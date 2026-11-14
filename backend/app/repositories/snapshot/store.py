@@ -53,6 +53,12 @@ class SnapshotStore:
         docs: list[dict[str, Any]] = self.data.get("documents", [])
         return docs
 
+    @property
+    def combustion_findings(self) -> list[dict[str, Any]]:
+        """I10 table; snapshots written before it have no such key (-> [])."""
+        findings: list[dict[str, Any]] = self.data.get("combustion_findings", [])
+        return findings
+
     @cached_property
     def bm25(self) -> BM25:
         """BM25 index over chunks (same text fields as legacy: doc_id, section, title, text)."""

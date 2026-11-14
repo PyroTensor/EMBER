@@ -32,15 +32,18 @@ from app.ingestion.extractors import ExtractionCache, StructuredLLMChain, build_
 from app.ingestion.extractors.schemas import (
     INV_PROMPT_VERSION,
     OCR_PROMPT_VERSION,
+    PAGE_PROMPT_VERSION,
     RUNS_PROMPT_VERSION,
     InvestigationExtraction,
+    PageExtraction,
     PageRunsExtraction,
     PageTranscription,
     RunExtraction,
 )
+from app.ingestion.stages import findings as findings_stage
 from app.ingestion.stages import normalize
 from app.schemas.enums import CombustionRegime, DiluentGas, FuelGeometry, FuelMaterial, Program
-from app.schemas.ingestion import Document, Investigation
+from app.schemas.ingestion import CombustionFinding, Document, Investigation
 
 logger = logging.getLogger(__name__)
 
@@ -149,6 +152,22 @@ RUNS_SYSTEM_PROMPT = (
     "confidence: 0-1, your confidence that this is one real measured run. "
     "evidence_quote: at most 200 characters copied verbatim from the page (the table row or sentence)."
 )
+# page-v2 (I10): the same page call also returns combustion findings, so findings cost no extra calls
+PAGE_SYSTEM_PROMPT = (
+    RUNS_SYSTEM_PROMPT.replace('return {"runs": []}', 'return {"runs": [], "findings": []}')
+    + "\n\nAlso return `findings`: measured or explicitly stated quantitative/qualitative RESULTS about "
+    "combustion in microgravity or reduced gravity that are NOT individual runs - e.g. flammability or "
+    "extinction limits, ignition delay, soot volume fraction, flame temperature or standoff, droplet "
+    "burning-rate constants, material properties, quantitative fire-safety results.\n"
+    "Rules: never restate a run that is already in `runs`; never invent values (null when not stated); "
+    "canonical units as above (temperature_k in K); return [] for background, motivation or prose without "
+    "a result. category: one of flammability_limit, extinction, ignition, flame_spread, burning_rate, "
+    "soot_radiation, flame_structure, material_property, fire_safety, other. gravity_context: microgravity, "
+    "partial_gravity (Moon/Mars) or normal_g_baseline (1 g comparison data). statement: one sentence, at "
+    "most 400 characters. relevance: 0-1, how clearly this is about combustion in micro-/reduced gravity. "
+    "is_microgravity_combustion: false for terrestrial-only results. evidence_quote: at most 200 "
+    "characters copied verbatim from the page."
+)
 REQUIRED_RUN_FIELDS = (
     "experiment_id",
     "program",
@@ -197,6 +216,9 @@ class ExtractorStats:
     discarded_sparse: int = 0
     budget_skipped: int = 0  # candidate pages skipped because the page budget ran out
     ocr_pages: int = 0  # scanned pages whose text was replaced by a vision transcription (I8)
+    findings: int = 0  # combustion findings kept from page extraction (incl. sparse runs) (I10)
+    sparse_to_findings: int = 0
+    findings_off_topic: int = 0
 
     def provider_mix(self) -> str:
         keys = ["openai", "gemini", "cache", "heuristic"]
@@ -252,6 +274,8 @@ class LLMExtractor:
         concurrency: int = 4,
         aliases: dict[str, Any] | None = None,
         renderer: Callable[[str, int], bytes] = render_page_png,
+        extract_findings: bool = False,
+        min_relevance: float = 0.7,
     ) -> None:
         self.chain = chain
         self.cache = cache
@@ -267,6 +291,16 @@ class LLMExtractor:
         self._renderer = renderer
         self._ocr_locks: dict[str, asyncio.Lock] = {}
         self._ocr_done: set[str] = set()
+        # combustion findings (I10): page-v2 prompt returns runs + findings in the same call
+        self.extract_findings = extract_findings
+        self.min_relevance = min_relevance
+        self.findings: list[CombustionFinding] = []
+        if extract_findings:
+            self._page_prompt, self._page_version = PAGE_SYSTEM_PROMPT, PAGE_PROMPT_VERSION
+            self._page_schema: type[PageRunsExtraction] | type[PageExtraction] = PageExtraction
+        else:
+            self._page_prompt, self._page_version = RUNS_SYSTEM_PROMPT, RUNS_PROMPT_VERSION
+            self._page_schema = PageRunsExtraction
 
     # ── scanned pages (I8) ────────────────────────────────────────────
 
@@ -435,9 +469,22 @@ class LLMExtractor:
         return False
 
     def candidate_pages(self, doc: Document) -> list[int]:
-        """1-based pages worth an LLM call (prefilter; pages already mapped from tables are skipped)."""
+        """1-based pages worth an LLM call (prefilter; pages already mapped from tables are skipped).
+
+        With findings on, a page also qualifies when it passes the microgravity-combustion gate and has at
+        least one number with a unit, even without run signals.
+        """
         skip = {int(p) for p in doc.metadata.get("table_row_pages", [])}
-        return [i for i, text in enumerate(doc.pages, start=1) if i not in skip and is_candidate_page(text)]
+        return [
+            i
+            for i, text in enumerate(doc.pages, start=1)
+            if i not in skip and (is_candidate_page(text) or self._finding_page(text, doc))
+        ]
+
+    def _finding_page(self, text: str, doc: Document) -> bool:
+        if not self.extract_findings or not findings_stage.has_number_with_unit(text):
+            return False
+        return findings_stage.is_microgravity_combustion(text, doc.metadata, {})[0]
 
     def _row(
         self, doc: Document, page_no: int, idx: int, run: RunExtraction, page_text: str, meta: dict[str, str]
@@ -449,6 +496,16 @@ class LLMExtractor:
         n_required = sum(1 for f in REQUIRED_RUN_FIELDS[1:] if values.get(f) is not None) + bool(eid)
         if n_required < MIN_REQUIRED_FIELDS:
             self.stats.discarded_sparse += 1
+            if self.extract_findings:  # I10: keep it as an out_of_schema_run finding instead
+                finding, _ = findings_stage.finding_from_sparse_run(
+                    run, doc, page_no, page_text, self._finding_meta(meta), aliases=self._aliases
+                )
+                if finding is not None:
+                    self.findings.append(finding)
+                    self.stats.sparse_to_findings += 1
+                    self.stats.findings += 1
+                else:
+                    self.stats.findings_off_topic += 1
             return None
         if values.get("program") is None and doc.metadata.get("investigation"):
             values["program"] = doc.metadata["investigation"]  # the page rarely restates the program
@@ -456,7 +513,7 @@ class LLMExtractor:
         extraction: dict[str, Any] = {
             "provider": meta["provider"],
             "model": meta["model"],
-            "prompt_version": RUNS_PROMPT_VERSION,
+            "prompt_version": self._page_version,
             "confidence": run.confidence,
             "evidence_quote": quote,
             "quote_found": bool(quote) and _normalise_text(quote) in _normalise_text(page_text),
@@ -472,13 +529,16 @@ class LLMExtractor:
             "extra_telemetry": {"extraction": extraction},
         }
 
+    def _finding_meta(self, meta: dict[str, str]) -> dict[str, str]:
+        return {"provider": meta["provider"], "model": meta["model"], "prompt_version": self._page_version}
+
     async def _page_runs(self, doc: Document, page_no: int, key: str) -> list[dict[str, Any]]:
         text = doc.pages[page_no - 1]
         async with self._sem:
-            result = await self.chain.extract(RUNS_SYSTEM_PROMPT, text, PageRunsExtraction)
+            result = await self.chain.extract(self._page_prompt, text, self._page_schema)
         self.stats.calls += 1
-        self.cache.put(doc.doc_id, "runs", page_no, key, prompt_version=RUNS_PROMPT_VERSION, result=result)
-        if not isinstance(result.parsed, PageRunsExtraction):
+        self.cache.put(doc.doc_id, "runs", page_no, key, prompt_version=self._page_version, result=result)
+        if not isinstance(result.parsed, (PageRunsExtraction, PageExtraction)):
             self.stats.failures += 1
             logger.warning("run extraction failed for %s p.%d", doc.doc_id, page_no)
             return []
@@ -486,12 +546,32 @@ class LLMExtractor:
         return self._rows(doc, page_no, result.parsed, meta)
 
     def _rows(
-        self, doc: Document, page_no: int, parsed: PageRunsExtraction, meta: dict[str, str]
+        self,
+        doc: Document,
+        page_no: int,
+        parsed: PageRunsExtraction | PageExtraction,
+        meta: dict[str, str],
     ) -> list[dict[str, Any]]:
         text = doc.pages[page_no - 1]
         rows = [self._row(doc, page_no, i, run, text, meta) for i, run in enumerate(parsed.runs, start=1)]
         kept = [r for r in rows if r is not None]
         self.stats.runs_extracted += len(kept)
+        if self.extract_findings and isinstance(parsed, PageExtraction):
+            for fx in parsed.findings:
+                finding, _ = findings_stage.finding_from_llm(
+                    fx,
+                    doc,
+                    page_no,
+                    text,
+                    self._finding_meta(meta),
+                    min_relevance=self.min_relevance,
+                    aliases=self._aliases,
+                )
+                if finding is None:
+                    self.stats.findings_off_topic += 1
+                else:
+                    self.findings.append(finding)
+                    self.stats.findings += 1
         return kept
 
     async def extract_test_runs(self, doc: Document) -> list[dict[str, Any]]:
@@ -502,11 +582,12 @@ class LLMExtractor:
         # shared deterministically across documents extracted concurrently
         for page_no in self.candidate_pages(doc):
             text = doc.pages[page_no - 1]
-            key = cache_key(RUNS_PROMPT_VERSION, PageRunsExtraction.__name__, text)
+            key = cache_key(self._page_version, self._page_schema.__name__, text)
             entry = self.cache.get_entry(doc.doc_id, "runs", page_no, key) if self.use_cache else None
             if entry is not None:
+                parsed: PageRunsExtraction | PageExtraction | None
                 try:
-                    parsed = PageRunsExtraction.model_validate(entry["parsed"])
+                    parsed = self._page_schema.model_validate(entry["parsed"])
                 except ValueError:
                     parsed = None
                 if parsed is not None:
@@ -538,12 +619,17 @@ def resolve_extractor_kind(kind: str | None = None) -> str:
 
 
 def get_extractor(
-    kind: str | None = None, *, max_pages: int | None = None, use_cache: bool = True
+    kind: str | None = None,
+    *,
+    max_pages: int | None = None,
+    use_cache: bool = True,
+    extract_findings: bool = False,
 ) -> Extractor:
     """Default = ``settings.EXTRACTOR`` (NOT ``LLM_PROVIDER``).
 
     ``max_pages`` (CLI ``--llm-max-pages``, else ``EXTRACT_MAX_PAGES``) and ``use_cache`` (CLI
-    ``--no-llm-cache``) configure the LLM extractor (I3/I4); the heuristic extractor ignores them.
+    ``--no-llm-cache``) configure the LLM extractor (I3/I4); ``extract_findings`` switches the page prompt to
+    ``page-v2`` (runs + combustion findings, I10). The heuristic extractor ignores all three.
     """
     if resolve_extractor_kind(kind) != "llm":
         return HeuristicExtractor()
@@ -560,6 +646,8 @@ def get_extractor(
         max_pages=settings.EXTRACT_MAX_PAGES if max_pages is None else max_pages,
         min_confidence=settings.EXTRACT_MIN_CONFIDENCE,
         concurrency=settings.EXTRACT_CONCURRENCY,
+        extract_findings=extract_findings,
+        min_relevance=settings.FINDINGS_MIN_RELEVANCE,
     )
 
 

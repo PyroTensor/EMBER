@@ -124,6 +124,9 @@ class Settings(BaseSettings):
     EXTRACT_CONCURRENCY: int = Field(default=4, ge=1, le=32)
     EXTRACT_MAX_PAGES: int = Field(default=200, ge=0, le=10000)  # LLM page budget per run (0 = no runs)
     EXTRACT_MIN_CONFIDENCE: float = Field(default=0.6, ge=0, le=1)
+    # combustion_findings (I10): microgravity-combustion data that fits no other table
+    EXTRACT_FINDINGS: bool = True
+    FINDINGS_MIN_RELEVANCE: float = Field(default=0.7, ge=0, le=1)
 
     # ── embeddings ───────────────────────────────────────────────────
     EMBED_ENABLED: bool = True  # False → NullEmbedder (keyword-only retrieval)

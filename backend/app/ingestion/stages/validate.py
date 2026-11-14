@@ -27,6 +27,7 @@ OPTIONAL_OUTPUTS = (
     "burn_duration_s",
 )
 REVIEW_TOP_N = 15
+ENUM_FIELDS = frozenset({"program", "fuel_material", "fuel_geometry", "diluent_gas", "combustion_regime"})
 _SURROGATE_FUELS = frozenset(
     {
         "cellulose",
@@ -52,6 +53,9 @@ class ValidationReport:
     valid: list[TestRunRecord] = field(default_factory=list)
     flags: dict[str, list[str]] = field(default_factory=dict)  # experiment_id -> soft flags
     rejected: list[dict[str, Any]] = field(default_factory=list)  # {row, errors}
+    # rows rejected ONLY for enum values outside schema_v1 (ranges fine): candidates for combustion_findings
+    # (I10). They are also in `rejected` and counted there.
+    enum_only: list[dict[str, Any]] = field(default_factory=list)
 
     def summary(self) -> str:
         flagged = sum(1 for f in self.flags.values() if f)
@@ -127,12 +131,15 @@ def validate_rows(rows: list[dict[str, Any]], write_queue: bool = True) -> Valid
         try:
             run = TestRunRecord(**row)
         except ValidationError as e:
+            errs = e.errors()
             rep.rejected.append(
                 {
                     "row": row,
-                    "errors": [f"{'.'.join(map(str, err['loc']))}: {err['msg']}" for err in e.errors()],
+                    "errors": [f"{'.'.join(map(str, err['loc']))}: {err['msg']}" for err in errs],
                 }
             )
+            if all(err["type"] == "enum" and err["loc"] and err["loc"][0] in ENUM_FIELDS for err in errs):
+                rep.enum_only.append(row)
             continue
         if run.experiment_id in seen_ids:
             rep.rejected.append(
