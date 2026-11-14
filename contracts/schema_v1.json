@@ -23,7 +23,7 @@
     },
     "fuel_material": {
       "type": "string",
-      "enum": ["PMMA", "Cotton-Fiberglass", "Nomex", "Heptane", "Methanol"]
+      "enum": ["PMMA", "Cotton-Fiberglass", "Nomex", "Heptane", "Methanol", "Ethylene", "Ethane", "Propane", "Butane"]
     },
     "fuel_geometry": {
       "type": "string",

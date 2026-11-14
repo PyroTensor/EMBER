@@ -14,14 +14,15 @@ cp .env.example .env
 make setup          # uv sync
 make db-up          # Postgres + pgvector (docker compose)
 make migrate        # alembic upgrade head
-make seed           # ingestion on data/seed -> Postgres + data/.cache/store.json
+make seed-proxy     # synthetic demo data (tests/fixtures/proxy) -> Postgres + data/.cache/store.json
+# real data: put the drop in data/seed (or pass SRC=<dir>) and run `make seed` (docs/INGESTION_GUIDE.md)
 make dev            # uvicorn app.main:app --reload --port 8000   (Swagger at http://localhost:8000/docs)
 ```
 
 Check it works: `curl http://localhost:8000/api/health` should report `"status": "ok"` and `"db": true`.
 
 Without Docker the API still runs: when Postgres is unreachable it falls back to the snapshot
-`data/.cache/store.json` (built by `make seed`, or on first use).
+`data/.cache/store.json` (written by every ingestion run; built from `data/seed` on first use, empty if that folder is).
 
 ### Other targets
 
@@ -32,7 +33,9 @@ Without Docker the API still runs: when Postgres is unreachable it falls back to
 | `make contract-check` | diff the served OpenAPI against `contracts/openapi_v1.yaml` |
 | `make openapi` | export the generated OpenAPI |
 | `make eval` | golden-set RAG evaluation in-process; exits 1 if `eval/thresholds.yaml` is not met |
-| `make ingest-drill` | dry-run ingestion of the messy `raw_drop_example.csv` |
+| `make ingest-drill` | dry-run ingestion of the messy `tests/fixtures/proxy/raw_drop_example.csv` |
+| `make seed` / `make seed-proxy` | ingest `data/seed` (or `SRC=<dir>`, optional `RUNS=<file>`) / the synthetic proxy fixtures |
+| `make ingest-llm` | LLM extraction dry run on `SRC` (paid calls, needs a key) |
 | `make test` / `make test-int` | unit + api tests / testcontainers integration tests |
 | `make db-down` / `make db-reset` | stop Postgres / wipe the volume and restart |
 
@@ -62,7 +65,7 @@ loaded first; real environment variables win.
 | `DB_POOL_SIZE` / `DB_CONNECT_TIMEOUT_S` | `5` / `2` | |
 | `DATA_BACKEND` | `auto` | `auto` (probe Postgres, else snapshot) / `postgres` / `snapshot` |
 | `DB_PROBE_TTL_S` | `15` | how long the DB availability decision is cached |
-| `SNAPSHOT_PATH` / `SEED_DIR` / `CACHE_DIR` | `data/.cache/store.json` / `data/seed` / `data/.cache` | relative to `backend/` |
+| `SNAPSHOT_PATH` / `SEED_DIR` / `CACHE_DIR` | `data/.cache/store.json` / `data/seed` (drop folder, empty by default) / `data/.cache` | relative to `backend/` |
 | `CORS_ORIGINS` | `["http://localhost:3000"]` | JSON list or CSV; never `*` |
 | `LLM_PROVIDER` | `heuristic` | `heuristic` (no key) / `gemini` / `openai` |
 | `LLM_MODEL` | `gemini-2.5-flash` | |

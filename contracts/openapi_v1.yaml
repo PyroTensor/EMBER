@@ -142,7 +142,7 @@ paths:
 components:
   schemas:
     Program: { type: string, enum: [BASS-II, SoFIE, FLEX, ACME, Saffire] }
-    FuelMaterial: { type: string, enum: [PMMA, Cotton-Fiberglass, Nomex, Heptane, Methanol] }
+    FuelMaterial: { type: string, enum: [PMMA, Cotton-Fiberglass, Nomex, Heptane, Methanol, Ethylene, Ethane, Propane, Butane] }
     DiluentGas: { type: string, enum: [N2, CO2, He, Ar] }
     CombustionRegime: { type: string, enum: [Sustained Burn, Self-Extinguished, Cool Flame, No Ignition] }
     EvidenceSource: { type: string, enum: [sql_tool, hybrid_retriever, scenario_ranker] }

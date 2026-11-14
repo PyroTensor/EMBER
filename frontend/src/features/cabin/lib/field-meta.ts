@@ -35,6 +35,10 @@ export const FUEL_MATERIAL_OPTIONS = [
   { value: "Nomex", label: "Nomex" },
   { value: "Heptane", label: "Heptane (liquid fuel)" },
   { value: "Methanol", label: "Methanol (liquid fuel)" },
+  { value: "Ethylene", label: "Ethylene (gaseous fuel)" },
+  { value: "Ethane", label: "Ethane (gaseous fuel)" },
+  { value: "Propane", label: "Propane (gaseous fuel)" },
+  { value: "Butane", label: "Butane (gaseous fuel)" },
 ] as const satisfies readonly Option<FuelMaterial>[];
 
 export const DILUENT_GAS_OPTIONS = [

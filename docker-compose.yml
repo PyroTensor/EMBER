@@ -33,10 +33,12 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    # Schema (incl. the read-only role ember_ro) → seed data + embeddings → API. Ingestion upserts, so restarts are safe.
+    # Schema (incl. the read-only role ember_ro) → ingest whatever is in backend/data/seed (the drop folder, copied
+    # into the image; it may be empty) → API. Ingestion upserts, so restarts are safe; an empty drop folder only
+    # logs a message and the API still starts.
     command: >-
       sh -c "alembic upgrade head &&
-             python -m app.ingestion --source data/seed &&
+             (python -m app.ingestion --source data/seed || echo 'data/seed: nothing ingested (empty drop folder?)') &&
              uvicorn app.main:app --host 0.0.0.0 --port 8000"
     environment:
       DB_HOST: db

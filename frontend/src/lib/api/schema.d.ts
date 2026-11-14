@@ -548,7 +548,7 @@ export interface components {
         /** @enum {string} */
         Program: "BASS-II" | "SoFIE" | "FLEX" | "ACME" | "Saffire";
         /** @enum {string} */
-        FuelMaterial: "PMMA" | "Cotton-Fiberglass" | "Nomex" | "Heptane" | "Methanol";
+        FuelMaterial: "PMMA" | "Cotton-Fiberglass" | "Nomex" | "Heptane" | "Methanol" | "Ethylene" | "Ethane" | "Propane" | "Butane";
         /** @enum {string} */
         DiluentGas: "N2" | "CO2" | "He" | "Ar";
         /** @enum {string} */
@@ -716,7 +716,7 @@ export interface components {
              */
             program: "BASS-II" | "SoFIE" | "FLEX" | "ACME" | "Saffire";
             /** @enum {string} */
-            fuel_material: "PMMA" | "Cotton-Fiberglass" | "Nomex" | "Heptane" | "Methanol";
+            fuel_material: "PMMA" | "Cotton-Fiberglass" | "Nomex" | "Heptane" | "Methanol" | "Ethylene" | "Ethane" | "Propane" | "Butane";
             /** @enum {string} */
             fuel_geometry: "Flat Sheet" | "Rod" | "Droplet" | "Gaseous";
             /** @description Gravity level in Earth g. Canonical values: 0.0 (microgravity), 0.16 (Lunar), 0.38 (Mars), 1.0 (Earth). */

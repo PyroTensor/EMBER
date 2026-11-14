@@ -1,29 +1,49 @@
 """Stage 4 - LLM extraction: Pydantic schema -> investigations + test runs, with source doc + page per field.
 
-Interface:
-    extractor.extract_investigation(doc) -> Investigation | None
-    extractor.extract_test_runs(doc)     -> list[dict]   (raw rows; normalize + validate follow)
+Interface (async, so the LLM extractor can make concurrent calls):
+    await extractor.extract_investigation(doc) -> Investigation | None
+    await extractor.extract_test_runs(doc)     -> list[dict]   (raw rows; normalize + validate follow)
 
 `HeuristicExtractor` (default, offline) reads the proxy front matter and first paragraphs.
-`GeminiExtractor` is the real thing for NTRS PDFs (Nov 14+).
-
-TODO(squad1-A): implement GeminiExtractor with google-genai structured output:
-    client.models.generate_content(model, contents=[page_text],
-        config={"response_mime_type": "application/json", "response_schema": list[TestRunExtraction]})
-  - one call per page so every extracted field carries (doc_id, page)
-  - keep temperature 0; store the raw LLM JSON in .cache/extractions/ for audit
-  - send low-confidence fields to validate.py's human review queue
+The extractor is chosen by ``settings.EXTRACTOR`` (``heuristic`` | ``llm``), independent of
+``LLM_PROVIDER`` (RAG only), so a RAG provider switch never starts paid extraction calls.
+`LLMExtractor` (``EXTRACTOR=llm`` / ``--extractor llm``) uses the structured chain (OpenAI primary, Gemini
+fallback, see ``app.ingestion.extractors``). Documents that already carry front-matter metadata never call the
+LLM, so the seed corpus stays free. Other documents (NTRS PDFs) get an investigation and their missing
+``doc.metadata`` keys (investigation, fuel, o2_range, pressure_kpa, gravity) filled in, so their chunks
+(stage 6, after this stage) carry the same metadata as markdown docs.
 """
 
 from __future__ import annotations
 
+import asyncio
+import hashlib
 import logging
 import re
+from collections import Counter
+from collections.abc import Callable
+from dataclasses import dataclass, field
 from typing import Any, Protocol
 
+import anyio.to_thread
+
 from app.core.config import get_settings
-from app.schemas.enums import Program
-from app.schemas.ingestion import Document, Investigation
+from app.ingestion.extractors import ExtractionCache, StructuredLLMChain, build_chain, cache_key
+from app.ingestion.extractors.schemas import (
+    INV_PROMPT_VERSION,
+    OCR_PROMPT_VERSION,
+    PAGE_PROMPT_VERSION,
+    RUNS_PROMPT_VERSION,
+    InvestigationExtraction,
+    PageExtraction,
+    PageRunsExtraction,
+    PageTranscription,
+    RunExtraction,
+)
+from app.ingestion.stages import findings as findings_stage
+from app.ingestion.stages import normalize
+from app.schemas.enums import CombustionRegime, DiluentGas, FuelGeometry, FuelMaterial, Program
+from app.schemas.ingestion import CombustionFinding, Document, Investigation
 
 logger = logging.getLogger(__name__)
 
@@ -34,10 +54,13 @@ _OBJECTIVE_RE = re.compile(
     re.DOTALL | re.IGNORECASE,
 )
 
+EXTRACTOR_KINDS: tuple[str, ...] = ("heuristic", "llm")
+_LEGACY_ALIASES: dict[str, str] = {"gemini": "llm", "openai": "llm"}
+
 
 class Extractor(Protocol):
-    def extract_investigation(self, doc: Document) -> Investigation | None: ...
-    def extract_test_runs(self, doc: Document) -> list[dict[str, Any]]: ...
+    async def extract_investigation(self, doc: Document) -> Investigation | None: ...
+    async def extract_test_runs(self, doc: Document) -> list[dict[str, Any]]: ...
 
 
 def _first_paragraph(doc: Document) -> str:
@@ -49,59 +72,592 @@ def _first_paragraph(doc: Document) -> str:
     return ""
 
 
+def heuristic_investigation(doc: Document) -> Investigation | None:
+    """Synchronous heuristic investigation extraction (front matter + objective/first paragraph).
+
+    Shared by ``HeuristicExtractor`` and sync callers (the snapshot's in-memory seed fallback).
+    """
+    if doc.source_type not in ("iss_page", "ntrs"):
+        return None
+    raw_prog = doc.metadata.get("investigation") or doc.metadata.get("program")
+    if not raw_prog:
+        return None
+    prog_enum = _PROGRAM_LOOKUP.get(str(raw_prog).strip().lower())
+    if prog_enum is None:
+        return None
+    title = doc.title.split(":", 1)[-1].strip() if ":" in doc.title else doc.title.strip()
+    body = "\n".join(doc.pages)
+    summary = ""
+    m = _OBJECTIVE_RE.search(body)
+    if m:
+        summary = re.sub(r"\s+", " ", m.group(1)).strip()
+    return Investigation(
+        id=prog_enum.value,
+        program=prog_enum,
+        title=title,
+        summary=summary or _first_paragraph(doc),
+        source_doc_id=doc.doc_id,
+    )
+
+
 class HeuristicExtractor:
     """Offline extractor for the proxy corpus and NTRS markdown/PDFs."""
 
-    def extract_investigation(self, doc: Document) -> Investigation | None:
-        if doc.source_type not in ("iss_page", "ntrs"):
-            return None
-        raw_prog = doc.metadata.get("investigation") or doc.metadata.get("program")
-        if not raw_prog:
-            return None
-        prog_enum = _PROGRAM_LOOKUP.get(str(raw_prog).strip().lower())
-        if prog_enum is None:
-            return None
-        title = doc.title.split(":", 1)[-1].strip() if ":" in doc.title else doc.title.strip()
-        body = "\n".join(doc.pages)
-        summary = ""
-        m = _OBJECTIVE_RE.search(body)
-        if m:
-            summary = re.sub(r"\s+", " ", m.group(1)).strip()
-        return Investigation(
-            id=prog_enum.value,
-            program=prog_enum,
-            title=title,
-            summary=summary or _first_paragraph(doc),
-            source_doc_id=doc.doc_id,
-        )
+    async def extract_investigation(self, doc: Document) -> Investigation | None:
+        return heuristic_investigation(doc)
 
-    def extract_test_runs(self, doc: Document) -> list[dict[str, Any]]:
+    async def extract_test_runs(self, doc: Document) -> list[dict[str, Any]]:
         # Proxy test runs arrive as structured CSV; nothing to pull out of prose.
         return []
 
 
-class GeminiExtractor:  # pragma: no cover - needs API key
-    def __init__(self, model: str | None = None):
-        settings = get_settings()
-        self.model = model or settings.LLM_MODEL
-        self._fallback = HeuristicExtractor()
-        self._api_key = settings.GEMINI_API_KEY.get_secret_value()
-        if not self._api_key:
-            logger.warning("GEMINI_API_KEY not set; GeminiExtractor falling back to HeuristicExtractor")
+# ── LLM extractor ─────────────────────────────────────────────────────
 
-    def extract_investigation(self, doc: Document) -> Investigation | None:
-        return self._fallback.extract_investigation(doc)
+INV_SYSTEM_PROMPT = (
+    "You extract metadata about NASA microgravity combustion investigations from document text. "
+    "Use ONLY the text provided; never guess. "
+    f"program: one of {', '.join(PROGRAMS)} if the text clearly names that investigation, else null. "
+    "title: the document title, else null. "
+    "summary: 1-3 sentences (max 600 characters) stating the objective or main result, else null. "
+    "fuels: material/fuel names exactly as written (empty list if none). "
+    "o2_pct_min / o2_pct_max: oxygen concentration range in percent by volume (convert mole fractions x100), "
+    "null if not stated. pressures_kpa: tested pressures converted to kPa (1 atm = 101.325 kPa, "
+    "1 psia = 6.895 kPa). gravity_levels_g: gravity levels in g (microgravity = 0.0, Moon = 0.16, "
+    "Mars = 0.38). evidence_page: the page number where the program evidence appears, else null."
+)
+INV_MAX_PAGES = 3
+INV_MAX_CHARS = 12_000
+_SUMMARY_MAX = 600
 
-    def extract_test_runs(self, doc: Document) -> list[dict[str, Any]]:
-        return self._fallback.extract_test_runs(doc)
+
+def _enum_list(enum: type[Program | FuelMaterial | FuelGeometry | DiluentGas | CombustionRegime]) -> str:
+    return ", ".join(e.value for e in enum)
 
 
-def get_extractor(kind: str | None = None) -> Extractor:
-    resolved = (kind or str(get_settings().LLM_PROVIDER)).lower()
-    if resolved == "gemini":
+RUNS_SYSTEM_PROMPT = (
+    "You extract individually reported microgravity combustion test runs from ONE page of a NASA document. "
+    "Extract ONLY individually reported experimental runs or table rows with measured conditions. "
+    "Never invent values: use null when a value is not stated for that run. "
+    "Ranges or parametric sweeps without per-run outcomes are NOT runs. "
+    'If the page has no such runs, return {"runs": []}.\n'
+    "Units (convert to these): oxygen_pct in % by volume (mole fraction x100); pressure_kpa in kPa "
+    "(1 psia = 6.895 kPa, 1 atm = 101.325 kPa, 1 mmHg = 0.1333 kPa); flow_velocity_cm_s in cm/s "
+    "(1 mm/s = 0.1 cm/s); gravity_g in g (microgravity/ISS = 0.0, Moon = 0.16, Mars = 0.38, Earth = 1.0); "
+    "peak_radiative_flux_kw_m2 in kW/m2; burn_duration_s in s; limiting_oxygen_index_pct in %.\n"
+    f"Allowed spellings - program: {_enum_list(Program)}; fuel_material: {_enum_list(FuelMaterial)}; "
+    f"fuel_geometry: {_enum_list(FuelGeometry)}; diluent_gas: {_enum_list(DiluentGas)}; "
+    f"combustion_regime: {_enum_list(CombustionRegime)}. If the text names another material/gas, copy it "
+    "verbatim.\n"
+    "experiment_id: ONLY a run/test id that appears verbatim on the page, else null. "
+    "confidence: 0-1, your confidence that this is one real measured run. "
+    "evidence_quote: at most 200 characters copied verbatim from the page (the table row or sentence)."
+)
+# page-v2 (I10): the same page call also returns combustion findings, so findings cost no extra calls
+PAGE_SYSTEM_PROMPT = (
+    RUNS_SYSTEM_PROMPT.replace('return {"runs": []}', 'return {"runs": [], "findings": []}')
+    + "\n\nAlso return `findings`: measured or explicitly stated quantitative/qualitative RESULTS about "
+    "combustion in microgravity or reduced gravity that are NOT individual runs - e.g. flammability or "
+    "extinction limits, ignition delay, soot volume fraction, flame temperature or standoff, droplet "
+    "burning-rate constants, material properties, quantitative fire-safety results.\n"
+    "Rules: never restate a run that is already in `runs`; never invent values (null when not stated); "
+    "canonical units as above (temperature_k in K); return [] for background, motivation or prose without "
+    "a result. category: one of flammability_limit, extinction, ignition, flame_spread, burning_rate, "
+    "soot_radiation, flame_structure, material_property, fire_safety, other. gravity_context: microgravity, "
+    "partial_gravity (Moon/Mars) or normal_g_baseline (1 g comparison data). statement: one sentence, at "
+    "most 400 characters. relevance: 0-1, how clearly this is about combustion in micro-/reduced gravity. "
+    "is_microgravity_combustion: false for terrestrial-only results. evidence_quote: at most 200 "
+    "characters copied verbatim from the page."
+)
+REQUIRED_RUN_FIELDS = (
+    "experiment_id",
+    "program",
+    "fuel_material",
+    "fuel_geometry",
+    "gravity_g",
+    "oxygen_pct",
+    "pressure_kpa",
+    "flow_velocity_cm_s",
+    "diluent_gas",
+    "combustion_regime",
+)
+MIN_REQUIRED_FIELDS = 4
+_RUN_VALUE_FIELDS = tuple(f for f in RunExtraction.model_fields if f not in ("confidence", "evidence_quote"))
+_SIGNAL_RE = re.compile(
+    r"\bO2\b|\boxygen\b|\bkPa\b|\bpsia\b|\batm\b|cm/s|mm/s|µg|μg|microgravity|\bLOI\b|extinct|ignit",
+    re.IGNORECASE,
+)
+_TABLE_ROW_RE = re.compile(r"^\s*\|.*\|", re.MULTILINE)
+_NUMBER_RE = re.compile(r"(?<![\w.])[-+]?\d+(?:\.\d+)?")
+MIN_SIGNALS = 2
+MIN_NUMBERS = 6
+
+
+def _normalise_text(text: str) -> str:
+    """Lowercase, table pipes and whitespace runs collapsed: used for verbatim-quote checks."""
+    return re.sub(r"[\s|]+", " ", text).strip().lower()
+
+
+def is_candidate_page(text: str) -> bool:
+    """>= 2 distinct condition signals AND (a markdown table row OR >= 6 numbers)."""
+    signals = {m.group(0).lower() for m in _SIGNAL_RE.finditer(text)}
+    if len(signals) < MIN_SIGNALS:
+        return False
+    return bool(_TABLE_ROW_RE.search(text)) or len(_NUMBER_RE.findall(text)) >= MIN_NUMBERS
+
+
+@dataclass
+class ExtractorStats:
+    calls: int = 0  # chain calls (cache misses)
+    cache_hits: int = 0
+    failures: int = 0  # chain calls where every provider failed
+    by_provider: Counter[str] = field(default_factory=Counter)  # investigations by source
+    run_pages: int = 0  # candidate pages sent to (or answered from the cache for) run extraction
+    runs_extracted: int = 0
+    discarded_sparse: int = 0
+    budget_skipped: int = 0  # candidate pages skipped because the page budget ran out
+    ocr_pages: int = 0  # scanned pages whose text was replaced by a vision transcription (I8)
+    findings: int = 0  # combustion findings kept from page extraction (incl. sparse runs) (I10)
+    sparse_to_findings: int = 0
+    findings_off_topic: int = 0
+
+    def provider_mix(self) -> str:
+        keys = ["openai", "gemini", "cache", "heuristic"]
+        keys += sorted(k for k in self.by_provider if k not in keys)
+        return ", ".join(f"{k} {self.by_provider[k]}" for k in keys)
+
+
+OCR_SYSTEM_PROMPT = (
+    "You transcribe ONE scanned page of a NASA combustion research document. "
+    "Return the page's text exactly as printed, in reading order: keep numbers, units, symbols and "
+    "table rows (write tables as markdown pipe tables). "
+    "Do not summarise, translate, correct or add anything. "
+    'If the page has no readable text, return {"text": ""}.'
+)
+OCR_DPI = 150
+
+
+def render_page_png(path: str, page_no: int, dpi: int = OCR_DPI) -> bytes:
+    """Render one 1-based PDF page to PNG with PyMuPDF (blocking: call through a worker thread)."""
+    import fitz  # PyMuPDF, extra "pdf"
+
+    with fitz.open(path) as pdf:
+        png: bytes = pdf[page_no - 1].get_pixmap(dpi=dpi).tobytes("png")
+    return png
+
+
+def _first_pages_text(doc: Document) -> str:
+    """First INV_MAX_PAGES pages, each prefixed '=== page N ===', capped at INV_MAX_CHARS in total."""
+    parts: list[str] = []
+    total = 0
+    for i, page in enumerate(doc.pages[:INV_MAX_PAGES], start=1):
+        if not page.strip():
+            continue
+        block = f"=== page {i} ===\n{page.strip()}\n"[: INV_MAX_CHARS - total]
+        parts.append(block)
+        total += len(block)
+        if total >= INV_MAX_CHARS:
+            break
+    return "".join(parts).strip()
+
+
+class LLMExtractor:
+    """Structured-LLM extractor (OpenAI primary, Gemini fallback, heuristic as the last resort)."""
+
+    def __init__(
+        self,
+        chain: StructuredLLMChain,
+        *,
+        cache: ExtractionCache,
+        use_cache: bool = True,
+        max_pages: int = 200,
+        min_confidence: float = 0.6,
+        concurrency: int = 4,
+        aliases: dict[str, Any] | None = None,
+        renderer: Callable[[str, int], bytes] = render_page_png,
+        extract_findings: bool = False,
+        min_relevance: float = 0.7,
+    ) -> None:
+        self.chain = chain
+        self.cache = cache
+        self.use_cache = use_cache
+        self.max_pages = max_pages  # run-extraction page budget (I4)
+        self.min_confidence = min_confidence  # review threshold for extracted runs (I4)
+        self._sem = asyncio.Semaphore(concurrency)
+        self._aliases = aliases if aliases is not None else normalize.load_column_map().get("aliases", {})
+        self._heuristic = HeuristicExtractor()
+        self.stats = ExtractorStats()
+        self._pages_used = 0  # shared LLM page budget across the whole run
+        self._budget_warned = False
+        self._renderer = renderer
+        self._ocr_locks: dict[str, asyncio.Lock] = {}
+        self._ocr_done: set[str] = set()
+        # combustion findings (I10): page-v2 prompt returns runs + findings in the same call
+        self.extract_findings = extract_findings
+        self.min_relevance = min_relevance
+        self.findings: list[CombustionFinding] = []
+        if extract_findings:
+            self._page_prompt, self._page_version = PAGE_SYSTEM_PROMPT, PAGE_PROMPT_VERSION
+            self._page_schema: type[PageRunsExtraction] | type[PageExtraction] = PageExtraction
+        else:
+            self._page_prompt, self._page_version = RUNS_SYSTEM_PROMPT, RUNS_PROMPT_VERSION
+            self._page_schema = PageRunsExtraction
+
+    # ── scanned pages (I8) ────────────────────────────────────────────
+
+    async def _ensure_transcribed(self, doc: Document) -> None:
+        """Once per document: replace the text of image-only pages with a vision transcription.
+
+        Runs before investigation and run extraction, so both (and chunking, stage 6) see the text.
+        Every transcription call counts against the shared page budget; cache hits are free.
+        """
+        if doc.doc_id in self._ocr_done:
+            return
+        lock = self._ocr_locks.setdefault(doc.doc_id, asyncio.Lock())
+        async with lock:
+            if doc.doc_id in self._ocr_done:
+                return
+            try:
+                await self._transcribe_image_pages(doc)
+            finally:
+                self._ocr_done.add(doc.doc_id)
+
+    async def _transcribe_image_pages(self, doc: Document) -> None:
+        image_pages = [int(p) for p in doc.metadata.get("image_pages", []) if 1 <= int(p) <= len(doc.pages)]
+        if not image_pages or not doc.path.lower().endswith(".pdf"):
+            return
         try:
-            return GeminiExtractor()
-        except Exception as exc:
-            logger.warning("Failed to initialize GeminiExtractor (%s); using HeuristicExtractor", exc)
-            return HeuristicExtractor()
-    return HeuristicExtractor()
+            pngs = await anyio.to_thread.run_sync(
+                lambda: {p: self._renderer(doc.path, p) for p in image_pages}
+            )
+        except Exception as exc:  # missing PyMuPDF, unreadable file...
+            logger.warning("cannot render scanned pages of %s (%s); skipping vision", doc.doc_id, exc)
+            return
+
+        texts: dict[int, tuple[str, str]] = {}  # page -> (text, provider)
+        pending: list[tuple[int, str, bytes]] = []
+        for page_no, png in pngs.items():  # synchronous: budget reserved before any await
+            key = cache_key(OCR_PROMPT_VERSION, PageTranscription.__name__, hashlib.sha256(png).hexdigest())
+            entry = self.cache.get_entry(doc.doc_id, "ocr", page_no, key) if self.use_cache else None
+            if entry is not None:
+                try:
+                    texts[page_no] = (
+                        PageTranscription.model_validate(entry["parsed"]).text,
+                        str(entry.get("provider") or "cache"),
+                    )
+                    self.stats.cache_hits += 1
+                    continue
+                except ValueError:
+                    pass
+            if self._reserve_page():
+                pending.append((page_no, key, png))
+
+        async def call(page_no: int, key: str, png: bytes) -> None:
+            user = f"Transcribe page {page_no} of document {doc.doc_id}."
+            async with self._sem:
+                result = await self.chain.extract(OCR_SYSTEM_PROMPT, user, PageTranscription, image_png=png)
+            self.stats.calls += 1
+            self.cache.put(doc.doc_id, "ocr", page_no, key, prompt_version=OCR_PROMPT_VERSION, result=result)
+            if isinstance(result.parsed, PageTranscription):
+                texts[page_no] = (result.parsed.text, result.provider or "llm")
+            else:
+                self.stats.failures += 1
+                logger.warning("vision transcription failed for %s p.%d", doc.doc_id, page_no)
+
+        await asyncio.gather(*(call(*item) for item in pending))
+
+        ocr_pages = sorted(p for p, (text, _) in texts.items() if text.strip())
+        for page_no in ocr_pages:
+            doc.pages[page_no - 1] = texts[page_no][0].strip()
+        if ocr_pages:
+            self.stats.ocr_pages += len(ocr_pages)
+            doc.metadata["ocr_pages"] = ocr_pages
+            doc.metadata.setdefault("ocr", f"llm:{texts[ocr_pages[0]][1]}")
+
+    def _program(self, raw: str | None) -> Program | None:
+        if not raw:
+            return None
+        mapped = normalize._alias("program", raw, self._aliases)
+        return _PROGRAM_LOOKUP.get(str(mapped).strip().lower())
+
+    async def _extract_inv(self, doc: Document, text: str) -> tuple[InvestigationExtraction | None, str]:
+        """Cached chain call. Returns (parsed or None, source label: provider | cache | heuristic)."""
+        key = cache_key(INV_PROMPT_VERSION, InvestigationExtraction.__name__, text)
+        if self.use_cache and (hit := self.cache.get(doc.doc_id, "inv", 1, key)) is not None:
+            try:
+                cached = InvestigationExtraction.model_validate(hit)
+            except ValueError:
+                cached = None  # stale/corrupt entry: fall through to a fresh call
+            if cached is not None:
+                self.stats.cache_hits += 1
+                return cached, "cache"
+        async with self._sem:
+            result = await self.chain.extract(INV_SYSTEM_PROMPT, text, InvestigationExtraction)
+        self.stats.calls += 1
+        self.cache.put(doc.doc_id, "inv", 1, key, prompt_version=INV_PROMPT_VERSION, result=result)
+        if not isinstance(result.parsed, InvestigationExtraction):
+            self.stats.failures += 1
+            logger.warning("investigation extraction failed for %s; using heuristic", doc.doc_id)
+            return None, "heuristic"
+        return result.parsed, result.provider or "llm"
+
+    @staticmethod
+    def _enrich(doc: Document, ext: InvestigationExtraction, program: Program | None, source: str) -> None:
+        """Fill ONLY missing doc.metadata keys (front matter / parse metadata always wins)."""
+        candidates: dict[str, Any] = {}
+        if program is not None:
+            candidates["investigation"] = program.value
+        fuels = [f.strip() for f in ext.fuels if f and f.strip()]
+        if fuels:
+            candidates["fuel"] = fuels
+        lo, hi = ext.o2_pct_min, ext.o2_pct_max
+        if lo is not None or hi is not None:
+            candidates["o2_range"] = [lo if lo is not None else hi, hi if hi is not None else lo]
+        if ext.pressures_kpa:
+            candidates["pressure_kpa"] = list(ext.pressures_kpa)
+        if ext.gravity_levels_g:
+            candidates["gravity"] = list(ext.gravity_levels_g)
+        added = False
+        for key, value in candidates.items():
+            if key not in doc.metadata:
+                doc.metadata[key] = value
+                added = True
+        if added:
+            doc.metadata.setdefault("metadata_source", f"llm:{source}")
+
+    def _heuristic_result(self, h: Investigation | None) -> Investigation | None:
+        if h is not None:
+            self.stats.by_provider["heuristic"] += 1
+        return h
+
+    async def extract_investigation(self, doc: Document) -> Investigation | None:
+        await self._ensure_transcribed(doc)
+        h = await self._heuristic.extract_investigation(doc)
+        has_front_matter = bool(doc.metadata.get("investigation") or doc.metadata.get("program"))
+        if has_front_matter and h is not None:
+            return self._heuristic_result(h)  # no LLM call: the seed corpus stays free
+        text = _first_pages_text(doc)
+        if not text:
+            return self._heuristic_result(h)
+        ext, source = await self._extract_inv(doc, text)
+        if ext is None:
+            return self._heuristic_result(h)
+        program = self._program(ext.program)
+        self._enrich(doc, ext, program, source)
+        if program is None:
+            return self._heuristic_result(h)
+        self.stats.by_provider[source] += 1
+        summary = re.sub(r"\s+", " ", ext.summary or "").strip()[:_SUMMARY_MAX]
+        return Investigation(
+            id=program.value,
+            program=program,
+            title=(ext.title or "").strip() or doc.title,
+            summary=summary,
+            source_doc_id=doc.doc_id,
+        )
+
+    # ── test runs (I4) ────────────────────────────────────────────────
+
+    def _reserve_page(self) -> bool:
+        """Take one page from the shared budget (synchronous, so concurrent docs never overspend)."""
+        if self._pages_used < self.max_pages:
+            self._pages_used += 1
+            return True
+        self.stats.budget_skipped += 1
+        if not self._budget_warned:
+            logger.warning("LLM page budget exhausted (%d); remaining pages skipped", self.max_pages)
+            self._budget_warned = True
+        return False
+
+    def candidate_pages(self, doc: Document) -> list[int]:
+        """1-based pages worth an LLM call (prefilter; pages already mapped from tables are skipped).
+
+        With findings on, a page also qualifies when it passes the microgravity-combustion gate and has at
+        least one number with a unit, even without run signals.
+        """
+        skip = {int(p) for p in doc.metadata.get("table_row_pages", [])}
+        return [
+            i
+            for i, text in enumerate(doc.pages, start=1)
+            if i not in skip and (is_candidate_page(text) or self._finding_page(text, doc))
+        ]
+
+    def _finding_page(self, text: str, doc: Document) -> bool:
+        if not self.extract_findings or not findings_stage.has_number_with_unit(text):
+            return False
+        return findings_stage.is_microgravity_combustion(text, doc.metadata, {})[0]
+
+    def _row(
+        self, doc: Document, page_no: int, idx: int, run: RunExtraction, page_text: str, meta: dict[str, str]
+    ) -> dict[str, Any] | None:
+        values = run.model_dump(include=set(_RUN_VALUE_FIELDS))
+        eid = (values.pop("experiment_id") or "").strip()
+        if not (eid and eid in page_text):
+            eid = ""
+        n_required = sum(1 for f in REQUIRED_RUN_FIELDS[1:] if values.get(f) is not None) + bool(eid)
+        if n_required < MIN_REQUIRED_FIELDS:
+            self.stats.discarded_sparse += 1
+            if self.extract_findings:  # I10: keep it as an out_of_schema_run finding instead
+                finding, _ = findings_stage.finding_from_sparse_run(
+                    run, doc, page_no, page_text, self._finding_meta(meta), aliases=self._aliases
+                )
+                if finding is not None:
+                    self.findings.append(finding)
+                    self.stats.sparse_to_findings += 1
+                    self.stats.findings += 1
+                else:
+                    self.stats.findings_off_topic += 1
+            return None
+        if values.get("program") is None and doc.metadata.get("investigation"):
+            values["program"] = doc.metadata["investigation"]  # the page rarely restates the program
+        quote = run.evidence_quote.strip()[:200]
+        extraction: dict[str, Any] = {
+            "provider": meta["provider"],
+            "model": meta["model"],
+            "prompt_version": self._page_version,
+            "confidence": run.confidence,
+            "evidence_quote": quote,
+            "quote_found": bool(quote) and _normalise_text(quote) in _normalise_text(page_text),
+        }
+        if page_no in doc.metadata.get("ocr_pages", []):
+            extraction["from_image"] = True  # page text came from a vision transcription
+        return {
+            "experiment_id": eid or f"{doc.doc_id}-p{page_no:03d}-r{idx:02d}",
+            **{k: v for k, v in values.items() if v is not None},
+            # provenance is ALWAYS set by code, never by the LLM
+            "source_doc_id": doc.doc_id,
+            "source_page": page_no,
+            "extra_telemetry": {"extraction": extraction},
+        }
+
+    def _finding_meta(self, meta: dict[str, str]) -> dict[str, str]:
+        return {"provider": meta["provider"], "model": meta["model"], "prompt_version": self._page_version}
+
+    async def _page_runs(self, doc: Document, page_no: int, key: str) -> list[dict[str, Any]]:
+        text = doc.pages[page_no - 1]
+        async with self._sem:
+            result = await self.chain.extract(self._page_prompt, text, self._page_schema)
+        self.stats.calls += 1
+        self.cache.put(doc.doc_id, "runs", page_no, key, prompt_version=self._page_version, result=result)
+        if not isinstance(result.parsed, (PageRunsExtraction, PageExtraction)):
+            self.stats.failures += 1
+            logger.warning("run extraction failed for %s p.%d", doc.doc_id, page_no)
+            return []
+        meta = {"provider": result.provider or "llm", "model": result.model or ""}
+        return self._rows(doc, page_no, result.parsed, meta)
+
+    def _rows(
+        self,
+        doc: Document,
+        page_no: int,
+        parsed: PageRunsExtraction | PageExtraction,
+        meta: dict[str, str],
+    ) -> list[dict[str, Any]]:
+        text = doc.pages[page_no - 1]
+        rows = [self._row(doc, page_no, i, run, text, meta) for i, run in enumerate(parsed.runs, start=1)]
+        kept = [r for r in rows if r is not None]
+        self.stats.runs_extracted += len(kept)
+        if self.extract_findings and isinstance(parsed, PageExtraction):
+            for fx in parsed.findings:
+                finding, _ = findings_stage.finding_from_llm(
+                    fx,
+                    doc,
+                    page_no,
+                    text,
+                    self._finding_meta(meta),
+                    min_relevance=self.min_relevance,
+                    aliases=self._aliases,
+                )
+                if finding is None:
+                    self.stats.findings_off_topic += 1
+                else:
+                    self.findings.append(finding)
+                    self.stats.findings += 1
+        return kept
+
+    async def extract_test_runs(self, doc: Document) -> list[dict[str, Any]]:
+        await self._ensure_transcribed(doc)  # no-op if extract_investigation already did it
+        rows: list[dict[str, Any]] = []
+        pending: list[tuple[int, str]] = []
+        # synchronous pass: cache hits are free; misses reserve budget BEFORE any await, so the budget is
+        # shared deterministically across documents extracted concurrently
+        for page_no in self.candidate_pages(doc):
+            text = doc.pages[page_no - 1]
+            key = cache_key(self._page_version, self._page_schema.__name__, text)
+            entry = self.cache.get_entry(doc.doc_id, "runs", page_no, key) if self.use_cache else None
+            if entry is not None:
+                parsed: PageRunsExtraction | PageExtraction | None
+                try:
+                    parsed = self._page_schema.model_validate(entry["parsed"])
+                except ValueError:
+                    parsed = None
+                if parsed is not None:
+                    self.stats.cache_hits += 1
+                    self.stats.run_pages += 1
+                    meta = {
+                        "provider": str(entry.get("provider") or "cache"),
+                        "model": str(entry.get("model") or ""),
+                    }
+                    rows.extend(self._rows(doc, page_no, parsed, meta))
+                    continue
+            if self._reserve_page():
+                self.stats.run_pages += 1
+                pending.append((page_no, key))
+        for page_rows in await asyncio.gather(*(self._page_runs(doc, p, k) for p, k in pending)):
+            rows.extend(page_rows)
+        return sorted(rows, key=lambda r: (r["source_page"], r["experiment_id"]))
+
+
+def resolve_extractor_kind(kind: str | None = None) -> str:
+    """Map a CLI/setting value to ``heuristic`` | ``llm`` (legacy ``gemini``/``openai`` alias to ``llm``)."""
+    resolved = (kind or get_settings().EXTRACTOR).strip().lower()
+    if resolved in _LEGACY_ALIASES:
+        logger.info("extractor '%s' is a legacy alias for 'llm'", resolved)
+        resolved = _LEGACY_ALIASES[resolved]
+    if resolved not in EXTRACTOR_KINDS:
+        raise ValueError(f"unknown extractor '{kind}'; expected one of {EXTRACTOR_KINDS}")
+    return resolved
+
+
+def get_extractor(
+    kind: str | None = None,
+    *,
+    max_pages: int | None = None,
+    use_cache: bool = True,
+    extract_findings: bool = False,
+) -> Extractor:
+    """Default = ``settings.EXTRACTOR`` (NOT ``LLM_PROVIDER``).
+
+    ``max_pages`` (CLI ``--llm-max-pages``, else ``EXTRACT_MAX_PAGES``) and ``use_cache`` (CLI
+    ``--no-llm-cache``) configure the LLM extractor (I3/I4); ``extract_findings`` switches the page prompt to
+    ``page-v2`` (runs + combustion findings, I10). The heuristic extractor ignores all three.
+    """
+    if resolve_extractor_kind(kind) != "llm":
+        return HeuristicExtractor()
+    settings = get_settings()
+    chain = build_chain(settings)
+    if chain is None:
+        logger.warning("no OPENAI_API_KEY / GEMINI_API_KEY: using HeuristicExtractor")
+        return HeuristicExtractor()
+    logger.info("LLMExtractor providers: %s", " -> ".join(chain.providers))
+    return LLMExtractor(
+        chain,
+        cache=ExtractionCache(),
+        use_cache=use_cache,
+        max_pages=settings.EXTRACT_MAX_PAGES if max_pages is None else max_pages,
+        min_confidence=settings.EXTRACT_MIN_CONFIDENCE,
+        concurrency=settings.EXTRACT_CONCURRENCY,
+        extract_findings=extract_findings,
+        min_relevance=settings.FINDINGS_MIN_RELEVANCE,
+    )
+
+
+__all__ = [
+    "EXTRACTOR_KINDS",
+    "Extractor",
+    "ExtractorStats",
+    "HeuristicExtractor",
+    "LLMExtractor",
+    "get_extractor",
+    "heuristic_investigation",
+    "resolve_extractor_kind",
+]

@@ -21,6 +21,10 @@ class FuelMaterial(StrEnum):
     NOMEX = "Nomex"
     HEPTANE = "Heptane"
     METHANOL = "Methanol"
+    ETHYLENE = "Ethylene"
+    ETHANE = "Ethane"
+    PROPANE = "Propane"
+    BUTANE = "Butane"
 
 
 class FuelGeometry(StrEnum):
