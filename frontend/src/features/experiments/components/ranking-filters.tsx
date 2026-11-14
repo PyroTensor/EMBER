@@ -81,7 +81,7 @@ export function RankingFilters({
               type="search"
               value={value.query}
               onChange={(event) => update("query", event.target.value)}
-              placeholder="Run ID, program, material, or regime"
+              placeholder="Program, material, or regime"
               className="border-border bg-surface-2 text-fg placeholder:text-muted h-10 w-full rounded-md border pr-3 pl-9 text-sm"
             />
           </div>
