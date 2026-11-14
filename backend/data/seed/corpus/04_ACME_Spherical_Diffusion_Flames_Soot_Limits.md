@@ -10,6 +10,10 @@ gravity: [0.0]
 proxy: true
 url: "https://psi.nasa.gov/physci/repo/search?q=ACME"
 sources:
+  - "/papers/nasa_glenn_acme.pdf"
+  - "/papers/nasa_glenn_spice.pdf"
+  - "/papers/nasa_glenn_slice.pdf"
+  - "/papers/iss_researchers_guide_combustion_science.pdf"
   - "https://psi.nasa.gov/physci/repo/search?q=ACME"
   - "https://www.nasa.gov/glenn/glenn-expertise-space-exploration/physical-sciences-program/combustion-science/"
   - "https://www.nasa.gov/missions/station/a-researchers-guide-to-combustion-science/"

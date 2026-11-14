@@ -10,6 +10,8 @@ gravity: [0.0, 0.16, 0.38, 1.0]
 proxy: true
 url: "https://www.nasa.gov/glenn/glenn-expertise-space-exploration/physical-sciences-program/combustion-science/"
 sources:
+  - "/papers/nasa_glenn_saffire.pdf"
+  - "/papers/iss_researchers_guide_combustion_science.pdf"
   - "https://www.nasa.gov/glenn/glenn-expertise-space-exploration/physical-sciences-program/combustion-science/"
   - "https://psi.nasa.gov/physci/repo/search?q=combustion"
   - "https://www.nasa.gov/missions/station/a-researchers-guide-to-combustion-science/"

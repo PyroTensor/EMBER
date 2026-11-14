@@ -10,6 +10,8 @@ gravity: [0.0]
 proxy: true
 url: "https://psi.nasa.gov/physci/repo/search?q=FLEX"
 sources:
+  - "/papers/nasa_glenn_flex.pdf"
+  - "/papers/iss_researchers_guide_combustion_science.pdf"
   - "https://psi.nasa.gov/physci/repo/search?q=FLEX"
   - "https://www.nasa.gov/missions/station/a-researchers-guide-to-combustion-science/"
   - "https://www.youtube.com/watch?v=W1oXykoz9zg"
