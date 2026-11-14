@@ -11,8 +11,8 @@ from app.schemas.enums import CombustionRegime, DiluentGas, FuelMaterial, RiskBa
 class CabinConfig(APIModel):
     """A habitat / scenario to evaluate or rank against. Bounds come from schema_v1."""
 
-    oxygen_pct: float = Field(ge=15.0, le=40.0)
-    pressure_kpa: float = Field(ge=40.0, le=101.3)
+    oxygen_pct: float = Field(ge=10.0, le=60.0)
+    pressure_kpa: float = Field(ge=20.0, le=150.0)
     flow_velocity_cm_s: float = Field(ge=0.0, le=50.0)
     gravity_g: float = Field(ge=0.0, le=1.0)
     fuel_material: FuelMaterial

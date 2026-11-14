@@ -11,57 +11,125 @@ fields:
     - { column: "Run ID" }
     - { column: run_id }
     - { column: "Test ID" }
+    - { column: test_id }
+    - { column: "Experiment ID" }
+    - { column: "Point ID" }
+    - { column: "FLEX Identifier" }
+    - { column: "Test #" }
+    - { column: "Sample Number" }
   program:
     - { column: program }
     - { column: Investigation }
     - { column: experiment }
+    - { column: Mission }
+    - { column: "PSI ID" }
+    - { column: psi_id }
   fuel_material:
     - { column: fuel_material }
     - { column: Sample }
     - { column: material }
     - { column: fuel }
+    - { column: "Fuel Material" }
+    - { column: "Sample Material" }
+    - { column: "Fuel Sample Material" }
+    - { column: "Sample (Fuel Type)" }
   fuel_geometry:
     - { column: fuel_geometry }
     - { column: Config }
     - { column: geometry }
+    - { column: "Fuel Geometry" }
+    - { column: "Sample Geometry" }
+    - { column: Configuration }
   gravity_g:
     - { column: gravity_g, unit: g }
     - { column: g_level, unit: g }
     - { column: gravity, unit: g }
+    - { column: "Gravity (g)", unit: g }
+    - { column: "Gravity Level", unit: g }
   oxygen_pct:
     - { column: oxygen_pct, unit: pct }
     - { column: "O2 (%)", unit: pct }
+    - { column: "Oxygen (%)", unit: pct }
+    - { column: "Ambient O2 (%)", unit: pct }
+    - { column: "Percent O2", unit: pct }
+    - { column: "Percent O2 (Note 1)", unit: pct }
+    - { column: "Oxygen Conc (percent)", unit: pct }
+    - { column: "Calibrated  initial O2 % by vol", unit: pct }
     - { column: "O2 (frac)", unit: fraction }
+    - { column: "Oxygen Mole Fraction", unit: fraction }
+    - { column: "O initial ambient composition; mole fraction", unit: fraction }
+    - { column: "XO2 (init)", unit: fraction }
+    - { column: XO2, unit: fraction }
     - { column: x_o2, unit: fraction }
   pressure_kpa:
     - { column: pressure_kpa, unit: kpa }
     - { column: "Pressure (kPa)", unit: kpa }
+    - { column: "Ambient Pressure (kPa)", unit: kpa }
+    - { column: "Cabin Pressure (kPa)", unit: kpa }
     - { column: "Pressure (psia)", unit: psia }
+    - { column: "Ambient Pressure (psia)", unit: psia }
     - { column: "Pressure (atm)", unit: atm }
+    - { column: "Ambient Pressure (atm)", unit: atm }
+    - { column: "pinit (atm)", unit: atm }
+    - { column: "Ambient pressure; mmHg", unit: mmhg }
   flow_velocity_cm_s:
     - { column: flow_velocity_cm_s, unit: cm_s }
     - { column: "Flow (cm/s)", unit: cm_s }
+    - { column: "Forced Flow (cm/s)", unit: cm_s }
+    - { column: "Flow Velocity (cm/s)", unit: cm_s }
+    - { column: "Air Velocity (cm/s)", unit: cm_s }
+    - { column: "Air Flow (cm/s)", unit: cm_s }
+    - { column: "Air Flow", unit: cm_s }
+    - { column: "Air display", unit: cm_s }
     - { column: "Flow (ft/min)", unit: ft_min }
     - { column: "Flow (mm/s)", unit: mm_s }
+    - { column: "Flow Velocity (mm/s)", unit: mm_s }
+    - { column: "Forced Flow (mm/s)", unit: mm_s }
   diluent_gas:
     - { column: diluent_gas }
     - { column: Diluent }
+    - { column: "Diluent Gas" }
+    - { column: "Balance Gas" }
+    - { column: Inert }
   combustion_regime:
     - { column: combustion_regime, unit: regime }
     - { column: Outcome, unit: regime }
     - { column: result, unit: regime }
+    - { column: Regime, unit: regime }
+    - { column: "Combustion Regime", unit: regime }
+    - { column: "Test end", unit: regime }
   spread_or_burn_rate:
     - { column: spread_or_burn_rate }
     - { column: "Spread/Burn rate" }
+    - { column: "Spread Rate (cm/s)", unit: cm_s }
+    - { column: "Flame Spread Rate (cm/s)", unit: cm_s }
+    - { column: "1-g Spread Rate", unit: cm_s }
+    - { column: "Spread Rate (mm/s)", unit: mm_s }
+    - { column: "Flame Spread Rate (mm/s)", unit: mm_s }
+    - { column: "Burn Rate (mm2/s)" }
+    - { column: "Burning Rate (mm2/s)" }
+    - { column: "Burning Rate Constant (mm2/s)" }
+    - { column: "Burning rate; mm" }
+    - { column: "K (mm2/s)" }
   peak_radiative_flux_kw_m2:
     - { column: peak_radiative_flux_kw_m2, unit: kw_m2 }
+    - { column: "Peak Heat Flux (kW/m2)", unit: kw_m2 }
+    - { column: "Peak Rad Flux (kW/m2)", unit: kw_m2 }
     - { column: "Peak Rad Flux (W/cm2)", unit: w_cm2 }
+    - { column: "Peak Heat Flux (W/cm2)", unit: w_cm2 }
   limiting_oxygen_index_pct:
     - { column: limiting_oxygen_index_pct, unit: pct }
     - { column: LOI, unit: pct }
+    - { column: "LOI (%)", unit: pct }
+    - { column: "Limiting Oxygen Index (%)", unit: pct }
   burn_duration_s:
     - { column: burn_duration_s }
     - { column: "Duration [s]" }
+    - { column: "Burn Duration (s)" }
+    - { column: "Flame Duration (s)" }
+    - { column: "Duration (s)" }
+    - { column: "Burn time; s" }
+    - { column: "Burn Time (s)" }
   source_doc_id:
     - { column: source_doc_id }
   source_page:
@@ -72,44 +140,152 @@ fields:
 # Free-text values -> schema enums
 aliases:
   program:
+    "BASS-II": BASS-II
     "BASS": BASS-II
     "BASS 2": BASS-II
+    "BASS-2": BASS-II
+    "BASS II": BASS-II
+    "PSI-25": BASS-II
+    "PSI-26": BASS-II
     "SPICE": BASS-II
     "SLICE": BASS-II
-    "Saffire": SoFIE
-    "Saffire-I": SoFIE
-    "Saffire-II": SoFIE
-    "Saffire-III": SoFIE
+    "SoFIE": SoFIE
+    "SOFIE": SoFIE
+    "SoFIE-GEL": SoFIE
+    "SoFIE-MIST": SoFIE
+    "SoFIE-RT": SoFIE
+    "SoFIE-SM": SoFIE
     "LUCI": SoFIE
     "FM2": SoFIE
+    "FLEX": FLEX
+    "FLEX-1": FLEX
+    "FLEX 1": FLEX
     "FLEX-2": FLEX
+    "FLEX 2": FLEX
+    "FLEX-2J": FLEX
     "CFI": FLEX
+    "PSI-68": FLEX
+    "PSI-69": FLEX
+    "ACME": ACME
+    "ACME-s-Flame": ACME
+    "ACME-E-FIELD": ACME
+    "ACME-CFT": ACME
+    "ACME-BRE": ACME
+    "ACME-CLD": ACME
     "BRE": ACME
     "CFI-G": ACME
     "E-FIELD": ACME
     "E-FIELD Flames": ACME
+    "CLD Flame": ACME
+    "Flame Design": ACME
     "SAME": ACME
     "SAME-R": ACME
     "DAFT": ACME
     "DAFT-2": ACME
+    "PSI-10": ACME
+    "PSI-20": ACME
+    "PSI-21": ACME
+    "PSI-22": ACME
+    "Saffire": Saffire
+    "SAFFIRE": Saffire
+    "PSI-98": Saffire
+    "PSI-99": Saffire
+    "PSI-100": Saffire
+    "Saffire-I": Saffire
+    "Saffire-II": Saffire
+    "Saffire-III": Saffire
+    "Saffire-IV": Saffire
+    "Saffire-V": Saffire
+    "Saffire-VI": Saffire
+    "Saffire I": Saffire
+    "Saffire II": Saffire
+    "Saffire III": Saffire
+    "Saffire IV": Saffire
+    "Saffire V": Saffire
+    "Saffire VI": Saffire
+    "Saffire 1": Saffire
+    "Saffire 2": Saffire
+    "Saffire 3": Saffire
+    "Saffire 4": Saffire
+    "Saffire 5": Saffire
+    "Saffire 6": Saffire
   fuel_material:
+    "PMMA": PMMA
+    "plexiglas": PMMA
+    "acrylic": PMMA
+    "cast pmma": PMMA
+    "extruded pmma": PMMA
+    "polymethyl methacrylate": PMMA
+    "Cotton-Fiberglass": Cotton-Fiberglass
     "SIBAL": Cotton-Fiberglass
     "cotton/fiberglass": Cotton-Fiberglass
+    "cotton": Cotton-Fiberglass
+    "fiberglass": Cotton-Fiberglass
+    "cellulose": Cotton-Fiberglass
+    "ashless filter paper": Cotton-Fiberglass
+    "Nomex": Nomex
+    "nomex ht90-40": Nomex
+    "ultem": Nomex
+    "Heptane": Heptane
     "n-heptane": Heptane
-    "plexiglas": PMMA
+    "n-octane": Heptane
+    "decane": Heptane
+    "n-decane": Heptane
+    "toluene": Heptane
+    "Methanol": Methanol
+    "ethanol": Methanol
+    "iso-propanol": Methanol
   fuel_geometry:
+    "Flat Sheet": Flat Sheet
     "sheet": Flat Sheet
     "flat": Flat Sheet
+    "slab": Flat Sheet
+    "ribbon": Flat Sheet
+    "strip": Flat Sheet
+    "fabric": Flat Sheet
+    "Rod": Rod
     "cylinder": Rod
+    "wire": Rod
+    "dowel": Rod
+    "Droplet": Droplet
+    "sphere": Droplet
+    "spherical": Droplet
+    "drop": Droplet
+    "Gaseous": Gaseous
+    "gas": Gaseous
+    "burner": Gaseous
+  diluent_gas:
+    "N2": N2
+    "nitrogen": N2
+    "air": N2
+    "CO2": CO2
+    "carbon dioxide": CO2
+    "He": He
+    "helium": He
+    "Ar": Ar
+    "argon": Ar
   combustion_regime:
+    "Sustained Burn": Sustained Burn
     "burned": Sustained Burn
     "burn": Sustained Burn
     "sustained": Sustained Burn
+    "steady burn": Sustained Burn
+    "flaming": Sustained Burn
+    "completion": Sustained Burn
+    "disruption": Sustained Burn
+    "Self-Extinguished": Self-Extinguished
     "extinguished": Self-Extinguished
+    "extinction": Self-Extinguished
     "ext": Self-Extinguished
     "self-ext": Self-Extinguished
+    "quenched": Self-Extinguished
+    "blowoff": Self-Extinguished
+    "Cool Flame": Cool Flame
     "cool flame": Cool Flame
     "cf": Cool Flame
+    "ltc": Cool Flame
+    "No Ignition": No Ignition
     "no ign": No Ignition
     "ni": No Ignition
     "no ignition": No Ignition
+    "did not ignite": No Ignition

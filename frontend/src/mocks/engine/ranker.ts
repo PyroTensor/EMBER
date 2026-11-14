@@ -3,6 +3,7 @@
 // TotalScore = (w_sim*S_sim + w_comp*S_comp + w_crit*S_crit) / (w_sim + w_comp + w_crit)
 //   S_sim  (0-100) weighted Gaussian similarity in normalised (O2, P, flow, g) space,
 //                  x material match (1.0 / 0.6) x diluent match (1.0 / 0.9)
+//                  x coverage penalty (0.85 ** n_missing)
 //   S_comp (0-100) 70 * fraction of optional outputs present + 30 * richness of extra_telemetry
 //   S_crit (0-100) 60 * regime severity + 25 * radiative flux + 15 * positive O2 margin over LOI
 import {
@@ -26,6 +27,7 @@ const SIM_FEATURES: Readonly<Record<SimFeature, readonly [number, number]>> = {
   gravity_g: [1.0, 1.0],
 };
 const SIM_LENGTH_SCALE = 8.0; // higher = sharper similarity falloff
+const MISSING_FEATURE_PENALTY = 0.85;
 
 const REGIME_SEVERITY: Readonly<Record<string, number>> = {
   "Sustained Burn": 1.0,
@@ -43,14 +45,24 @@ const OPTIONAL_OUTPUTS = [
 const SIM_ENTRIES = Object.entries(SIM_FEATURES) as [SimFeature, readonly [number, number]][];
 
 export function similarity(run: Run, cfg: CabinConfig): number {
-  let totalW = 0;
-  for (const [, [, w]] of SIM_ENTRIES) totalW += w;
-  let sum = 0;
-  for (const [f, [rng, w]] of SIM_ENTRIES) sum += w * ((Number(run[f]) - Number(cfg[f])) / rng) ** 2;
-  const d2 = sum / totalW;
-  let s = Math.exp(-SIM_LENGTH_SCALE * d2);
-  s *= run.fuel_material === cfg.fuel_material ? 1.0 : 0.6;
-  s *= run.diluent_gas === cfg.diluent_gas ? 1.0 : 0.9;
+  let activeW = 0;
+  let weightedSq = 0;
+  let nMissing = 0;
+  for (const [f, [rng, w]] of SIM_ENTRIES) {
+    const rv = run[f];
+    const cv = cfg[f];
+    if (rv == null || cv == null) {
+      nMissing += 1;
+      continue;
+    }
+    activeW += w;
+    weightedSq += w * ((Number(rv) - Number(cv)) / rng) ** 2;
+  }
+  if (activeW <= 0) return 0.0;
+  const d2 = weightedSq / activeW;
+  let s = Math.exp(-SIM_LENGTH_SCALE * d2) * MISSING_FEATURE_PENALTY ** nMissing;
+  s *= run.fuel_material && cfg.fuel_material && run.fuel_material === cfg.fuel_material ? 1.0 : 0.6;
+  s *= run.diluent_gas && cfg.diluent_gas && run.diluent_gas === cfg.diluent_gas ? 1.0 : 0.9;
   return 100.0 * s;
 }
 
@@ -61,10 +73,13 @@ export function completeness(run: Run): number {
 }
 
 export function criticality(run: Run): number {
-  const sev = REGIME_SEVERITY[run.combustion_regime] ?? 0.0;
-  const flux = Math.min((run.peak_radiative_flux_kw_m2 || 0.0) / 10.0, 1.0);
+  const sev = REGIME_SEVERITY[run.combustion_regime || ""] ?? 0.0;
+  const fluxVal = run.peak_radiative_flux_kw_m2;
+  const flux = fluxVal == null ? 0.0 : Math.min(Math.max(Number(fluxVal), 0.0) / 10.0, 1.0);
   const loi = run.limiting_oxygen_index_pct;
-  const margin = loi == null ? 0.0 : Math.min(Math.max(Number(run.oxygen_pct) - Number(loi), 0.0) / 10.0, 1.0);
+  const o2 = run.oxygen_pct;
+  const margin =
+    loi == null || o2 == null ? 0.0 : Math.min(Math.max(Number(o2) - Number(loi), 0.0) / 10.0, 1.0);
   return 60.0 * sev + 25.0 * flux + 15.0 * margin;
 }
 

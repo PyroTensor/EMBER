@@ -2,6 +2,7 @@
 import type { CombustionRegime } from "@/lib/api/types";
 
 export const P0_KPA = 101.3;
+export const DEFAULT_BASE_LOI = 18.0;
 
 /** % O2 at 1g / 101.3 kPa / buoyant flow. */
 export const MATERIAL_BASE_LOI: Readonly<Record<string, number>> = {
@@ -15,7 +16,7 @@ export const DILUENT_SHIFT: Readonly<Record<string, number>> = { N2: 0.0, CO2: 3
 
 /** Characteristic buoyancy-induced velocity (cm/s); ~30 cm/s at 1g sea level. */
 export function buoyantVelocity(gravityG: number, pressureKpa: number): number {
-  return 30.0 * Math.sqrt((Math.max(gravityG, 0.0) * pressureKpa) / P0_KPA);
+  return 30.0 * Math.sqrt((Math.max(gravityG, 0.0) * Math.max(pressureKpa, 0.0)) / P0_KPA);
 }
 
 /** u_eff = sqrt(u_forced^2 + u_buoyant^2). */
@@ -43,8 +44,7 @@ export function limitingOxygenIndex(
   flowCmS: number,
   diluent = "N2",
 ): number {
-  const base = MATERIAL_BASE_LOI[material];
-  if (base === undefined) throw new Error(`Unknown fuel_material: ${material}`);
+  const base = MATERIAL_BASE_LOI[material] ?? DEFAULT_BASE_LOI;
   const u = effectiveVelocity(flowCmS, gravityG, pressureKpa);
   return base + flowLoiShift(u) + pressureLoiShift(pressureKpa) + (DILUENT_SHIFT[diluent] ?? 0.0);
 }
@@ -52,6 +52,6 @@ export function limitingOxygenIndex(
 export function predictRegime(material: string, gravityG: number, oxygenMargin: number): CombustionRegime {
   if (oxygenMargin < -2.0) return "No Ignition";
   if (oxygenMargin < 0.0) return "Self-Extinguished";
-  if (material === "Heptane" && gravityG === 0.0 && oxygenMargin < 9.0) return "Cool Flame";
+  if (material === "Heptane" && gravityG < 0.05 && oxygenMargin < 9.0) return "Cool Flame";
   return "Sustained Burn";
 }

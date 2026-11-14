@@ -7,14 +7,16 @@ from typing import Final
 DOMAIN_KEYWORDS: Final[frozenset[str]] = frozenset({
     "flame", "fire", "burn", "combustion", "oxygen", "o2", "loi", "pressure", "kpa", "psia",
     "flow", "ventilation", "hvac", "microgravity", "0g", "1g", "gravity", "lunar", "mars",
-    "artemis", "iss", "bass", "bass-ii", "sofie", "flex", "acme", "pmma", "nomex", "cotton",
+    "artemis", "iss", "bass", "bass-ii", "sofie", "flex", "acme", "saffire", "pmma", "nomex", "cotton",
     "fiberglass", "sibal", "heptane", "methanol", "droplet", "cool", "radiative", "flux",
     "extinguish", "ignition", "spread", "diluent", "co2", "helium", "argon", "nitrogen",
     "nasa", "6001b", "spacecraft", "cabin", "habitat", "exp-", "doc-", "soot", "standoff",
-    "apollo", "mir", "saffire", "spice", "slice", "same", "same-r", "daft", "daft-2", "bre",
+    "apollo", "mir", "spice", "slice", "same", "same-r", "daft", "daft-2", "bre",
     "cfi", "cfi-g", "e-field", "luci", "fm2", "cir", "msg", "mdca", "spacesuit", "suit",
     "rover", "firefighter", "firefighting", "spinoff", "smoke", "detector", "alarm", "dust",
     "aerosol", "scba", "canister", "perchlorate", "vika", "turnout", "pbi",
+    "flammability", "flammable", "atmosphere", "freefall", "suppressant", "smolder", "smouldering",
+    "scenario", "configuration", "experiment", "experiments", "runs",
 })  # fmt: skip
 
 OUT_OF_SCOPE_HINTS: Final[frozenset[str]] = frozenset({

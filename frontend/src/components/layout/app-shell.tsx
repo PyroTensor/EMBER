@@ -78,7 +78,7 @@ export function AppShell({ children, status }: AppShellProps) {
         </div>
       ) : null}
 
-      <div className="sticky top-0 z-30">
+      <div data-app-header className="sticky top-0 z-30">
         <MockBanner />
         <TopBar
           status={status}

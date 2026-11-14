@@ -13,20 +13,26 @@ export const NO_DATA_MESSAGE =
 const DOMAIN_KEYWORDS = new Set([
   "flame", "fire", "burn", "combustion", "oxygen", "o2", "loi", "pressure", "kpa", "psia",
   "flow", "ventilation", "hvac", "microgravity", "0g", "1g", "gravity", "lunar", "mars",
-  "artemis", "iss", "bass", "bass-ii", "sofie", "flex", "acme", "pmma", "nomex", "cotton",
+  "artemis", "iss", "bass", "bass-ii", "sofie", "flex", "acme", "saffire", "pmma", "nomex", "cotton",
   "fiberglass", "sibal", "heptane", "methanol", "droplet", "cool", "radiative", "flux",
   "extinguish", "ignition", "spread", "diluent", "co2", "helium", "argon", "nitrogen",
   "nasa", "6001b", "spacecraft", "cabin", "habitat", "exp-", "doc-", "soot", "standoff",
+  "apollo", "mir", "saffire", "spice", "slice", "same", "same-r", "daft", "daft-2", "bre",
+  "cfi", "cfi-g", "e-field", "luci", "fm2", "cir", "msg", "mdca", "spacesuit", "suit",
+  "rover", "firefighter", "firefighting", "spinoff", "smoke", "detector", "alarm", "dust",
+  "aerosol", "scba", "canister", "perchlorate", "vika", "turnout", "pbi",
+  "flammability", "flammable", "atmosphere", "freefall", "suppressant", "smolder", "smouldering",
+  "scenario", "configuration", "experiment", "experiments", "runs",
 ]); // prettier-ignore
 
 const TOP_N = 3;
 let traceCounter = 0;
 
 /** Backend router rule: out of scope when no domain token and no EXP id. */
-export function isInScope(question: string): boolean {
+export function isInScope(question: string, hasScenario = false): boolean {
   const q = question.toLowerCase().trim();
   const tokens = q.match(/[a-z0-9_-]+/g) ?? [];
-  return tokens.some((t) => DOMAIN_KEYWORDS.has(t)) || /exp-\d+/.test(q);
+  return tokens.some((t) => DOMAIN_KEYWORDS.has(t)) || /exp-\d+/.test(q) || hasScenario;
 }
 
 /** Python str() of a float (21 → "21.0"), so mock text matches the backend's f-strings. */
@@ -66,7 +72,7 @@ function sentence(r: RankedExperiment, i: number): string {
 const traceId = () => `mock-${++traceCounter}`;
 
 export function mockAsk(req: AskRequest, runs: readonly Run[]): AskResponse {
-  if (!isInScope(req.question)) {
+  if (!isInScope(req.question, Boolean(req.scenario))) {
     return {
       answer: NO_DATA_MESSAGE,
       route: "out_of_scope",

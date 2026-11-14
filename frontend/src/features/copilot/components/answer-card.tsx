@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, type ReactNode } from "react";
-import { SearchX } from "lucide-react";
+import { FlaskConical, SearchX } from "lucide-react";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import type { AskResponse, DocumentSummary, Route } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
@@ -64,6 +64,64 @@ function AnswerText({
   );
 }
 
+/** Compact summary strip of cited experiments ([EXP-XXXX]) so researchers can inspect run metrics without a cluttered raw evidence dump. */
+function CitedExperimentsStrip({
+  response,
+  onOpenDocument,
+}: {
+  response: AskResponse;
+  onOpenDocument?: (target: DocumentReaderTarget) => void;
+}) {
+  const expCitations = (response.citations ?? []).filter(
+    (c) => c.kind === "experiment" && c.experiment_id,
+  );
+  if (expCitations.length === 0) return null;
+
+  return (
+    <div className="border-border/70 space-y-2 border-t pt-3.5">
+      <p className="text-muted flex items-center gap-1.5 font-mono text-[11px] uppercase tracking-wider">
+        <FlaskConical aria-hidden className="text-accent size-3.5" />
+        Cited test runs ({expCitations.length})
+      </p>
+      <div className="grid gap-2 sm:grid-cols-2">
+        {expCitations.map((c) => (
+          <div
+            key={c.id}
+            className="border-border bg-bg/60 flex flex-col justify-between gap-1.5 rounded-md border p-2.5 text-xs"
+          >
+            <div className="flex items-center justify-between gap-2">
+              <span className="border-accent/40 bg-accent/10 text-accent inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[11px] font-medium">
+                <FlaskConical aria-hidden className="size-3" />
+                {c.experiment_id}
+              </span>
+              {c.doc_id && onOpenDocument ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    onOpenDocument({
+                      docId: c.doc_id as string,
+                      page: c.page ?? undefined,
+                    })
+                  }
+                  className="font-mono text-[11px] text-sky-300 transition-colors hover:text-sky-200 hover:underline"
+                >
+                  Source: {c.doc_id}
+                  {c.page ? ` p.${c.page}` : ""} →
+                </button>
+              ) : null}
+            </div>
+            {c.snippet ? (
+              <p className="text-muted font-mono text-[11px] leading-relaxed">
+                {c.snippet}
+              </p>
+            ) : null}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /** Shown instead of an answer when the graph could not ground one (supported=false). */
 function NoDataPanel({ message }: { message: string | undefined }) {
   return (
@@ -90,6 +148,7 @@ function NoDataPanel({ message }: { message: string | undefined }) {
 }
 
 interface AnswerCardProps {
+  id?: string;
   response: AskResponse;
   /** The question this answers (shown as the card heading). */
   question?: string;
@@ -100,6 +159,7 @@ interface AnswerCardProps {
 
 /** One Co-Pilot answer: route / support / rewrite badges, then the cited answer or the No-data panel. */
 export function AnswerCard({
+  id,
   response,
   question,
   documentsById,
@@ -113,6 +173,7 @@ export function AnswerCard({
 
   return (
     <article
+      id={id}
       className={cn(
         "rounded-card border-border bg-surface space-y-4 border p-5",
         className,
@@ -120,7 +181,7 @@ export function AnswerCard({
     >
       <header className="space-y-2">
         {question ? (
-          <h3 className="text-fg text-sm font-semibold">{question}</h3>
+          <h3 className="text-fg text-base font-semibold">{question}</h3>
         ) : null}
         <div className="flex flex-wrap items-center gap-2">
           {response.route ? (
@@ -131,9 +192,11 @@ export function AnswerCard({
           <Badge tone={supported ? "success" : "danger"} dot>
             {supported ? "Supported" : "Unsupported"}
           </Badge>
-          <Badge title="Query rewrites before enough evidence was found">
-            {rewrites} {rewrites === 1 ? "rewrite" : "rewrites"}
-          </Badge>
+          {rewrites > 0 ? (
+            <Badge title="Query rewrites before enough evidence was found">
+              {rewrites} {rewrites === 1 ? "rewrite" : "rewrites"}
+            </Badge>
+          ) : null}
           {response.trace_id ? (
             <span
               className="text-muted ml-auto font-mono text-[10px]"
@@ -146,11 +209,17 @@ export function AnswerCard({
       </header>
 
       {supported ? (
-        <AnswerText
-          response={response}
-          documentsById={documentsById}
-          onOpenDocument={onOpenDocument}
-        />
+        <>
+          <AnswerText
+            response={response}
+            documentsById={documentsById}
+            onOpenDocument={onOpenDocument}
+          />
+          <CitedExperimentsStrip
+            response={response}
+            onOpenDocument={onOpenDocument}
+          />
+        </>
       ) : (
         <NoDataPanel message={response.answer} />
       )}

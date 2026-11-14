@@ -10,6 +10,8 @@ gravity: [0.0, 0.16, 0.38, 1.0]
 proxy: true
 url: "https://www.nasa.gov/glenn/glenn-expertise-space-exploration/physical-sciences-program/combustion-science/"
 sources:
+  - "/papers/nasa_glenn_saffire.pdf"
+  - "/papers/iss_researchers_guide_combustion_science.pdf"
   - "https://www.nasa.gov/glenn/glenn-expertise-space-exploration/physical-sciences-program/combustion-science/"
   - "https://psi.nasa.gov/physci/repo/search?q=combustion"
   - "https://www.nasa.gov/missions/station/a-researchers-guide-to-combustion-science/"
@@ -47,7 +49,9 @@ material except Nomex.
 | 34 % / 56.5 kPa | sustained, spread roughly 2-3x the 21 % rate | sustained | marginal: burns only with ventilation |
 | 40 % / 48 kPa | vigorous | vigorous | sustained |
 
-Nomex had a high LOI in microgravity at 56.5 kPa (around 28-29 %), so at 34 % O2 it burned only when
+Compared with the ISS 21 % O2 / 101.3 kPa baseline, the Artemis 34 % O2 / 56.5 kPa exploration
+atmosphere increased flame spread rates over cotton-fiberglass and PMMA to roughly 2 to 3 times the
+21 % rate. Nomex had a high LOI in microgravity at 56.5 kPa (around 28-29 %), so at 34 % O2 it burned only when
 low-speed flow was present. This leaves a margin of only a few percentage points. At 36 % O2 and above,
 Nomex burned in every flow condition tested.
 

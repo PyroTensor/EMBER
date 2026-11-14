@@ -23,7 +23,25 @@ export const SOURCE_TYPE_LABEL: Record<string, string> = {
   psi_dataset: "NASA PSI Dataset",
 };
 
+const LOCAL_PDF_LABELS: Record<string, string> = {
+  "/papers/iss_researchers_guide_combustion_science.pdf":
+    "ISS Researcher's Guide (PDF)",
+  "/papers/nasa_glenn_acme.pdf": "NASA Glenn ACME Dossier (PDF)",
+  "/papers/nasa_glenn_bass.pdf": "NASA Glenn BASS / BASS-II (PDF)",
+  "/papers/nasa_glenn_daft.pdf": "NASA Glenn DAFT (PDF)",
+  "/papers/nasa_glenn_flex.pdf": "NASA Glenn FLEX / FLEX-2 (PDF)",
+  "/papers/nasa_glenn_saffire.pdf": "NASA Glenn Saffire I–VI (PDF)",
+  "/papers/nasa_glenn_same.pdf": "NASA Glenn SAME / SAME-R (PDF)",
+  "/papers/nasa_glenn_slice.pdf": "NASA Glenn SLICE (PDF)",
+  "/papers/nasa_glenn_spice.pdf": "NASA Glenn SPICE (PDF)",
+};
+
 export function formatSourceLinkLabel(url: string): string {
+  if (url.startsWith("/papers/")) {
+    return (
+      LOCAL_PDF_LABELS[url] ?? url.split("/").pop() ?? "Downloaded NASA PDF"
+    );
+  }
   try {
     const parsed = new URL(url);
     const host = parsed.hostname.replace(/^www\./, "");
@@ -35,8 +53,14 @@ export function formatSourceLinkLabel(url: string): string {
     if (host.includes("spinoff.nasa.gov")) {
       return `NASA Spinoff (${path.split("/").pop() ?? "Article"})`;
     }
+    if (host.includes("hdl.handle.net")) {
+      return `NTRS Handle (${path.split("/").pop() ?? "Report"})`;
+    }
     if (host.includes("sma.nasa.gov")) {
       return `NASA SMA (${path.split("/").pop()?.toUpperCase() ?? "Report"})`;
+    }
+    if (host.includes("history.nasa.gov")) {
+      return `NASA History (${path.split("/").pop() ?? "PDF"})`;
     }
     if (host.includes("youtube.com")) {
       return "NASA ScienceCasts Video";

@@ -45,6 +45,22 @@ def _jsonable(value: Any) -> Any:
     return json.loads(json.dumps(value, default=str))
 
 
+def deduplicate_investigations(
+    investigations: list[Investigation], runs: list[TestRunRecord] | None = None
+) -> list[Investigation]:
+    """Deduplicate investigations by ``id`` (keeping the richest summary) and auto-seed stubs for runs."""
+    by_id: dict[str, Investigation] = {}
+    for inv in investigations:
+        prev = by_id.get(inv.id)
+        if prev is None or len(inv.summary) > len(prev.summary):
+            by_id[inv.id] = inv
+    for r in runs or []:
+        prog_id = str(r.program)
+        if prog_id not in by_id:
+            by_id[prog_id] = Investigation(id=prog_id, program=r.program, title=prog_id, summary="")
+    return list(by_id.values())
+
+
 def build_payload(
     investigations: list[Investigation],
     documents: list[Document],
@@ -56,17 +72,18 @@ def build_payload(
     chunks: list[Chunk],
 ) -> dict[str, Any]:
     """The snapshot document; its rows use DB column names so Postgres loads reuse them."""
-    known_inv = {i.id for i in investigations}
+    deduped_inv = deduplicate_investigations(investigations, runs)
+    known_inv = {i.id for i in deduped_inv}
     run_dicts = []
     for r in runs:
         d = r.model_dump(mode="json")
-        d["investigation_id"] = r.program if r.program in known_inv else None
+        d["investigation_id"] = str(r.program) if str(r.program) in known_inv else None
         d["review_flags"] = flags.get(r.experiment_id, [])
         run_dicts.append(d)
     run_ids = {r.experiment_id for r in runs}
 
     return {
-        "investigations": [i.model_dump(mode="json") for i in investigations],
+        "investigations": [i.model_dump(mode="json") for i in deduped_inv],
         "documents": [
             {
                 "doc_id": doc.doc_id,
@@ -126,7 +143,7 @@ async def load_postgres(payload: dict[str, Any], *, load_chunks: bool = True) ->
             counts["chunks"] = 0
             if load_chunks:
                 chunk_repo = PgChunkRepository(session)
-                by_doc: dict[str, list[dict[str, Any]]] = {}
+                by_doc: dict[str, list[dict[str, Any]]] = {doc["doc_id"]: [] for doc in payload["documents"]}
                 for c in payload["chunks"]:
                     by_doc.setdefault(c["doc_id"], []).append({k: v for k, v in c.items() if k != "id"})
                 for doc_id, rows in by_doc.items():
@@ -158,4 +175,11 @@ async def load(
     return result
 
 
-__all__ = ["LoadResult", "build_payload", "load", "load_postgres", "save_snapshot"]
+__all__ = [
+    "LoadResult",
+    "build_payload",
+    "deduplicate_investigations",
+    "load",
+    "load_postgres",
+    "save_snapshot",
+]

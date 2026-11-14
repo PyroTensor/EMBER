@@ -9,7 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { presetId as presetKey } from "@/features/cabin";
 import { usePresets } from "@/features/presets";
-import type { CabinConfig, Preset, RankRequest, RankWeights } from "@/lib/api/types";
+import type { Preset, RankRequest, RankWeights } from "@/lib/api/types";
+import { useCabinScenario } from "@/lib/cabin-scenario/cabin-scenario-context";
 import { useRanking } from "../hooks";
 import { DEFAULT_RANK_WEIGHTS } from "../lib/score-format";
 import { ExtraTelemetryTable } from "./extra-telemetry-table";
@@ -21,17 +22,6 @@ import { TelemetryChart } from "./telemetry-chart";
 import { WeightSliders } from "./weight-sliders";
 
 const RANK_LIMIT = 10;
-
-function toConfig(p: Preset): CabinConfig {
-  return {
-    oxygen_pct: p.oxygen_pct,
-    pressure_kpa: p.pressure_kpa,
-    flow_velocity_cm_s: p.flow_velocity_cm_s,
-    gravity_g: p.gravity_g,
-    fuel_material: p.fuel_material,
-    diluent_gas: p.diluent_gas,
-  };
-}
 
 /** Ranking & Telemetry: scenario + weights → ranked runs → selected run's score breakdown. */
 export function RankingView() {
@@ -71,9 +61,7 @@ export function RankingView() {
 }
 
 function RankingWorkspace({ presets }: { presets: Preset[] }) {
-  const first = presets[0] as Preset;
-  const [cfg, setCfg] = useState<CabinConfig>(() => toConfig(first));
-  const [scenarioId, setScenarioId] = useState<string | null>(presetKey(first, 0));
+  const { config: cfg, presetId: scenarioId, selectPreset, updateField } = useCabinScenario();
   const [weights, setWeights] = useState<RankWeights>({ ...DEFAULT_RANK_WEIGHTS });
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
@@ -102,12 +90,10 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
               cfg={cfg}
               presetId={scenarioId}
               onPreset={(p) => {
-                setCfg(toConfig(p));
-                setScenarioId(presetKey(p, presets.indexOf(p)));
+                selectPreset(p, presetKey(p, presets.indexOf(p)));
               }}
               onChange={(field, value) => {
-                setCfg((prev) => ({ ...prev, [field]: value }));
-                setScenarioId(null);
+                updateField(field, value);
               }}
             />
           </CardBody>
