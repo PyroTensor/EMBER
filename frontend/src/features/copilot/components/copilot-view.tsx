@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MessagesSquare, SlidersHorizontal, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody } from "@/components/ui/card";
@@ -19,6 +19,7 @@ import {
   type DocumentReaderTarget,
 } from "./document-reader";
 import { DroppedClaims } from "./dropped-claims";
+import { EmberBackdrop } from "./ember-backdrop";
 import { QuestionInput } from "./question-input";
 import { RelevantPapers } from "./relevant-papers";
 import { StarterPrompts } from "./starter-prompts";
@@ -58,6 +59,42 @@ export function CopilotView() {
     null,
   );
   const nextId = useRef(cachedNextId);
+  const scrollToAnswerId = useRef<number | null>(null);
+
+  useEffect(() => {
+    const id = scrollToAnswerId.current;
+    if (id === null || turns.find((turn) => turn.id === id)?.status !== "success") return;
+
+    const answer = document.getElementById(`copilot-answer-${id}`);
+    if (!answer) return;
+    const appHeader = document.querySelector<HTMLElement>("[data-app-header]");
+    const headerHeight = appHeader?.getBoundingClientRect().height ?? 0;
+    const maxY = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+    const targetY = Math.min(
+      maxY,
+      Math.max(0, window.scrollY + answer.getBoundingClientRect().top - headerHeight - 12),
+    );
+    const startY = window.scrollY;
+
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      window.scrollTo(0, targetY);
+      scrollToAnswerId.current = null;
+      return;
+    }
+
+    let frame = 0;
+    const startedAt = performance.now();
+    const duration = Math.min(2400, Math.max(1500, Math.abs(targetY - startY) * 1.8));
+    const step = (now: number) => {
+      const progress = Math.min(1, (now - startedAt) / duration);
+      const eased = progress < 0.5 ? 4 * progress ** 3 : 1 - (-2 * progress + 2) ** 3 / 2;
+      window.scrollTo(0, startY + (targetY - startY) * eased);
+      if (progress < 1) frame = requestAnimationFrame(step);
+      else if (scrollToAnswerId.current === id) scrollToAnswerId.current = null;
+    };
+    frame = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame);
+  }, [turns]);
 
   const setTurns = (updater: Turn[] | ((prev: Turn[]) => Turn[])) => {
     setTurnsState((prev) => {
@@ -101,12 +138,14 @@ export function CopilotView() {
       : undefined;
     const id = nextId.current++;
     cachedNextId = nextId.current;
+    scrollToAnswerId.current = id;
     setTurns((ts) => [{ id, req, scenarioLabel, status: "pending" }, ...ts]);
     run(id, req, scenarioLabel);
   };
 
   const retry = (turn: Turn) => {
     if (ask.isPending) return;
+    scrollToAnswerId.current = turn.id;
     settle(turn.id, {
       id: turn.id,
       req: turn.req,
@@ -118,6 +157,7 @@ export function CopilotView() {
 
   const clearHistory = () => {
     if (ask.isPending) return;
+    scrollToAnswerId.current = null;
     setTurns([]);
   };
 
@@ -148,8 +188,20 @@ export function CopilotView() {
         ) : null}
       </header>
 
-      <Card>
-        <CardBody className="space-y-5">
+      <Card
+        aria-busy={ask.isPending}
+        className="copilot-ember-card relative isolate overflow-hidden bg-black"
+      >
+        <EmberBackdrop loading={ask.isPending} />
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/35 via-black/10 to-black/20"
+        />
+        <CardBody
+          inert={ask.isPending}
+          data-loading={ask.isPending}
+          className="copilot-question-content relative z-10 space-y-5"
+        >
           <StarterPrompts
             onPick={submit}
             disabled={ask.isPending}
@@ -183,7 +235,7 @@ export function CopilotView() {
           />
         </Card>
       ) : (
-        <ol aria-label="Conversation, newest first" className="space-y-6">
+        <ol aria-label="Conversation, newest first" className="min-h-screen space-y-6">
           {turns.map((turn) => (
             <li key={turn.id}>
               <TurnView
@@ -271,6 +323,7 @@ function TurnView({
     <div className="space-y-3">
       {scenarioNote}
       <AnswerCard
+        id={`copilot-answer-${turn.id}`}
         response={response}
         question={turn.req.question}
         documentsById={documentsById}
