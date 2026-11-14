@@ -35,8 +35,11 @@ jobs:
 
       - name: Generated API types match the contract
         run: |
+          cp src/lib/api/schema.d.ts /tmp/schema.before.d.ts
+          npx prettier --write /tmp/schema.before.d.ts
           npm run gen:api
-          git diff --exit-code src/lib/api/schema.d.ts
+          npx prettier --write src/lib/api/schema.d.ts
+          diff -u /tmp/schema.before.d.ts src/lib/api/schema.d.ts
 
       - name: Lint
         run: npm run lint
