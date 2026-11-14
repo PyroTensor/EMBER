@@ -3,21 +3,17 @@
 import { useRef, type KeyboardEvent } from "react";
 import { cn } from "@/lib/cn";
 
-export type RankingSection =
-  "scenario" | "rankings" | "compare" | "telemetry" | "sources";
+export type RankingSection = "scenario" | "rankings" | "sources";
 
 const SECTIONS: readonly { id: RankingSection; label: string }[] = [
   { id: "scenario", label: "Scenario" },
   { id: "rankings", label: "Rankings" },
-  { id: "compare", label: "Compare" },
-  { id: "telemetry", label: "Telemetry" },
   { id: "sources", label: "Data & Sources" },
 ];
 
 export function RankingSectionNav({
   active,
   onSelect,
-  pinnedCount,
   scenarioName,
   scenarioSummary,
   selectedRunId,
@@ -25,17 +21,13 @@ export function RankingSectionNav({
 }: {
   active: RankingSection;
   onSelect: (section: RankingSection) => void;
-  pinnedCount: number;
   scenarioName: string;
   scenarioSummary: string;
   selectedRunId: string | null;
   topOffset: number;
 }) {
   const tabs = useRef<(HTMLButtonElement | null)[]>([]);
-  const sections =
-    pinnedCount >= 2
-      ? SECTIONS
-      : SECTIONS.filter((section) => section.id !== "compare");
+  const sections = SECTIONS;
 
   const onKeyDown = (
     event: KeyboardEvent<HTMLButtonElement>,
@@ -72,10 +64,6 @@ export function RankingSectionNav({
         >
           {sections.map((section, index) => {
             const selected = active === section.id;
-            const label =
-              section.id === "compare"
-                ? `Compare (${pinnedCount}/3)`
-                : section.label;
             return (
               <button
                 key={section.id}
@@ -97,7 +85,7 @@ export function RankingSectionNav({
                     : "text-muted hover:text-fg border-transparent",
                 )}
               >
-                {label}
+                {section.label}
               </button>
             );
           })}
@@ -105,11 +93,12 @@ export function RankingSectionNav({
       </nav>
       <div className="text-muted flex flex-wrap items-center gap-x-5 gap-y-1 px-4 py-2 text-xs">
         <p className="min-w-0 truncate" title={scenarioSummary}>
-          Scenario: <strong className="text-fg">{scenarioName}</strong>{" "}
+          <span className="sr-only">Scenario: </span>
+          <strong className="text-fg">{scenarioName}</strong>{" "}
           <span className="hidden sm:inline">· {scenarioSummary}</span>
         </p>
         <p className="shrink-0">
-          Selected run:{" "}
+          <span className="sr-only">Selected run: </span>
           <strong className="text-fg font-mono">
             {selectedRunId ?? "None"}
           </strong>
