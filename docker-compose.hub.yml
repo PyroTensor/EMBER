@@ -1,0 +1,11 @@
+# Override for running EMBER from the prebuilt Docker Hub images instead of building locally.
+#   docker compose -f docker-compose.yml -f docker-compose.hub.yml pull
+#   docker compose -f docker-compose.yml -f docker-compose.hub.yml up -d --no-build
+# Bump the tags below when a new version is pushed.
+# The frontend image was built with NEXT_PUBLIC_API_URL=http://localhost:8000 (live mode), so the stack
+# must run on the same machine as the browser.
+services:
+  backend:
+    image: miniya2006/ember-backend:0.1.0
+  frontend:
+    image: miniya2006/ember-frontend:0.1.0
