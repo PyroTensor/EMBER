@@ -69,8 +69,8 @@ jobs:
       - name: Migrate
         run: make migrate
 
-      - name: Seed
-        run: make seed
+      - name: Seed (synthetic proxy fixtures)
+        run: make seed-proxy
 
       - name: Golden-set eval
         run: make eval

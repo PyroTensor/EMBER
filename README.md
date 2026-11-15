@@ -54,7 +54,7 @@ The frontend runs in live mode against it. On Windows, use `mingw32-make` if `ma
 ```bash
 cd backend
 cp .env.example .env
-make setup && make db-up && make migrate && make seed
+make setup && make db-up && make migrate && make seed-proxy   # synthetic demo data; real drops: see docs/INGESTION_GUIDE.md
 make dev                      # http://localhost:8000 (Swagger at /docs)
 ```
 

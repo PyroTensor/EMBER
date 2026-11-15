@@ -49,7 +49,8 @@ flowchart LR
 ## Diagram-to-code map
 
 ### 1. Offline ingestion ([`backend/app/ingestion/`](../backend/app/ingestion/))
-Run with `make seed` (proxy data in `backend/data/seed/`) or `python -m app.ingestion --source <dir>`.
+Run with `make seed` (the drop folder `backend/data/seed/`, empty by default), `make seed-proxy` (synthetic data in
+`backend/tests/fixtures/proxy/`) or `python -m app.ingestion --source <dir>`. Full guide: [INGESTION_GUIDE.md](INGESTION_GUIDE.md).
 
 | Stage | File | Responsibility |
 |---|---|---|

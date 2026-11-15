@@ -41,12 +41,14 @@ class PgTestRunRepository(SqlRepository[TestRun]):
         return [dict(row) for row in result.mappings()]
 
     async def get_many(self, ids: builtins.list[str]) -> builtins.list[dict[str, Any]]:
-        """Runs for ``ids`` in the order given; unknown ids are skipped."""
+        """Runs for ``ids`` in the order given, matched case-insensitively; unknown ids are skipped."""
         if not ids:
             return []
-        result = await self.session.execute(self._record_select().where(self.table.c.experiment_id.in_(ids)))
-        by_id = {row["experiment_id"]: dict(row) for row in result.mappings()}
-        return [by_id[i] for i in dict.fromkeys(ids) if i in by_id]
+        keys = list(dict.fromkeys(i.upper() for i in ids))
+        col = self.table.c.experiment_id
+        result = await self.session.execute(self._record_select().where(func.upper(col).in_(keys)))
+        by_id = {str(row["experiment_id"]).upper(): dict(row) for row in result.mappings()}
+        return [by_id[k] for k in keys if k in by_id]
 
     async def all_for_ranking(self) -> builtins.list[dict[str, Any]]:
         return await self.list()

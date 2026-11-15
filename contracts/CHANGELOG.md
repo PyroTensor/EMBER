@@ -2,6 +2,12 @@
 
 Every change to `contracts/` gets an entry: date, what changed, and why.
 
+## 2026-11-14: gaseous fuels in `FuelMaterial`
+- Added `Ethylene`, `Ethane`, `Propane`, `Butane` to the `fuel_material` enum in `schema_v1.json` and the
+  `FuelMaterial` enum in `openapi_v1.yaml`.
+- Why: the official ACME test matrices (PSI-10 Flame Design, PSI-159 CFI-G) are gaseous burner flames on these
+  fuels; without them every row was rejected. Frontend types (`npm run gen:api`) not regenerated yet.
+
 ## 2026-11-14: pre-handoff QA checklist (v2) alignment
 - Added `"Saffire"` to `Program` enum in `schema_v1.json` and `openapi_v1.yaml` (SC-02).
 - Widened `oxygen_pct` bounds to `[10.0, 60.0]` and `pressure_kpa` bounds to `[20.0, 150.0]` in `schema_v1.json` so converted 1.0 atm (`101.325 kPa`) / 14.7 psia (`101.353 kPa`) rows and low-O₂ LOI runs validate cleanly (SC-01, SC-03).

@@ -5,6 +5,7 @@ from __future__ import annotations
 import re
 from typing import Any, Final
 
+from app.rag.citations import RUN_ID_MENTION
 from app.rag.prompts import load_prompt
 from app.rag.scope import DOMAIN_KEYWORDS, OUT_OF_SCOPE_HINTS
 from app.rag.state import GraphState, RouteKind
@@ -29,12 +30,12 @@ async def classify_question(question: str, tk: RagToolkit, has_scenario: bool = 
 
     if any(h in q for h in OUT_OF_SCOPE_HINTS) and not (tokens & DOMAIN_KEYWORDS):
         return "out_of_scope"
-    if not (tokens & DOMAIN_KEYWORDS) and not re.search(r"exp-\d+", q) and not has_scenario:
+    if not (tokens & DOMAIN_KEYWORDS) and not RUN_ID_MENTION.search(q) and not has_scenario:
         return "out_of_scope"
 
     if has_scenario:
         return "compare"
-    if FACTS_PATTERNS.search(q):
+    if RUN_ID_MENTION.search(q) or FACTS_PATTERNS.search(q):
         return "facts"
     if COMPARE_PATTERNS.search(q):
         return "compare"

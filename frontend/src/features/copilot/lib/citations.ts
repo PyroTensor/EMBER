@@ -4,11 +4,17 @@ export type AnswerToken =
   { type: "text"; value: string } | { type: "cite"; value: string };
 
 /**
- * Inline citation tags produced by the backend's citation_check: "[DOC-02 p.3]" (document + page) and
- * "[EXP-0012]" (experiment). A bare "[DOC-02]" or "[ISS-BASS-II p.1]" is accepted too.
+ * Inline citation tags produced by the backend's citation_check: a document page ("[DOC-02 p.3]",
+ * "[ACME_CFI-G_Final_Report p.30]") or a test run ("[EXP-0012]", "[PSI-25_B1]", "[PSI-99_2-5]").
+ * A bare "[DOC-02]" or "[ISS-BASS-II]" is read as a document too.
  */
-const CITE_RE = /\[(?:(?:DOC-\d+|ISS-[A-Z0-9-]+)(?:\s+p\.\s?\d+)?|EXP-\d+)\]/g;
-const DOC_TAG_RE = /^\[?(DOC-\d+|ISS-[A-Z0-9-]+)(?:\s+p\.\s?(\d+))?\]?$/i;
+const RUN_ID = "[A-Z][A-Z0-9]*-[A-Za-z0-9][A-Za-z0-9_.-]*";
+const CITE_RE = new RegExp(
+  String.raw`\[(?:[A-Za-z0-9_-]+\s+p\.\s?\d+|DOC-\d+|${RUN_ID})\]`,
+  "g",
+);
+const DOC_TAG_RE =
+  /^\[?(?:([A-Za-z0-9_-]+)\s+p\.\s?(\d+)|(DOC-\d+|ISS-[A-Z0-9-]+))\]?$/i;
 
 /** Split an answer into text and citation-tag tokens (in order; empty text tokens are dropped). */
 export function tokenize(answer: string): AnswerToken[] {
@@ -41,7 +47,7 @@ export function findCitation(
   );
 }
 
-/** Chip label without brackets: "DOC-01 p.1", "EXP-0023". */
+/** Chip label without brackets: "DOC-01 p.1", "PSI-25_B1". */
 export const tagLabel = (tag: string) =>
   tag.replace(/^\[|\]$/g, "").replace(/\s+/g, " ");
 
@@ -50,8 +56,9 @@ export function parseDocTag(
   tag: string,
 ): { docId: string; page?: number } | null {
   const m = DOC_TAG_RE.exec(tag.trim());
-  if (!m?.[1]) return null;
-  const docId = m[1].toUpperCase();
+  const id = m?.[1] ?? m?.[3];
+  if (!m || !id) return null;
+  const docId = id.toUpperCase();
   const page = m[2] ? Number.parseInt(m[2], 10) : undefined;
   return { docId, page: Number.isFinite(page) ? page : undefined };
 }

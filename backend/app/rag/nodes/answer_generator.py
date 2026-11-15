@@ -1,4 +1,4 @@
-"""LangGraph Node - Answer generator: cites [DOC-XX p.Y] and [EXP-XXXX] per claim; 'no data' when missing."""
+"""LangGraph Node - Answer generator: cites [DOC-XX p.Y] and [<run id>] per claim; 'no data' when missing."""
 
 from __future__ import annotations
 
@@ -8,6 +8,7 @@ from typing import Any
 from app.core.constants import NO_DATA_MESSAGE
 from app.domain.risk.fire_risk import evaluate_cabin
 from app.domain.types import ISS_BASELINE, CabinParams
+from app.rag.citations import format_doc_tag, format_exp_tag
 from app.rag.prompts import load_prompt
 from app.rag.state import EvidenceItem, GraphState
 from app.rag.toolkit import RagToolkit
@@ -34,6 +35,15 @@ def _best_sentences(chunk_text: str, question: str, max_sentences: int = 2) -> l
         scored.append((len(words & q_terms), s))
     scored.sort(key=lambda t: t[0], reverse=True)
     return [s for _, s in scored[:max_sentences]]
+
+
+def _cite_tag(e: EvidenceItem) -> str | None:
+    """The exact tag the LLM must copy to cite this evidence item (checked later by citation_check)."""
+    if e.get("experiment_id"):
+        return format_exp_tag(str(e["experiment_id"]))
+    if e.get("doc_id") and e.get("page"):
+        return format_doc_tag(str(e["doc_id"]), int(e["page"] or 0))
+    return None
 
 
 def _format_scenario_context(scenario: dict[str, Any] | None) -> str:
@@ -111,7 +121,7 @@ def _synthesize_heuristic(
         top_runs = runs[:2]
         run_summaries = []
         for r in top_runs:
-            m = re.search(r"([A-Z0-9-]+)\s*\(([^)]+)\):\s*([^->]+)->\s*([^()]+)", r["text"])
+            m = re.search(r"([A-Za-z0-9_.-]+)\s*\(([^)]+)\):\s*([^->]+)->\s*([^()]+)", r["text"])
             if m:
                 eid, meta, cond, out = m.groups()
                 run_summaries.append(
@@ -137,7 +147,10 @@ async def answer_generator_node(state: GraphState, tk: RagToolkit) -> dict[str, 
 
     scenario = state.get("scenario")
     if tk.llm.name != "heuristic":
-        context = "\n".join(f"- {e['text']}" for e in evidence[: tk.settings.RAG_ANSWER_EVIDENCE])
+        context = "\n".join(
+            f"- {tag} {e['text']}" if (tag := _cite_tag(e)) else f"- {e['text']}"
+            for e in evidence[: tk.settings.RAG_ANSWER_EVIDENCE]
+        )
         scenario_block = _format_scenario_context(scenario)
         user_msg = f"Question: {state['original_question']}\n\n{scenario_block}Evidence:\n{context}"
         ans = await tk.llm.complete(load_prompt("answer"), user_msg)

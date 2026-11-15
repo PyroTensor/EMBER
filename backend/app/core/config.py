@@ -13,7 +13,7 @@ from __future__ import annotations
 from enum import StrEnum
 from functools import lru_cache
 from pathlib import Path
-from typing import Annotated, Any, Final
+from typing import Annotated, Any, Final, Literal
 from urllib.parse import quote
 
 from dotenv import load_dotenv
@@ -113,6 +113,20 @@ class Settings(BaseSettings):
     LLM_MODEL: str = "gemini-2.5-flash"
     GEMINI_API_KEY: SecretStr = SecretStr("")
     OPENAI_API_KEY: SecretStr = SecretStr("")
+
+    # ── ingestion extractor (independent of LLM_PROVIDER, which is RAG-only) ──
+    # OpenAI is primary, Gemini is the fallback; either key alone works. No key → heuristic (no crash).
+    EXTRACTOR: Literal["heuristic", "llm"] = "heuristic"
+    EXTRACT_OPENAI_MODEL: str = "gpt-4.1-mini"
+    EXTRACT_GEMINI_MODEL: str = "gemini-2.5-flash"
+    EXTRACT_TIMEOUT_S: float = Field(default=60, gt=0, le=600)
+    EXTRACT_MAX_RETRIES: int = Field(default=2, ge=0, le=6)
+    EXTRACT_CONCURRENCY: int = Field(default=4, ge=1, le=32)
+    EXTRACT_MAX_PAGES: int = Field(default=200, ge=0, le=10000)  # LLM page budget per run (0 = no runs)
+    EXTRACT_MIN_CONFIDENCE: float = Field(default=0.6, ge=0, le=1)
+    # combustion_findings (I10): microgravity-combustion data that fits no other table
+    EXTRACT_FINDINGS: bool = True
+    FINDINGS_MIN_RELEVANCE: float = Field(default=0.7, ge=0, le=1)
 
     # ── embeddings ───────────────────────────────────────────────────
     EMBED_ENABLED: bool = True  # False → NullEmbedder (keyword-only retrieval)

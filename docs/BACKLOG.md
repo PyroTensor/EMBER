@@ -7,9 +7,9 @@ The monorepo backbone is wired end-to-end. Below is the prioritized backlog for 
 ## Squad 1 (data & domain, now in `backend/app/ingestion/` and `backend/app/domain/`)
 
 ### Track S1-A: Ingestion & Document Extraction
-- [ ] **`TODO(squad1-A)` PDF / Table Parsing** ([parse.py](../backend/app/ingestion/stages/parse.py)): Add table extraction (PyMuPDF / Docling) so test matrices inside NTRS PDFs emit structured rows.
-- [ ] **`TODO(squad1-A)` Gemini Structured Extraction** ([llm_extract.py](../backend/app/ingestion/stages/llm_extract.py)): Implement `GeminiExtractor` using `google-genai` `response_schema` to pull `Investigation` and `TestRun` records from prose pages with `(source_doc_id, source_page)` provenance.
-- [ ] **`TODO(squad1-A)` NTRS / PSI Fetcher** ([fetch_cache.py](../backend/app/ingestion/stages/fetch_cache.py)): Add `fetch_url()` to download official NTRS PDFs / PSI CSVs directly into `backend/data/.cache/raw/`.
+- [x] **PDF / Table Parsing** ([parse.py](../backend/app/ingestion/stages/parse.py), [table_rows.py](../backend/app/ingestion/stages/table_rows.py)): PyMuPDF `find_tables` + markdown pipe tables become structured tables; tables that map ≥ 4 required fields emit rows with `(source_doc_id, source_page)`. Scanned pages are transcribed through vision with `--extractor llm`.
+- [x] **Structured LLM Extraction** ([llm_extract.py](../backend/app/ingestion/stages/llm_extract.py), [extractors/](../backend/app/ingestion/extractors)): `LLMExtractor` with **OpenAI primary, Gemini fallback** (structured output), heuristic as the last resort. Pulls `Investigation` metadata and test runs from document pages with code-set `(source_doc_id, source_page)` provenance, a page budget, a cache in `data/.cache/extractions/` and `extraction:*` review flags. Also fills the `combustion_findings` table.
+- [x] **NTRS / URL Fetcher** ([fetch_cache.py](../backend/app/ingestion/stages/fetch_cache.py)): `--fetch sources.yaml` downloads NTRS PDFs and direct URLs into `--source` (robots.txt, rate limit, ETag skip). PSI logins are not automated.
 
 ### Track S1-B: Physics, Surrogate Risk & Ranking
 - [ ] **`TODO(squad1-B)` 2D Flammability Phase Grid** ([combustion.py](../backend/app/domain/physics/combustion.py)): Implement `phase_grid(gravity_g, flow_cm_s, material, diluent)` returning an $(O_2\%, P_{\text{kPa}})$ contour matrix for Module 1's Plotly phase diagram.

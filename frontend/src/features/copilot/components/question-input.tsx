@@ -94,7 +94,7 @@ export function QuestionInput({
         <InputGroup>
           <InputGroupTextarea
             id={inputId}
-            placeholder="Ask about flame spread, oxygen limits, ventilation, gravity or a run such as EXP-0012…"
+            placeholder="Ask about flame spread, oxygen limits, ventilation, gravity or a run such as PSI-25_B1…"
             value={value}
             onChange={(e) => setValue(e.target.value)}
             onKeyDown={onKeyDown}

@@ -5,8 +5,8 @@
     Docker (and the snapshot repositories) see exactly the ingested records and embeddings.
 (b) If Postgres is reachable (``DbAvailability``; ``DATA_BACKEND=snapshot`` skips it), everything is upserted
     in ONE transaction: investigations, documents, test_runs, telemetry, presets, chunks (replaced
-    per doc_id).
-    Idempotent: re-running upserts rows and replaces chunks per document.
+    per doc_id), combustion_findings (replaced per doc_id / CSV file, I10).
+    Idempotent: re-running upserts rows and replaces chunks / findings per document.
 """
 
 from __future__ import annotations
@@ -20,13 +20,14 @@ from typing import Any
 from app.core.config import get_settings
 from app.db.engine import Database
 from app.repositories.chunk_repo import PgChunkRepository
+from app.repositories.combustion_finding_repo import PgCombustionFindingRepository
 from app.repositories.document_repo import PgDocumentRepository
 from app.repositories.investigation_repo import PgInvestigationRepository
 from app.repositories.preset_repo import PgPresetRepository
 from app.repositories.telemetry_repo import PgTelemetryRepository
 from app.repositories.test_run_repo import PgTestRunRepository
 from app.schemas.experiment import TestRunRecord
-from app.schemas.ingestion import Chunk, Document, Investigation
+from app.schemas.ingestion import Chunk, CombustionFinding, Document, Investigation
 from app.schemas.preset import Preset
 
 logger = logging.getLogger(__name__)
@@ -70,10 +71,20 @@ def build_payload(
     telemetry: dict[str, dict[str, Any]],
     presets: list[Preset],
     chunks: list[Chunk],
+    findings: list[CombustionFinding] | None = None,
 ) -> dict[str, Any]:
     """The snapshot document; its rows use DB column names so Postgres loads reuse them."""
     deduped_inv = deduplicate_investigations(investigations, runs)
     known_inv = {i.id for i in deduped_inv}
+    doc_ids = {doc.doc_id for doc in documents}
+    finding_dicts = []
+    for f in findings or []:
+        d = f.model_dump(mode="json")
+        if d["investigation_id"] not in known_inv:
+            d["investigation_id"] = None  # FK: only investigations loaded in this payload
+        if d["source_doc_id"] is not None and d["source_doc_id"] not in doc_ids:
+            continue  # FK: a document that is not in this payload (should not happen)
+        finding_dicts.append(d)
     run_dicts = []
     for r in runs:
         d = r.model_dump(mode="json")
@@ -110,6 +121,7 @@ def build_payload(
             for idx, c in enumerate(chunks)
         ],
         "presets": [{**p.model_dump(mode="json"), "sort_order": i} for i, p in enumerate(presets)],
+        "combustion_findings": finding_dicts,
     }
 
 
@@ -132,6 +144,14 @@ async def load_postgres(payload: dict[str, Any], *, load_chunks: bool = True) ->
                 payload["investigations"]
             )
             counts["documents"] = await PgDocumentRepository(session).upsert_many(payload["documents"])
+            # findings AFTER investigations + documents (FKs); stale findings of re-ingested sources go first
+            findings = payload.get("combustion_findings", [])
+            finding_repo = PgCombustionFindingRepository(session)
+            await finding_repo.replace_for_docs(
+                [doc["doc_id"] for doc in payload["documents"]],
+                sorted({f["source_file"] for f in findings if f.get("source_file")}),
+            )
+            counts["combustion_findings"] = await finding_repo.upsert_many(findings)
             counts["test_runs"] = await PgTestRunRepository(session).upsert_many(payload["test_runs"])
             counts["telemetry"] = await PgTelemetryRepository(session).upsert_many(
                 [{"experiment_id": k, "series": v} for k, v in payload["telemetry"].items()]
@@ -164,8 +184,11 @@ async def load(
     chunks: list[Chunk],
     *,
     load_chunks: bool = True,
+    findings: list[CombustionFinding] | None = None,
 ) -> LoadResult:
-    payload = build_payload(investigations, documents, checksums, runs, flags, telemetry, presets, chunks)
+    payload = build_payload(
+        investigations, documents, checksums, runs, flags, telemetry, presets, chunks, findings
+    )
     result = LoadResult(snapshot_path=save_snapshot(payload))
     outcome = await load_postgres(payload, load_chunks=load_chunks)
     if isinstance(outcome, str):
