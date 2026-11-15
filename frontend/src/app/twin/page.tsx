@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { TwinView } from "@/features/twin";
 
-export const metadata: Metadata = { title: "Flame Twin" };
+export const metadata: Metadata = { title: "Flame Simulator" };
 
 export default function Page() {
   return (
     <div className="mx-auto max-w-6xl space-y-4 p-4 sm:p-6">
       <header className="space-y-1">
-        <h1 className="text-xl font-semibold">Flame Twin</h1>
+        <h1 className="text-xl font-semibold">Flame Simulator</h1>
         <p className="text-muted text-sm">
           Multi-gravity and atmosphere flame morphology simulator
         </p>

@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AppShell } from "@/components/layout/app-shell";
-import { HealthStatus } from "@/features/health";
 import { Providers } from "./providers";
 import "./globals.css";
 
@@ -12,7 +11,7 @@ export const metadata: Metadata = {
   title: { default: "EMBER", template: "%s · EMBER" },
   description:
     "Exploration of Microgravity Burning through Experimental Research: cabin flammability configurator, " +
-    "1g vs 0g flame twin, experiment ranking and a grounded SI Co-Pilot.",
+    "3D flame simulator, experiment ranking and grounded EMBER SI.",
 };
 
 export default function RootLayout({
@@ -24,7 +23,7 @@ export default function RootLayout({
     <html lang="en" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full bg-black font-sans text-zinc-100">
         <Providers>
-          <AppShell status={<HealthStatus />}>{children}</AppShell>
+          <AppShell>{children}</AppShell>
         </Providers>
       </body>
     </html>

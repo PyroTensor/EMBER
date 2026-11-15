@@ -15,10 +15,8 @@ interface RankedTableProps {
   results: readonly RankedExperiment[];
   selectedId: string | null;
   onSelect: (experimentId: string, reveal?: boolean) => void;
-  pinnedIds: readonly string[];
-  onTogglePin: (experimentId: string) => void;
-  pinDisabled?: boolean;
   origins: ReadonlyMap<string, DataOrigin>;
+  telemetryAvailable?: ReadonlyMap<string, boolean>;
 }
 
 function MiniBar({
@@ -62,10 +60,8 @@ export function RankedTable({
   results,
   selectedId,
   onSelect,
-  pinnedIds,
-  onTogglePin,
-  pinDisabled,
   origins,
+  telemetryAvailable,
 }: RankedTableProps) {
   const rowRefs = useRef<(HTMLTableRowElement | null)[]>([]);
   const current = Math.max(
@@ -103,7 +99,7 @@ export function RankedTable({
       <table
         role="grid"
         aria-label="Ranked test runs"
-        className="w-full min-w-[940px] text-sm"
+        className="w-full min-w-[840px] text-sm"
       >
         <thead>
           <tr className="border-border text-muted border-b text-left text-[11px] tracking-wide uppercase">
@@ -129,23 +125,20 @@ export function RankedTable({
               <th
                 key={c.key}
                 scope="col"
-                className="px-2 py-2 font-medium"
+                className="px-2 py-2 pr-4 font-medium"
                 title={c.description}
               >
                 {c.label}
               </th>
             ))}
-            <th scope="col" className="px-2 py-2 pr-4 text-right font-medium">
-              Compare
-            </th>
           </tr>
         </thead>
         <tbody>
           {results.map((r, i) => {
             const id = r.experiment_id ?? `row-${i}`;
             const selected = i === current && selectedId !== null;
-            const pinned = pinnedIds.includes(id);
             const origin = origins.get(id) ?? "unverified";
+            const hasTelemetry = telemetryAvailable?.get(id) === true;
             return (
               <tr
                 key={id}
@@ -186,17 +179,22 @@ export function RankedTable({
                 </td>
                 <td className="px-2 py-2.5">
                   <div className="flex flex-col items-start gap-1">
-                    <Badge
-                      tone={
-                        origin === "proxy"
-                          ? "warning"
-                          : origin === "sourced"
-                            ? "success"
-                            : "neutral"
-                      }
-                    >
-                      {ORIGIN_LABEL[origin]}
-                    </Badge>
+                    <div className="flex flex-wrap items-center gap-1">
+                      <Badge
+                        tone={
+                          origin === "proxy"
+                            ? "warning"
+                            : origin === "sourced"
+                              ? "success"
+                              : "neutral"
+                        }
+                      >
+                        {ORIGIN_LABEL[origin]}
+                      </Badge>
+                      {hasTelemetry ? (
+                        <Badge tone="info">Time series</Badge>
+                      ) : null}
+                    </div>
                     {r.record ? (
                       <span className="text-muted text-[11px] whitespace-nowrap">
                         {4 - missingOutcomes(r.record).length}/4 outcomes
@@ -205,7 +203,7 @@ export function RankedTable({
                   </div>
                 </td>
                 {SCORE_COMPONENTS.map((c) => (
-                  <td key={c.key} className="px-2 py-2.5">
+                  <td key={c.key} className="px-2 py-2.5 pr-4">
                     <MiniBar
                       value={r[c.key]}
                       barClass={c.barClass}
@@ -213,21 +211,6 @@ export function RankedTable({
                     />
                   </td>
                 ))}
-                <td className="px-2 py-2.5 pr-4 text-right">
-                  <input
-                    type="checkbox"
-                    aria-label={`Compare ${id}`}
-                    checked={pinned}
-                    disabled={pinDisabled || (!pinned && pinnedIds.length >= 3)}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                    }}
-                    onChange={() => {
-                      onTogglePin(id);
-                    }}
-                    className="accent-accent size-4 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-                  />
-                </td>
               </tr>
             );
           })}

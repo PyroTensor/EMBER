@@ -3,18 +3,15 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { MockBanner } from "./mock-banner";
 import { Sidebar } from "./sidebar";
 import { TopBar } from "./top-bar";
 
 interface AppShellProps {
   children: ReactNode;
-  /** Optional top-bar status slot (health stats, connection badge). */
-  status?: ReactNode;
 }
 
-/** 240 px sidebar on md+; below md the sidebar becomes a modal drawer opened from the top bar. */
-export function AppShell({ children, status }: AppShellProps) {
+/** 240 px sidebar on md+; below md the sidebar becomes a modal drawer opened from the mobile header. */
+export function AppShell({ children }: AppShellProps) {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerId = useId();
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -78,10 +75,8 @@ export function AppShell({ children, status }: AppShellProps) {
         </div>
       ) : null}
 
-      <div data-app-header className="sticky top-0 z-30">
-        <MockBanner />
+      <div data-app-header className="sticky top-0 z-30 md:hidden">
         <TopBar
-          status={status}
           menuOpen={drawerOpen}
           drawerId={drawerId}
           onMenuClick={() => setDrawerOpen(true)}

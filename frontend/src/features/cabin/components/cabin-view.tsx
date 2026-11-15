@@ -36,7 +36,7 @@ export function CabinView() {
           className="border-accent/40 bg-accent/10 text-accent hover:bg-accent/20 inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors"
         >
           <MessagesSquare aria-hidden className="size-3.5" />
-          Ask SI Co-Pilot about this cabin →
+          Ask EMBER SI about this cabin →
         </Link>
       </header>
 

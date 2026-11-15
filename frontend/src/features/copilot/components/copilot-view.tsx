@@ -46,7 +46,7 @@ let cachedTurns: Turn[] = [];
 let cachedUseScenario = false;
 let cachedNextId = 1;
 
-/** SI Co-Pilot: ask grounded questions; every claim is verified against the NASA corpus and experiment database. */
+/** EMBER SI: ask grounded questions; every claim is verified against the NASA corpus and experiment database. */
 export function CopilotView() {
   const ask = useAskCopilot();
   const { data: documents } = useDocuments();
@@ -180,7 +180,7 @@ export function CopilotView() {
     <div className="mx-auto max-w-5xl space-y-6 p-4 sm:p-8">
       <header className="flex flex-wrap items-end justify-between gap-4">
         <div className="space-y-1">
-          <h1 className="text-xl font-semibold">SI Co-Pilot</h1>
+          <h1 className="text-xl font-semibold">EMBER SI</h1>
           <p className="text-muted max-w-2xl text-sm">
             Ask grounded questions about the experiments and documents. Every
             sentence in an answer cites its source; claims the evidence
@@ -232,7 +232,7 @@ export function CopilotView() {
 
       <p role="status" className="sr-only">
         {ask.isPending
-          ? "Asking the Co-Pilot…"
+          ? "Asking EMBER SI…"
           : turns[0]?.status === "success"
             ? "Answer ready."
             : ""}

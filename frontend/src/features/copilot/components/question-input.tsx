@@ -107,8 +107,8 @@ export function QuestionInput({
             <Button
               type="submit"
               size="icon"
-              aria-label={pending ? "Asking Co-Pilot" : "Send question"}
-              title={pending ? "Asking Co-Pilot" : "Send question"}
+              aria-label={pending ? "Asking EMBER SI" : "Send question"}
+              title={pending ? "Asking EMBER SI" : "Send question"}
               disabled={!canSubmit}
               className="rounded-full"
             >

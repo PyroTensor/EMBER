@@ -55,6 +55,26 @@ export const isTelemetryMissing = (error: unknown) =>
   isApiError(error) &&
   (error.status === 404 || error.code === "TELEMETRY_NOT_FOUND");
 
+export function getAvailableTelemetryChannels(
+  telemetry: Telemetry | undefined | null,
+): TelemetryChannel[] {
+  if (!telemetry || !telemetry.time_s.length) return [];
+  return (Object.keys(TELEMETRY_CHANNELS) as TelemetryChannel[]).filter(
+    (channel) => {
+      const values = telemetryValues(telemetry, channel);
+      return Boolean(
+        values?.some((value) => value !== null && Number.isFinite(value)),
+      );
+    },
+  );
+}
+
+export function hasRecordedTelemetry(
+  telemetry: Telemetry | undefined | null,
+): boolean {
+  return getAvailableTelemetryChannels(telemetry).length > 0;
+}
+
 /** One quantity per plot, so its y-axis always has exactly one unit. */
 export function TelemetryPlot({
   telemetry,
@@ -108,14 +128,8 @@ export function TelemetryPlot({
   );
 }
 
-/** Loads the selected run's telemetry and displays the chosen channel. */
-export function TelemetryChart({
-  experimentId,
-  channel,
-}: {
-  experimentId: string;
-  channel: TelemetryChannel;
-}) {
+/** Loads the selected run's telemetry and displays all recorded channels together. */
+export function TelemetryChart({ experimentId }: { experimentId: string }) {
   const telemetry = useTelemetry(experimentId);
 
   if (telemetry.isPending) {
@@ -145,5 +159,45 @@ export function TelemetryChart({
     );
   }
 
-  return <TelemetryPlot telemetry={telemetry.data} channel={channel} />;
+  const availableChannels = getAvailableTelemetryChannels(telemetry.data);
+  if (availableChannels.length === 0) {
+    return (
+      <EmptyState
+        icon={Activity}
+        title={`No telemetry for ${experimentId}`}
+        description="This run has no recorded time-series channels."
+      />
+    );
+  }
+
+  return (
+    <div
+      className={
+        availableChannels.length > 1 ? "grid gap-6 lg:grid-cols-2" : "space-y-4"
+      }
+    >
+      {availableChannels.map((channel) => {
+        const meta = TELEMETRY_CHANNELS[channel];
+        return (
+          <div
+            key={channel}
+            className="border-border bg-bg/50 min-w-0 space-y-2 rounded-md border p-4"
+          >
+            <div className="flex items-baseline justify-between gap-2">
+              <h4 className="text-fg text-xs font-semibold">
+                {meta.label}{" "}
+                <span className="text-muted font-mono font-normal">
+                  ({meta.unit})
+                </span>
+              </h4>
+              <span className="text-muted font-mono text-[11px]">
+                {telemetry.data.time_s.length} samples
+              </span>
+            </div>
+            <TelemetryPlot telemetry={telemetry.data} channel={channel} />
+          </div>
+        );
+      })}
+    </div>
+  );
 }

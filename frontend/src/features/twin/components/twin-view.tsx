@@ -250,7 +250,7 @@ export function TwinView() {
                     <span className="text-muted">
                       {params.oxygen_pct} % O₂ · {params.pressure_kpa} kPa ·{" "}
                       {params.flow_velocity_cm_s} cm/s · {params.gravity_g} g
-                      {localGravity !== null ? " · Flame Twin only" : ""}
+                      {localGravity !== null ? " · Flame Simulator only" : ""}
                     </span>
                   </p>
                 )}

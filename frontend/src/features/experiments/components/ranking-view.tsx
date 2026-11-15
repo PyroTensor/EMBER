@@ -1,13 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQueries } from "@tanstack/react-query";
 import { ListOrdered } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ErrorState } from "@/components/ui/error-state";
-import { Select } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
 import { presetId as presetKey } from "@/features/cabin";
@@ -43,15 +42,13 @@ import {
   type RunFilters,
 } from "./ranking-filters";
 import { RankedTable } from "./ranked-table";
-import { RunComparison } from "./run-comparison";
 import { RunDetails } from "./run-details";
 import { ScenarioPicker } from "./scenario-picker";
 import { ScoreBreakdown } from "./score-breakdown";
 import {
+  hasRecordedTelemetry,
   isTelemetryMissing,
-  TELEMETRY_OPTIONS,
   TelemetryChart,
-  type TelemetryChannel,
 } from "./telemetry-chart";
 import { WeightSliders } from "./weight-sliders";
 
@@ -116,24 +113,18 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
   const [section, setSection] = useState<RankingSection>("rankings");
   const [headerHeight, setHeaderHeight] = useState(0);
   const panelStart = useRef<HTMLDivElement>(null);
-  const scoreStart = useRef<HTMLDivElement>(null);
-  const compareStart = useRef<HTMLDivElement>(null);
+  const telemetryStart = useRef<HTMLDivElement>(null);
+  const pendingPanRunId = useRef<string | null>(null);
   const [weights, setWeights] = useState<RankWeights>({
     ...DEFAULT_RANK_WEIGHTS,
   });
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filters, setFilters] = useState<RunFilters>(DEFAULT_RUN_FILTERS);
-  const [channel, setChannel] = useState<TelemetryChannel>("flame_radius_mm");
-  const [pins, setPins] = useState<{ key: string; ids: string[] }>({
-    key: "",
-    ids: [],
-  });
 
   const req = useMemo<RankRequest>(
     () => ({ config: cfg, weights, limit: RANK_LIMIT }),
     [cfg, weights],
   );
-  const pinKey = JSON.stringify(req);
   const ranking = useRanking(req);
   // Never show a previous ranking next to an error: the error wins.
   const rankData = ranking.isError ? undefined : ranking.data;
@@ -159,24 +150,38 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
     [results, documentsById, mode],
   );
   const availabilityChecks = useQueries({
-    queries:
-      filters.telemetry === "all"
-        ? []
-        : results.map((run) => ({
-            queryKey: qk.telemetry(run.experiment_id),
-            queryFn: ({ signal }: { signal: AbortSignal }) =>
-              getTelemetry(run.experiment_id, signal),
-            staleTime: Infinity,
-          })),
+    queries: results.map((run) => ({
+      queryKey: qk.telemetry(run.experiment_id),
+      queryFn: ({ signal }: { signal: AbortSignal }) =>
+        getTelemetry(run.experiment_id, signal),
+      staleTime: Infinity,
+    })),
   });
+  const telemetryAvailableMap = new Map<string, boolean>();
+  for (let i = 0; i < results.length; i++) {
+    const id = results[i]?.experiment_id;
+    const check = availabilityChecks[i];
+    if (!id || !check) continue;
+    if (check.isSuccess) {
+      telemetryAvailableMap.set(id, hasRecordedTelemetry(check.data));
+    } else if (check.isError && isTelemetryMissing(check.error)) {
+      telemetryAvailableMap.set(id, false);
+    }
+  }
+  const runsWithTelemetry = results
+    .filter((run) => telemetryAvailableMap.get(run.experiment_id) === true)
+    .map((run) => run.experiment_id);
   const checkingTelemetry =
     filters.telemetry !== "all" &&
     availabilityChecks.some((check) => check.isPending);
-  const availabilityErrors = availabilityChecks.filter(
-    (check) => check.isError && !isTelemetryMissing(check.error),
-  ).length;
+  const availabilityErrors =
+    filters.telemetry === "all"
+      ? 0
+      : availabilityChecks.filter(
+          (check) => check.isError && !isTelemetryMissing(check.error),
+        ).length;
   const query = filters.query.trim().toLowerCase();
-  const filteredResults = results.filter((run, index) => {
+  const filteredResults = results.filter((run) => {
     const record = run.record;
     if (
       query &&
@@ -201,12 +206,7 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
     )
       return false;
     if (filters.telemetry !== "all") {
-      const check = availabilityChecks[index];
-      const available = check?.isSuccess
-        ? check.data.time_s.length > 0
-        : check?.isError && isTelemetryMissing(check.error)
-          ? false
-          : null;
+      const available = telemetryAvailableMap.get(run.experiment_id) ?? null;
       if (
         available === null ||
         (filters.telemetry === "available") !== available
@@ -216,45 +216,28 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
     return true;
   });
   const visibleResults = filteredResults.slice(0, filters.pageSize);
-  const pinnedIds = pins.key === pinKey ? pins.ids : [];
-  const pinnedRuns = pinnedIds.flatMap((id) => {
-    const run = results.find((result) => result.experiment_id === id);
-    return run ? [run] : [];
-  });
-  const scrollToTarget = (target: { current: HTMLElement | null }) => {
-    requestAnimationFrame(() => {
-      const element = target.current;
-      const nav = document.getElementById("ranking-section-nav");
-      if (!element || !nav) return;
-      const top =
-        window.scrollY +
-        element.getBoundingClientRect().top -
-        headerHeight -
-        nav.getBoundingClientRect().height -
-        12;
-      window.scrollTo({
-        top: Math.max(0, top),
-        behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-          ? "auto"
-          : "smooth",
+  const scrollToTarget = useCallback(
+    (target: { current: HTMLElement | null }) => {
+      requestAnimationFrame(() => {
+        const element = target.current;
+        const nav = document.getElementById("ranking-section-nav");
+        if (!element || !nav) return;
+        const top =
+          window.scrollY +
+          element.getBoundingClientRect().top -
+          headerHeight -
+          nav.getBoundingClientRect().height -
+          12;
+        window.scrollTo({
+          top: Math.max(0, top),
+          behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "auto"
+            : "smooth",
+        });
       });
-    });
-  };
-  const togglePin = (id: string) => {
-    const checking = !pinnedIds.includes(id) && pinnedIds.length < 3;
-    setPins((current) => {
-      const ids = current.key === pinKey ? current.ids : [];
-      return {
-        key: pinKey,
-        ids: ids.includes(id)
-          ? ids.filter((pinned) => pinned !== id)
-          : ids.length < 3
-            ? [...ids, id]
-            : ids,
-      };
-    });
-    if (checking && pinnedIds.length >= 1) scrollToTarget(compareStart);
-  };
+    },
+    [headerHeight],
+  );
 
   // Keep the user's pick while it is still in the list; otherwise the first row is selected.
   const effectiveId =
@@ -264,11 +247,43 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
   const selectedRun = visibleResults.find(
     (r) => r.experiment_id === effectiveId,
   );
+  const selectedTelemetry = useTelemetry(selectedRun?.experiment_id ?? null);
   const selectRun = (id: string, reveal = true) => {
     setSelectedId(id);
-    if (reveal) scrollToTarget(scoreStart);
+    if (!reveal) {
+      pendingPanRunId.current = null;
+      return;
+    }
+    if (
+      id === selectedRun?.experiment_id &&
+      selectedTelemetry.isSuccess &&
+      hasRecordedTelemetry(selectedTelemetry.data)
+    ) {
+      pendingPanRunId.current = null;
+      scrollToTarget(telemetryStart);
+      return;
+    }
+    pendingPanRunId.current = id;
   };
-  const selectedTelemetry = useTelemetry(selectedRun?.experiment_id ?? null);
+
+  useEffect(() => {
+    if (!selectedRun?.experiment_id) return;
+    if (pendingPanRunId.current !== selectedRun.experiment_id) return;
+    if (selectedTelemetry.isSuccess) {
+      pendingPanRunId.current = null;
+      if (hasRecordedTelemetry(selectedTelemetry.data)) {
+        scrollToTarget(telemetryStart);
+      }
+    } else if (selectedTelemetry.isError) {
+      pendingPanRunId.current = null;
+    }
+  }, [
+    selectedRun?.experiment_id,
+    selectedTelemetry.isSuccess,
+    selectedTelemetry.isError,
+    selectedTelemetry.data,
+    scrollToTarget,
+  ]);
   const selectedSourceId = selectedRun?.record?.source_doc_id?.toUpperCase();
   const selectedSource = selectedSourceId
     ? documentsById.get(selectedSourceId)
@@ -386,11 +401,10 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
               className="border-border text-muted border-b px-5 py-3 text-xs"
               aria-live="polite"
             >
-              Select a run to view its score and telemetry. Check 2 or 3 runs in
-              Compare to overlay their telemetry and compare conditions.
-              {pinnedIds.length === 1
-                ? " One run checked; choose another to compare."
-                : null}
+              Select a run to view its score breakdown. Runs badged with{" "}
+              <strong className="text-fg">Time series</strong> have recorded
+              telemetry curves; selecting one automatically pans to its graphs
+              below.
             </p>
             {ranking.isError ? (
               <CardBody>
@@ -435,10 +449,8 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
                   results={visibleResults}
                   selectedId={effectiveId}
                   onSelect={selectRun}
-                  pinnedIds={pinnedIds}
-                  onTogglePin={togglePin}
-                  pinDisabled={ranking.isFetching}
                   origins={origins}
+                  telemetryAvailable={telemetryAvailableMap}
                 />
               </div>
             )}
@@ -464,11 +476,7 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
               </p>
             ) : null}
           </Card>
-          <div
-            ref={scoreStart}
-            className="space-y-4"
-            aria-busy={ranking.isFetching}
-          >
+          <div className="space-y-4" aria-busy={ranking.isFetching}>
             {selectedRun && rankData?.weights ? (
               <Card>
                 <CardHeader
@@ -491,50 +499,52 @@ function RankingWorkspace({ presets }: { presets: Preset[] }) {
                 />
               </Card>
             )}
-            {selectedRun?.experiment_id ? (
-              <Card>
-                <CardHeader
-                  title="Telemetry"
-                  subtitle={`${selectedRun.experiment_id}: choose one measured channel to view over time`}
-                />
-                <CardBody className="space-y-4">
-                  <div className="max-w-xs">
-                    <Select
-                      label="Telemetry channel"
-                      value={channel}
-                      options={TELEMETRY_OPTIONS}
-                      onChange={setChannel}
-                    />
-                  </div>
-                  <TelemetryChart
-                    experimentId={selectedRun.experiment_id}
-                    channel={channel}
+            <div ref={telemetryStart}>
+              {selectedRun?.experiment_id ? (
+                <Card>
+                  <CardHeader
+                    title="Telemetry"
+                    subtitle={`${selectedRun.experiment_id}: all recorded time-series channels shown together`}
                   />
-                </CardBody>
-              </Card>
-            ) : (
-              <Card>
-                <EmptyState
-                  icon={ListOrdered}
-                  title="No telemetry selected"
-                  description="Choose an experiment above to inspect its measured channels."
-                />
-              </Card>
-            )}
-          </div>
-          {pinnedRuns.length >= 2 ? (
-            <div ref={compareStart}>
-              <RunComparison
-                runs={pinnedRuns}
-                channel={channel}
-                onChannelChange={setChannel}
-                onRemove={togglePin}
-                origins={origins}
-                documents={documentsById}
-                onOpenSource={(docId, page) => setReaderTarget({ docId, page })}
-              />
+                  <CardBody className="space-y-4">
+                    <TelemetryChart experimentId={selectedRun.experiment_id} />
+                    {runsWithTelemetry.length > 0 ? (
+                      <div className="border-border flex flex-wrap items-center gap-2 border-t pt-3">
+                        <span className="text-muted text-xs">
+                          Ranked runs with recorded telemetry:
+                        </span>
+                        {runsWithTelemetry.map((id) => {
+                          const active = id === selectedRun.experiment_id;
+                          return (
+                            <button
+                              key={id}
+                              type="button"
+                              onClick={() => selectRun(id, true)}
+                              className={
+                                active
+                                  ? "border-accent bg-accent/15 text-accent rounded border px-2 py-0.5 font-mono text-xs font-medium"
+                                  : "border-border bg-bg text-muted hover:text-fg hover:border-accent/40 rounded border px-2 py-0.5 font-mono text-xs transition-colors"
+                              }
+                            >
+                              {id}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : null}
+                  </CardBody>
+                </Card>
+              ) : (
+                <Card>
+                  <EmptyState
+                    icon={ListOrdered}
+                    title="No telemetry selected"
+                    description="Choose an experiment above to inspect its recorded time series."
+                  />
+                </Card>
+              )}
             </div>
-          ) : null}
+          </div>
         </section>
 
         <section
