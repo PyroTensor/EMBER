@@ -24,3 +24,6 @@ frontend/next-env.d.ts
 .DS_Store
 .idea/
 .vscode/
+
+# Local Docker Hub credentials
+docker-details.txt
