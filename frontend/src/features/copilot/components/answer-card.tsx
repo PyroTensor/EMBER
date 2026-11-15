@@ -140,7 +140,7 @@ function NoDataPanel({ message }: { message: string | undefined }) {
         </p>
         <p className="text-muted text-xs">
           Try asking about flame spread, oxygen limits, ventilation, gravity or
-          a specific run (e.g. EXP-0012).
+          a specific run (e.g. PSI-25_B1).
         </p>
       </div>
     </div>

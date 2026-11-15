@@ -78,8 +78,9 @@ class SnapshotTestRunRepo:
         return rows
 
     async def get_many(self, ids: builtins.list[str]) -> builtins.list[dict[str, Any]]:
-        by_id = {r["experiment_id"]: r for r in self.store.test_runs}
-        return [_record(by_id[i]) for i in dict.fromkeys(ids) if i in by_id]
+        by_id = {str(r["experiment_id"]).upper(): r for r in self.store.test_runs}
+        keys = dict.fromkeys(i.upper() for i in ids)
+        return [_record(by_id[k]) for k in keys if k in by_id]
 
     async def all_for_ranking(self) -> builtins.list[dict[str, Any]]:
         return await self.list()

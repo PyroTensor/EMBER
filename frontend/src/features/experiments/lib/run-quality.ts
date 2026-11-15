@@ -21,6 +21,9 @@ export function dataOrigin(
     : undefined;
   if (source?.is_proxy === true) return "proxy";
   if (source?.is_proxy === false) return "sourced";
+  // Official PSI test-run tables are ingested from CSVs that aren't corpus documents; the ingestion tags
+  // every such run with its PSI investigation code, which is what makes it source-linked.
+  if (typeof run.extra_telemetry?.psi_investigation_code === "string") return "sourced";
   return "unverified";
 }
 

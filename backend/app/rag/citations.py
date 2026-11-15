@@ -1,10 +1,10 @@
 """Citation tags and a citation-aware sentence splitter (fixes context.md §10.9).
 
-Tags: ``[DOC-XX p.Y]`` for document pages, ``[EXP-XXXX]`` for experiments (regexes from legacy
-``citation_check``). ``split_sentences`` understands LLM-style output: it splits on ``. ! ?`` + whitespace
-and on newlines, strips bullet markers (``- ``, ``* ``, ``1. ``), never splits inside a ``[ ... ]`` tag, and
-keeps tags that follow the full stop (``Claim. [DOC-01 p.3]``) with the sentence they belong to. Closing
-emphasis, quotes or brackets right after the terminator stay with the sentence (``**Do X.** Then Y.`` is two
+Tags: ``[DOC-XX p.Y]`` for document pages, ``[EXP-XXXX]`` / ``[PSI-25_B1]`` for test runs.
+``split_sentences`` understands LLM-style output: it splits on ``. ! ?`` + whitespace and on newlines,
+strips bullet markers (``- ``, ``* ``, ``1. ``), never splits inside a ``[ ... ]`` tag, and keeps tags
+that follow the full stop (``Claim. [DOC-01 p.3]``) with the sentence they belong to. Closing emphasis,
+quotes or brackets right after the terminator stay with the sentence (``**Do X.** Then Y.`` is two
 sentences, so an uncited bold heading can't hide inside the next, cited one).
 """
 
@@ -14,14 +14,18 @@ import re
 from typing import Final
 
 DOC_CITE: Final = re.compile(r"\[([A-Za-z0-9_-]+)\s+p\.(\d+)\]")
-EXP_CITE: Final = re.compile(r"\[(EXP-\d{4})\]")
+# Test-run ids: proxy ``EXP-0012``; official PSI ids kept verbatim (``PSI-25_B1``, ``PSI-99_2-5``).
+RUN_ID: Final = r"[A-Z][A-Z0-9]*-[A-Za-z0-9][A-Za-z0-9_.-]*"
+EXP_CITE: Final = re.compile(rf"\[({RUN_ID})\]")
+# A run id mentioned in a free-text question ("what happened in psi-25_b1?", "EXP-0012").
+RUN_ID_MENTION: Final = re.compile(r"\b(?:exp-\d{4}|[a-z][a-z0-9]*-\d+_[a-z0-9][a-z0-9.-]*[a-z0-9])\b", re.I)
 
 _TERMINATORS: Final = ".!?"
 # Markdown emphasis, closing quotes and brackets that may sit between a terminator and the next sentence.
 _CLOSERS: Final = "*_\"')”’"
 _BULLET: Final = re.compile(r"[ \t]*(?:[-*•][ \t]+|\d{1,3}[.)][ \t]+)")
 # A citation tag right after a full stop, optionally separated by spaces, commas or semicolons.
-_TRAILING_TAG: Final = re.compile(r"[ \t,;]*\[(?:[A-Za-z0-9_-]+\s+p\.\d+|EXP-\d{4})\]")
+_TRAILING_TAG: Final = re.compile(rf"[ \t,;]*\[(?:[A-Za-z0-9_-]+\s+p\.\d+|{RUN_ID})\]")
 
 
 def format_doc_tag(doc_id: str, page: int) -> str:
@@ -94,4 +98,13 @@ def split_sentences(text: str) -> list[str]:
     return sentences
 
 
-__all__ = ["DOC_CITE", "EXP_CITE", "extract_tags", "format_doc_tag", "format_exp_tag", "split_sentences"]
+__all__ = [
+    "DOC_CITE",
+    "EXP_CITE",
+    "RUN_ID",
+    "RUN_ID_MENTION",
+    "extract_tags",
+    "format_doc_tag",
+    "format_exp_tag",
+    "split_sentences",
+]

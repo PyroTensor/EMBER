@@ -10,6 +10,7 @@ import re
 from collections.abc import Mapping
 from typing import Any, Final
 
+from app.rag.citations import RUN_ID_MENTION
 from app.rag.state import EvidenceItem, GraphState
 from app.rag.toolkit import RagToolkit
 from app.schemas.enums import CombustionRegime, FuelMaterial, Program
@@ -92,8 +93,8 @@ def _run_item(r: Mapping[str, Any], score: float) -> EvidenceItem:
 async def run_sql_tool(question: str, tk: RagToolkit) -> list[EvidenceItem]:
     q = question.lower()
 
-    # 1. Explicit EXP-XXXX lookup
-    exp_ids = [m.upper() for m in re.findall(r"exp-\d{4}", q)]
+    # 1. Explicit run-id lookup (EXP-0012, PSI-25_B1, ...)
+    exp_ids = list(dict.fromkeys(m.group(0) for m in RUN_ID_MENTION.finditer(question)))
     if exp_ids:
         items = [_run_item(r, 1.0) for r in await tk.runs.get_many(exp_ids)]
         if items:
