@@ -1,5 +1,7 @@
-# Keep the build context small and secrets out of the image.
+# Keep the build context small, secrets out of the image, and standalone simulator scripts excluded.
+simulate_live_telemetry.py
 .venv/
+**/.venv/
 .env
 .env.*
 !.env.example

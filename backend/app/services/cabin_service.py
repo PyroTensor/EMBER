@@ -12,18 +12,21 @@ class CabinService:
     """No I/O: ``CabinConfig`` → domain ``CabinParams`` → ``RiskResult`` → ``CabinEvaluation``."""
 
     async def evaluate(self, cfg: CabinConfig) -> CabinEvaluation:
-        params = CabinParams(
-            oxygen_pct=cfg.oxygen_pct,
-            pressure_kpa=cfg.pressure_kpa,
-            flow_velocity_cm_s=cfg.flow_velocity_cm_s,
-            gravity_g=cfg.gravity_g,
-            fuel_material=cfg.fuel_material.value,
-            diluent_gas=cfg.diluent_gas.value,
-        )
-        return _to_schema(evaluate_cabin(params, ISS_BASELINE))
+        return evaluation_to_schema(evaluate_cabin(cabin_to_params(cfg), ISS_BASELINE))
 
 
-def _to_schema(result: RiskResult) -> CabinEvaluation:
+def cabin_to_params(cfg: CabinConfig) -> CabinParams:
+    return CabinParams(
+        oxygen_pct=cfg.oxygen_pct,
+        pressure_kpa=cfg.pressure_kpa,
+        flow_velocity_cm_s=cfg.flow_velocity_cm_s,
+        gravity_g=cfg.gravity_g,
+        fuel_material=cfg.fuel_material.value,
+        diluent_gas=cfg.diluent_gas.value,
+    )
+
+
+def evaluation_to_schema(result: RiskResult) -> CabinEvaluation:
     return CabinEvaluation(
         risk_index=result.risk_index,
         risk_band=RiskBand(result.risk_band),
@@ -37,4 +40,4 @@ def _to_schema(result: RiskResult) -> CabinEvaluation:
     )
 
 
-__all__ = ["CabinService"]
+__all__ = ["CabinService", "cabin_to_params", "evaluation_to_schema"]

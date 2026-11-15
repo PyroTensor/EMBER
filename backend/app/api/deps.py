@@ -49,6 +49,7 @@ from app.services.copilot_service import CopilotService
 from app.services.document_service import DocumentService
 from app.services.experiment_service import ExperimentService
 from app.services.health_service import HealthService
+from app.services.live_telemetry_service import LiveTelemetryService
 from app.services.preset_service import PresetService
 from app.services.ranking_service import RankingService
 from app.services.telemetry_service import TelemetryService
@@ -159,6 +160,13 @@ def get_telemetry_service(reader: TelemetryReaderDep) -> TelemetryService:
 TelemetryServiceDep = Annotated[TelemetryService, Depends(get_telemetry_service)]
 
 
+def get_live_telemetry_service(reader: TestRunReaderDep) -> LiveTelemetryService:
+    return LiveTelemetryService(reader)
+
+
+LiveTelemetryServiceDep = Annotated[LiveTelemetryService, Depends(get_live_telemetry_service)]
+
+
 def get_document_service(reader: DocumentReaderDep) -> DocumentService:
     return DocumentService(reader)
 
@@ -194,6 +202,7 @@ __all__ = [
     "DocumentServiceDep",
     "ExperimentServiceDep",
     "HealthServiceDep",
+    "LiveTelemetryServiceDep",
     "PresetReaderDep",
     "PresetServiceDep",
     "ROSessionDep",
@@ -211,6 +220,7 @@ __all__ = [
     "get_document_service",
     "get_experiment_service",
     "get_health_service",
+    "get_live_telemetry_service",
     "get_preset_reader",
     "get_preset_service",
     "get_ranking_service",

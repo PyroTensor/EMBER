@@ -3,6 +3,7 @@ import {
   ChartLine,
   Flame,
   LayoutDashboard,
+  Radio,
   Search,
   SlidersHorizontal,
   type LucideIcon,
@@ -23,6 +24,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
   { href: "/ranking", label: "Ranking & Telemetry", icon: ChartLine, module: "03" },
   { href: "/resources", label: "Search Resources", icon: Search, module: "04" },
   { href: "/copilot", label: "EMBER SI", icon: BotMessageSquare, module: "05" },
+  { href: "/live-telemetry", label: "Live Telemetry", icon: Radio, module: "06" },
 ];
 
 export function isActive(href: string, pathname: string): boolean {

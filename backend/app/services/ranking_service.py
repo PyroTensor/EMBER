@@ -25,7 +25,7 @@ class RankingService:
             weights.model_dump(),
             req.limit,
         )
-        return RankResponse(weights=weights, results=[_to_schema(r) for r in ranked])
+        return RankResponse(weights=weights, results=[ranked_run_to_schema(r) for r in ranked])
 
 
 def _to_params(cfg: CabinConfig) -> CabinParams:
@@ -49,7 +49,7 @@ def _normalized(w: RankWeights) -> RankWeights:
     )
 
 
-def _to_schema(r: RankedRun) -> RankedExperiment:
+def ranked_run_to_schema(r: RankedRun) -> RankedExperiment:
     return RankedExperiment(
         rank=r.rank,
         experiment_id=r.experiment_id,
@@ -61,4 +61,4 @@ def _to_schema(r: RankedRun) -> RankedExperiment:
     )
 
 
-__all__ = ["RankingService"]
+__all__ = ["RankingService", "ranked_run_to_schema"]

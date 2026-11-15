@@ -1,6 +1,13 @@
-# Keep the build context small and local env/secrets out of the image.
+# Keep the build context small and local env/secrets/simulators out of the image.
+simulate_live_telemetry.py
 node_modules/
+**/node_modules/
 .next/
+**/.next/
+.venv/
+**/.venv/
+**/__pycache__/
+*.py[cod]
 out/
 coverage/
 *.tsbuildinfo

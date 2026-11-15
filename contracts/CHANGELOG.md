@@ -2,6 +2,13 @@
 
 Every change to `contracts/` gets an entry: date, what changed, and why.
 
+## 2026-11-15: live telemetry dashboard
+- Added `GET/POST /api/live-telemetry` and `POST /api/live-telemetry/reset`, `LiveStreamStatus`,
+  `LiveSensorReadings`, `LiveTelemetryIngestRequest`, `LiveTelemetrySample`, and `LiveTelemetryState`
+  for live cabin/rig streaming, rolling history, real-time fire-risk evaluation, and historical run matching.
+- Why: enable the Live Telemetry page (`/live-telemetry`) fed by an external Python script or the
+  in-browser simulator while keeping current schema v1 enums and endpoints intact.
+
 ## 2026-11-14: gaseous fuels in `FuelMaterial`
 - Added `Ethylene`, `Ethane`, `Propane`, `Butane` to the `fuel_material` enum in `schema_v1.json` and the
   `FuelMaterial` enum in `openapi_v1.yaml`.

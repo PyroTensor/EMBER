@@ -24,6 +24,11 @@ export type DocumentSummary = Schemas["DocumentSummary"];
 export type DocumentDetail = Schemas["DocumentDetail"];
 export type ErrorResponse = Schemas["ErrorResponse"];
 export type EvidenceSource = Schemas["EvidenceSource"];
+export type LiveStreamStatus = Schemas["LiveStreamStatus"];
+export type LiveSensorReadings = Schemas["LiveSensorReadings"];
+export type LiveTelemetryIngestRequest = Schemas["LiveTelemetryIngestRequest"];
+export type LiveTelemetrySample = Schemas["LiveTelemetrySample"];
+export type LiveTelemetryState = Schemas["LiveTelemetryState"];
 
 /** One combustion test run (contracts/schema_v1.json). */
 export type TestRunRecord = NonNullable<RankedExperiment["record"]>;
