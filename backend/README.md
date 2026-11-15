@@ -55,6 +55,16 @@ variables (no `.env` is copied in). Run migrations from the image with `docker r
 Every variable maps 1:1 to a field of `app.core.config.Settings` (names are case-sensitive). `backend/.env` is
 loaded first; real environment variables win.
 
+For the existing database in the root Compose stack, start it from the repository root with
+`docker compose up -d db`. A backend running on the host must use `DB_HOST=localhost`,
+`DB_PORT=5433`, and `DATA_BACKEND=postgres`, as shown in `.env.example`. The backend container
+uses `DB_HOST=db` and `DB_PORT=5432` through Compose overrides.
+
+`DATA_BACKEND=postgres` prevents a failed connection from silently serving an old proxy snapshot.
+Check `/api/health` for `db: true`, then check `/api/experiments` for the expected ingested run IDs.
+Restart the backend after changing `.env`. Existing `.env` files are not updated by copying repository
+changes; update these two settings explicitly. Do not commit `.env`, which may contain API credentials.
+
 | Variable | Default | Notes |
 |---|---|---|
 | `ENV` | `dev` | `dev` / `test` / `prod`. `prod` rejects placeholder DB passwords and `http://` CORS origins |
