@@ -27,3 +27,8 @@ frontend/next-env.d.ts
 
 # Local Docker Hub credentials
 docker-details.txt
+
+# Local generated artifacts and seed data
+.pptx-polish/
+backend/data/seed/
+output/
