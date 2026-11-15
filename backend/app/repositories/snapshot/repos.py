@@ -111,7 +111,11 @@ class SnapshotChunkRepo:
     ) -> list[dict[str, Any]]:
         chunks = self.store.chunks
         allowed = {
-            i for i, c in enumerate(chunks) if not filter or _contains(c.get("metadata") or {}, filter)
+            i
+            for i, c in enumerate(chunks)
+            if (not filter or _contains(c.get("metadata") or {}, filter))
+            and (c.get("metadata") or {}).get("source_type") != "psi_dataset"
+            and "-TABLE" not in str(c.get("doc_id") or "").upper()
         }
 
         bm25 = {i: s for i, s in self.store.bm25.scores(query).items() if i in allowed}
@@ -180,15 +184,19 @@ class SnapshotDocumentRepo:
     async def get_detail(self, doc_id: str) -> dict[str, Any] | None:
         doc_row = next((d for d in self.store.documents if str(d["doc_id"]) == doc_id), None)
         if doc_row is None:
+            doc_low = doc_id.lower()
+            doc_row = next((d for d in self.store.documents if str(d["doc_id"]).lower() == doc_low), None)
+        if doc_row is None:
             return None
+        canonical_id = str(doc_row["doc_id"])
         chunks = sorted(
-            (c for c in self.store.chunks if str(c["doc_id"]) == doc_id),
+            (c for c in self.store.chunks if str(c["doc_id"]) == canonical_id),
             key=lambda c: (int(c.get("page") or 1), int(c.get("id") or 0)),
         )
         related_runs = sorted(
             str(r["experiment_id"])
             for r in self.store.test_runs
-            if str(r.get("source_doc_id") or "") == doc_id
+            if str(r.get("source_doc_id") or "") == canonical_id
         )
         summary = extract_doc_meta(doc_row, chunks)
         return {

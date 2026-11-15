@@ -7,6 +7,7 @@ import { ErrorState } from "@/components/ui/error-state";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/cn";
 import { useDocument } from "../hooks";
+import { getDocumentDownloadUrl, isCsvOrTableDoc } from "../lib/psi-publications";
 
 export interface DocumentReaderTarget {
   docId: string;
@@ -230,14 +231,26 @@ export function DocumentReaderModal({ target, onClose }: DocumentReaderModalProp
             </h2>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close document reader"
-            className="shrink-0 rounded-md border border-border bg-surface p-1.5 text-muted transition-colors hover:bg-surface-2 hover:text-fg"
-          >
-            <X aria-hidden className="size-4" />
-          </button>
+          <div className="flex shrink-0 items-center gap-2">
+            <a
+              href={getDocumentDownloadUrl(doc?.doc_id ?? target.docId)}
+              download
+              className="inline-flex items-center gap-1.5 rounded-md border border-sky-400/40 bg-sky-400/10 px-3 py-1.5 font-mono text-xs font-medium text-sky-300 transition-colors hover:bg-sky-400/20"
+            >
+              <Download aria-hidden className="size-3.5" />
+              {isCsvOrTableDoc(doc?.doc_id ?? target.docId)
+                ? "Download CSV"
+                : "Download PDF"}
+            </a>
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Close document reader"
+              className="shrink-0 rounded-md border border-border bg-surface p-1.5 text-muted transition-colors hover:bg-surface-2 hover:text-fg"
+            >
+              <X aria-hidden className="size-4" />
+            </button>
+          </div>
         </header>
 
         {/* Page selector + Downloaded NASA PDFs + External NASA Source links */}
@@ -357,12 +370,24 @@ export function DocumentReaderModal({ target, onClose }: DocumentReaderModalProp
               <Skeleton className="h-24 w-full" />
             </div>
           ) : isError ? (
-            <ErrorState
-              title={`Could not load document ${target.docId}`}
-              error={error}
-              onRetry={() => refetch()}
-              retrying={isFetching}
-            />
+            <div className="space-y-4">
+              <ErrorState
+                title={`Could not load document ${target.docId}`}
+                error={error}
+                onRetry={() => refetch()}
+                retrying={isFetching}
+              />
+              <div className="flex justify-center">
+                <a
+                  href={getDocumentDownloadUrl(target.docId)}
+                  download
+                  className="inline-flex items-center gap-1.5 rounded-md border border-sky-400/40 bg-sky-400/10 px-4 py-2 font-mono text-xs font-medium text-sky-300 transition-colors hover:bg-sky-400/20"
+                >
+                  <FileDown aria-hidden className="size-4" />
+                  Download original file directly
+                </a>
+              </div>
+            </div>
           ) : activePdf ? (
             <div className="space-y-3">
               <div className="flex items-center justify-between">

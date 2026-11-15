@@ -52,7 +52,10 @@ def _after_router(state: GraphState) -> str:
 
 
 def _after_hybrid(state: GraphState) -> str:
-    return "evidence_grader" if state.get("route") == "facts" else "sql_tool"
+    has_chunks = any(e["kind"] == "chunk" for e in state.get("evidence") or [])
+    if state.get("route") == "search" and not has_chunks:
+        return "sql_tool"
+    return "evidence_grader"
 
 
 def _after_sql(state: GraphState) -> str:

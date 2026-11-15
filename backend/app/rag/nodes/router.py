@@ -2,18 +2,21 @@
 
 from __future__ import annotations
 
+import logging
 import re
 from typing import Any, Final
 
 from app.rag.citations import RUN_ID_MENTION
 from app.rag.prompts import load_prompt
-from app.rag.scope import DOMAIN_KEYWORDS, OUT_OF_SCOPE_HINTS
+from app.rag.scope import looks_in_scope
 from app.rag.state import GraphState, RouteKind
 from app.rag.toolkit import RagToolkit
 
+logger = logging.getLogger(__name__)
+
 COMPARE_PATTERNS: Final = re.compile(
-    r"\b(compare|versus|vs\.?|difference between|artemis|lunar|mars|1g|0g|scenario|habitat|rank|"
-    r"closest|similar to|iss cabin|iss standard|this cabin|my cabin|cabin configuration)\b",
+    r"\b(compare|versus|vs\.?|difference between|closest|similar to|nearest|rank|ranking|"
+    r"match|this cabin|my cabin|iss cabin|iss standard|cabin configuration|which runs|which tests)\b",
     re.IGNORECASE,
 )
 FACTS_PATTERNS: Final = re.compile(
@@ -26,11 +29,8 @@ _LLM_ROUTES: Final[tuple[RouteKind, ...]] = ("out_of_scope", "compare", "facts",
 
 async def classify_question(question: str, tk: RagToolkit, has_scenario: bool = False) -> RouteKind:
     q = question.lower().strip()
-    tokens = set(re.findall(r"[a-z0-9_-]+", q))
 
-    if any(h in q for h in OUT_OF_SCOPE_HINTS) and not (tokens & DOMAIN_KEYWORDS):
-        return "out_of_scope"
-    if not (tokens & DOMAIN_KEYWORDS) and not RUN_ID_MENTION.search(q) and not has_scenario:
+    if not looks_in_scope(q) and not RUN_ID_MENTION.search(q) and not has_scenario:
         return "out_of_scope"
 
     if has_scenario:
@@ -41,10 +41,13 @@ async def classify_question(question: str, tk: RagToolkit, has_scenario: bool = 
         return "compare"
 
     if tk.llm.name != "heuristic":
-        out = (await tk.llm.complete(load_prompt("router"), question)).lower()
-        for r in _LLM_ROUTES:
-            if r in out:
-                return r
+        try:
+            out = (await tk.llm.complete(load_prompt("router"), question)).lower()
+            for r in _LLM_ROUTES:
+                if r in out:
+                    return r
+        except Exception:
+            logger.warning("router LLM call failed; falling back to search", exc_info=True)
 
     return "search"
 

@@ -15,7 +15,7 @@ from typing import Final
 
 DOC_CITE: Final = re.compile(r"\[([A-Za-z0-9_-]+)\s+p\.(\d+)\]")
 # Test-run ids: proxy ``EXP-0012``; official PSI ids kept verbatim (``PSI-25_B1``, ``PSI-99_2-5``).
-RUN_ID: Final = r"[A-Z][A-Z0-9]*-[A-Za-z0-9][A-Za-z0-9_.-]*"
+RUN_ID: Final = r"(?:[A-Z][A-Z0-9]*-[A-Za-z0-9][A-Za-z0-9_.-]*|[A-Za-z][A-Za-z0-9]*-\d+[A-Za-z0-9_.-]*)"
 EXP_CITE: Final = re.compile(rf"\[({RUN_ID})\]")
 # A run id mentioned in a free-text question ("what happened in psi-25_b1?", "EXP-0012").
 RUN_ID_MENTION: Final = re.compile(r"\b(?:exp-\d{4}|[a-z][a-z0-9]*-\d+_[a-z0-9][a-z0-9.-]*[a-z0-9])\b", re.I)

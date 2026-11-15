@@ -126,6 +126,7 @@ export function CopilotView() {
   const documentsById = useMemo(() => {
     const map = new Map<string, DocumentSummary>();
     for (const d of documents ?? []) {
+      map.set(d.doc_id, d);
       map.set(d.doc_id.toUpperCase(), d);
     }
     return map;
@@ -345,6 +346,7 @@ function TurnView({
       />
       <RelevantPapers
         response={response}
+        question={turn.req.question}
         documentsById={documentsById}
         onOpenDocument={onOpenDocument}
       />

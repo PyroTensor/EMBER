@@ -121,6 +121,16 @@ paths:
         "404": { description: Unknown document, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
         "422": { description: Validation error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
         "500": { description: Internal server error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+  /api/documents/{doc_id}/download:
+    get:
+      summary: Download original PDF, CSV table, or Markdown export for a source document
+      parameters:
+        - { name: doc_id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200": { description: Binary PDF, CSV, or Markdown file attachment }
+        "404": { description: Unknown document, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+        "422": { description: Validation error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
+        "500": { description: Internal server error, content: { application/json: { schema: { $ref: "#/components/schemas/ErrorResponse" } } } }
   /api/copilot/ask:
     post:
       summary: Grounded RAG question answering (LangGraph)

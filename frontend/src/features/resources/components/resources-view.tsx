@@ -3,9 +3,11 @@
 import { Fragment, useMemo, useState, type ReactNode } from "react";
 import {
   BookOpen,
+  Download,
   ExternalLink,
   FileText,
   FlaskConical,
+  GraduationCap,
   Search,
   X,
 } from "lucide-react";
@@ -20,6 +22,11 @@ import {
   type DocumentReaderTarget,
 } from "@/features/copilot/components/document-reader";
 import { useDocuments } from "@/features/copilot/hooks";
+import {
+  findRelevantPsiPublications,
+  getDocumentDownloadUrl,
+  isCsvOrTableDoc,
+} from "@/features/copilot/lib/psi-publications";
 import { cn } from "@/lib/cn";
 import {
   formatSourceLinkLabel,
@@ -116,6 +123,26 @@ export function ResourcesView() {
   );
 
   const hasKeywords = terms.length > 0;
+  const documentsById = useMemo(() => {
+    const map = new Map<string, (typeof results)[number]["doc"]>();
+    for (const doc of documents ?? []) {
+      map.set(doc.doc_id, doc);
+      map.set(doc.doc_id.toUpperCase(), doc);
+    }
+    return map;
+  }, [documents]);
+  const matchedPublications = useMemo(
+    () =>
+      hasKeywords
+        ? findRelevantPsiPublications({
+            docIds: results.map((r) => r.doc.doc_id),
+            documentsById,
+            question: query,
+            limit: 6,
+          })
+        : [],
+    [hasKeywords, results, documentsById, query],
+  );
 
   return (
     <div className="mx-auto max-w-6xl space-y-6 p-4 sm:p-8">
@@ -293,6 +320,59 @@ export function ResourcesView() {
         </ul>
       )}
 
+      {hasKeywords && matchedPublications.length > 0 ? (
+        <Card>
+          <CardBody className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <GraduationCap
+                  aria-hidden
+                  className="size-4 text-emerald-400"
+                />
+                <h2 className="text-fg text-sm font-medium">
+                  Related NASA PSI Peer-Reviewed Publications (
+                  {matchedPublications.length})
+                </h2>
+              </div>
+              <span className="text-muted text-xs">
+                DOI &amp; journal citations matching your query
+              </span>
+            </div>
+            <ul className="space-y-2">
+              {matchedPublications.map((pub) => (
+                <li
+                  key={`${pub.url}-${pub.title}`}
+                  className="border-border bg-bg/70 flex flex-wrap items-center justify-between gap-3 rounded-lg border px-3.5 py-2.5"
+                >
+                  <div className="min-w-0 flex-1 space-y-1">
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {pub.psiCodes.map((code) => (
+                        <Badge key={code} tone="info">
+                          {code}
+                        </Badge>
+                      ))}
+                    </div>
+                    <p className="text-fg text-sm leading-snug font-medium">
+                      {pub.title}
+                    </p>
+                    <p className="text-muted text-xs">{pub.authors}</p>
+                  </div>
+                  <a
+                    href={pub.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded border border-emerald-400/40 bg-emerald-400/10 px-3 py-1.5 font-mono text-xs font-medium text-emerald-300 transition-colors hover:bg-emerald-400/20"
+                  >
+                    Open DOI / Paper
+                    <ExternalLink aria-hidden className="size-3.5" />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </CardBody>
+        </Card>
+      ) : null}
+
       <DocumentReaderModal
         key={
           readerTarget
@@ -323,11 +403,11 @@ function ResourceResultCard({
   return (
     <article className="rounded-card border-border bg-surface space-y-4 border p-5 transition-colors hover:border-sky-400/40">
       {/* Header row */}
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="min-w-0 flex-1 space-y-1.5">
+      <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
+        <div className="min-w-0 space-y-1.5 xl:flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center gap-1 rounded border border-sky-400/40 bg-sky-400/10 px-2 py-0.5 font-mono text-xs font-medium text-sky-300">
-              <FileText aria-hidden className="size-3.5" />
+            <span className="inline-flex max-w-full items-center gap-1 break-all rounded border border-sky-400/40 bg-sky-400/10 px-2 py-0.5 font-mono text-xs font-medium text-sky-300">
+              <FileText aria-hidden className="size-3.5 shrink-0" />
               <HighlightedText text={doc.doc_id} terms={searchTerms} />
             </span>
             {doc.investigation ? (
@@ -365,6 +445,14 @@ function ResourceResultCard({
 
         {/* Action buttons */}
         <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <a
+            href={getDocumentDownloadUrl(doc.doc_id)}
+            download
+            className="inline-flex items-center gap-1.5 rounded border border-sky-400/40 bg-sky-400/10 px-3 py-1.5 font-mono text-xs font-medium text-sky-300 transition-colors hover:bg-sky-400/20"
+          >
+            <Download aria-hidden className="size-3.5" />
+            {isCsvOrTableDoc(doc.doc_id) ? "Download CSV" : "Download PDF"}
+          </a>
           <button
             type="button"
             onClick={() =>
@@ -373,10 +461,10 @@ function ResourceResultCard({
                 page: firstMatchedPage,
               })
             }
-            className="inline-flex items-center gap-1.5 rounded border border-sky-400/40 bg-sky-400/10 px-3 py-1.5 font-mono text-xs font-medium text-sky-300 transition-colors hover:bg-sky-400/20"
+            className="border-border bg-bg text-muted hover:text-fg inline-flex items-center gap-1.5 rounded border px-3 py-1.5 font-mono text-xs transition-colors hover:border-sky-400/40"
           >
             <BookOpen aria-hidden className="size-3.5" />
-            Read paper
+            Preview
           </button>
           {primaryUrl ? (
             <a

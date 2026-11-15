@@ -32,6 +32,8 @@ kw AS (
   SELECT c.id, row_number() OVER (ORDER BY ts_rank_cd(c.tsv, q.tsq) DESC, c.id) AS r
   FROM chunks c, q
   WHERE numnode(q.tsq) > 0 AND c.tsv @@ q.tsq AND c.metadata @> CAST(:filter AS jsonb)
+    AND COALESCE(c.metadata->>'source_type', '') != 'psi_dataset'
+    AND c.doc_id NOT LIKE '%-TABLE%'
   ORDER BY r LIMIT :k)"""
 
 _VEC_CTE: Final = """
@@ -39,6 +41,8 @@ vec AS (
   SELECT c.id, row_number() OVER (ORDER BY c.embedding <=> :emb, c.id) AS r
   FROM chunks c
   WHERE c.embedding IS NOT NULL AND c.metadata @> CAST(:filter AS jsonb)
+    AND COALESCE(c.metadata->>'source_type', '') != 'psi_dataset'
+    AND c.doc_id NOT LIKE '%-TABLE%'
   ORDER BY c.embedding <=> :emb LIMIT :k)"""
 
 _HYBRID_SQL: Final = f"""

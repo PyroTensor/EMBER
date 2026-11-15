@@ -12,6 +12,7 @@ from typing import Any
 
 from app.core.constants import NO_DATA_MESSAGE
 from app.rag.citations import DOC_CITE, EXP_CITE, split_sentences
+from app.rag.nodes.answer_generator import _synthesize_heuristic
 from app.rag.state import CitationItem, EvidenceItem, GraphState
 from app.rag.toolkit import RagToolkit
 
@@ -25,12 +26,21 @@ def verify_and_extract_citations(
         return answer, False, [], []
 
     valid_docs: dict[tuple[str, int], str] = {}
+    doc_canon: dict[tuple[str, int], tuple[str, str]] = {}
     valid_exps: dict[str, tuple[str | None, int | None, str]] = {}
+    exp_canon: dict[str, tuple[str, str | None, int | None, str]] = {}
     for e in evidence:
         if e.get("doc_id") and e.get("page"):
-            valid_docs[(str(e["doc_id"]), int(e["page"] or 0))] = e["text"][:280]
+            canon_doc = str(e["doc_id"])
+            page_num = int(e["page"] or 0)
+            snippet = e["text"][:280]
+            valid_docs[(canon_doc, page_num)] = snippet
+            doc_canon[(canon_doc.lower(), page_num)] = (canon_doc, snippet)
         if e.get("experiment_id"):
-            valid_exps[str(e["experiment_id"])] = (e.get("doc_id"), e.get("page"), e["text"][:280])
+            canon_eid = str(e["experiment_id"])
+            val = (e.get("doc_id"), e.get("page"), e["text"][:280])
+            valid_exps[canon_eid] = val
+            exp_canon[canon_eid.lower()] = (canon_eid, *val)
 
     sentences = split_sentences(answer)
     kept: list[str] = []
@@ -44,42 +54,58 @@ def verify_and_extract_citations(
             dropped.append(sent)
             continue
 
+        resolved_docs: list[tuple[str, int, str]] = []
         all_valid = True
         for doc_id, page_s in doc_matches:
-            key = (doc_id, int(page_s))
-            if key not in valid_docs:
+            page = int(page_s)
+            hit = doc_canon.get((doc_id.lower(), page))
+            if hit is None:
                 all_valid = False
                 break
-        for eid in exp_matches:
-            if eid not in valid_exps:
-                all_valid = False
-                break
+            resolved_docs.append((hit[0], page, hit[1]))
+
+        resolved_exps: list[tuple[str, str | None, int | None, str]] = []
+        if all_valid:
+            for eid in exp_matches:
+                ehit = exp_canon.get(eid.lower())
+                if ehit is None:
+                    all_valid = False
+                    break
+                resolved_exps.append(ehit)
 
         if not all_valid:
             dropped.append(sent)
             continue
 
-        kept.append(sent)
-        for doc_id, page_s in doc_matches:
-            page = int(page_s)
-            label = f"[{doc_id} p.{page}]"
+        # Normalize tag casing inside the sentence so UI chips and eval always match canonical IDs
+        norm_sent = DOC_CITE.sub(
+            lambda m: f"[{doc_canon[(m.group(1).lower(), int(m.group(2)))][0]} p.{int(m.group(2))}]",
+            sent,
+        )
+        norm_sent = EXP_CITE.sub(
+            lambda m: f"[{exp_canon[m.group(1).lower()][0]}]",
+            norm_sent,
+        )
+        kept.append(norm_sent)
+
+        for canon_doc, page, snippet in resolved_docs:
+            label = f"[{canon_doc} p.{page}]"
             citations[label] = {
                 "id": label,
                 "kind": "doc",
-                "doc_id": doc_id,
+                "doc_id": canon_doc,
                 "page": page,
                 "experiment_id": None,
-                "snippet": valid_docs[(doc_id, page)],
+                "snippet": snippet,
             }
-        for eid in exp_matches:
-            label = f"[{eid}]"
-            exp_doc_id, exp_page, snippet = valid_exps[eid]
+        for canon_eid, exp_doc_id, exp_page, snippet in resolved_exps:
+            label = f"[{canon_eid}]"
             citations[label] = {
                 "id": label,
                 "kind": "experiment",
                 "doc_id": exp_doc_id,
                 "page": exp_page,
-                "experiment_id": eid,
+                "experiment_id": canon_eid,
                 "snippet": snippet,
             }
 
@@ -89,11 +115,21 @@ def verify_and_extract_citations(
 
 
 async def citation_check_node(state: GraphState, tk: RagToolkit) -> dict[str, Any]:
+    evidence = state.get("evidence") or []
+    was_supported = bool(state.get("supported"))
     ans, sup, cites, dropped = verify_and_extract_citations(
         state.get("answer", ""),
-        state.get("evidence") or [],
-        bool(state.get("supported")),
+        evidence,
+        was_supported,
     )
+    if not sup and was_supported and evidence and state.get("route") != "out_of_scope":
+        fallback_ans, fallback_sup = _synthesize_heuristic(
+            state.get("original_question") or state["question"],
+            evidence,
+            scenario=state.get("scenario"),
+        )
+        if fallback_sup:
+            ans, sup, cites, _ = verify_and_extract_citations(fallback_ans, evidence, True)
     return {
         "answer": ans,
         "supported": sup,

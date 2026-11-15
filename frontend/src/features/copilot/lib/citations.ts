@@ -51,14 +51,13 @@ export function findCitation(
 export const tagLabel = (tag: string) =>
   tag.replace(/^\[|\]$/g, "").replace(/\s+/g, " ");
 
-/** Parse doc_id and optional page number from a tag like "[DOC-03 p.2]" or "DOC-03 p.2". */
+/** Parse doc_id and optional page number from a tag like "[DOC-03 p.2]" or "ACME_CFI-G_Final_Report p.30". */
 export function parseDocTag(
   tag: string,
 ): { docId: string; page?: number } | null {
   const m = DOC_TAG_RE.exec(tag.trim());
   const id = m?.[1] ?? m?.[3];
   if (!m || !id) return null;
-  const docId = id.toUpperCase();
   const page = m[2] ? Number.parseInt(m[2], 10) : undefined;
-  return { docId, page: Number.isFinite(page) ? page : undefined };
+  return { docId: id, page: Number.isFinite(page) ? page : undefined };
 }

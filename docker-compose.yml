@@ -51,6 +51,7 @@ services:
       CORS_ORIGINS: http://localhost:3000
     volumes:
       - hf_cache:/app/.cache/huggingface  # embedding model, downloaded once
+      - ./backend/data/seed:/app/data/seed:ro
     ports:
       - "8000:8000"
 

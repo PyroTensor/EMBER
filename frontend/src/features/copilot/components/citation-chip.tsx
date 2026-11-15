@@ -1,10 +1,15 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { BookOpen, FileText, FlaskConical, X } from "lucide-react";
+import { BookOpen, Download, FileText, FlaskConical, X } from "lucide-react";
 import type { Citation, DocumentSummary } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
 import { parseDocTag, tagLabel } from "../lib/citations";
+import {
+  formatDocDisplayName,
+  getDocumentDownloadUrl,
+  isCsvOrTableDoc,
+} from "../lib/psi-publications";
 import type { DocumentReaderTarget } from "./document-reader";
 
 interface CitationChipProps {
@@ -35,9 +40,12 @@ export function CitationChip({
   const wrapperRef = useRef<HTMLSpanElement>(null);
 
   const parsedDoc = parseDocTag(tag);
-  const resolvedDocId = (citation?.doc_id ?? parsedDoc?.docId)?.toUpperCase();
+  const rawDocId = citation?.doc_id ?? parsedDoc?.docId;
   const resolvedPage = citation?.page ?? parsedDoc?.page ?? undefined;
-  const docMeta = resolvedDocId ? documentsById?.get(resolvedDocId) : undefined;
+  const docMeta = rawDocId
+    ? (documentsById?.get(rawDocId) ?? documentsById?.get(rawDocId.toUpperCase()))
+    : undefined;
+  const resolvedDocId = docMeta?.doc_id ?? rawDocId;
 
   const isDoc = citation?.kind === "doc" || Boolean(parsedDoc);
   const Icon = isDoc ? FileText : FlaskConical;
@@ -118,9 +126,9 @@ export function CitationChip({
                     : (citation.experiment_id ?? tagLabel(tag))
                   : tagLabel(tag)}
               </span>
-              {docMeta?.title ? (
+              {resolvedDocId ? (
                 <span className="mt-0.5 block text-xs leading-snug font-medium text-sky-300">
-                  {docMeta.title}
+                  {formatDocDisplayName(resolvedDocId, docMeta)}
                 </span>
               ) : null}
               {citation && !isDoc && citation.doc_id ? (
@@ -147,20 +155,35 @@ export function CitationChip({
               {citation.snippet}
             </span>
           ) : null}
-          {resolvedDocId && onOpenDocument ? (
-            <span className="border-border mt-2.5 block border-t pt-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setOpen(false);
-                  onOpenDocument({ docId: resolvedDocId, page: resolvedPage });
-                }}
-                className="inline-flex w-full items-center justify-center gap-1.5 rounded border border-sky-400/40 bg-sky-400/15 px-2.5 py-1.5 font-mono text-[11px] font-medium text-sky-300 transition-colors hover:bg-sky-400/25"
+          {resolvedDocId ? (
+            <span className="border-border mt-2.5 flex flex-wrap gap-1.5 border-t pt-2">
+              <a
+                href={getDocumentDownloadUrl(resolvedDocId)}
+                download
+                className="inline-flex flex-1 items-center justify-center gap-1.5 rounded border border-emerald-400/40 bg-emerald-400/15 px-2.5 py-1.5 font-mono text-[11px] font-medium text-emerald-300 transition-colors hover:bg-emerald-400/25"
               >
-                <BookOpen aria-hidden className="size-3.5" />
-                Read full paper ({resolvedDocId}
-                {resolvedPage != null ? ` · p.${resolvedPage}` : ""})
-              </button>
+                <Download aria-hidden className="size-3.5" />
+                {isCsvOrTableDoc(resolvedDocId)
+                  ? "Download CSV"
+                  : "Download PDF / Doc"}
+              </a>
+              {!isCsvOrTableDoc(resolvedDocId) && onOpenDocument ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false);
+                    onOpenDocument({
+                      docId: resolvedDocId,
+                      page: resolvedPage,
+                    });
+                  }}
+                  className="inline-flex items-center justify-center gap-1 rounded border border-sky-400/40 bg-sky-400/10 px-2.5 py-1.5 font-mono text-[11px] font-medium text-sky-300 transition-colors hover:bg-sky-400/20"
+                >
+                  <BookOpen aria-hidden className="size-3.5" />
+                  Preview
+                  {resolvedPage != null ? ` p.${resolvedPage}` : ""}
+                </button>
+              ) : null}
             </span>
           ) : null}
         </span>

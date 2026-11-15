@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import re
 from typing import Any
 
@@ -13,9 +14,11 @@ from app.rag.prompts import load_prompt
 from app.rag.state import EvidenceItem, GraphState
 from app.rag.toolkit import RagToolkit
 
+logger = logging.getLogger(__name__)
+
 
 def _clean_sentence(text: str) -> str:
-    s = re.sub(r"\[[A-Za-z0-9_-]+\s+p\.\d+\s*-\s*[^\]]*\]\s*", "", text)
+    s = re.sub(r"\[[A-Za-z0-9_.-]+\s+p\.\d+\s*-\s*[^\]]*\]\s*", "", text)
     s = re.sub(r"^>.*$", "", s, flags=re.MULTILINE)
     s = re.sub(r"#+\s*", "", s)
     s = re.sub(r"\s+", " ", s).strip()
@@ -29,11 +32,22 @@ def _best_sentences(chunk_text: str, question: str, max_sentences: int = 2) -> l
 
     scored = []
     for s in raw_sents:
-        if s.startswith("|") or "PROXY DOCUMENT" in s or "PROXY ISS" in s:
+        low = s.lower()
+        if (
+            s.startswith("|")
+            or "PROXY DOCUMENT" in s
+            or "PROXY ISS" in s
+            or "copyright" in low
+            or "table of contents" in low
+        ):
             continue
-        words = set(re.findall(r"[a-z0-9-]+", s.lower()))
+        words = set(re.findall(r"[a-z0-9-]+", low))
         scored.append((len(words & q_terms), s))
     scored.sort(key=lambda t: t[0], reverse=True)
+    if not scored and len(cleaned) > 40:
+        fallback = cleaned[:260].rsplit(" ", 1)[0].strip()
+        if fallback:
+            return [fallback]
     return [s for _, s in scored[:max_sentences]]
 
 
@@ -153,10 +167,16 @@ async def answer_generator_node(state: GraphState, tk: RagToolkit) -> dict[str, 
         )
         scenario_block = _format_scenario_context(scenario)
         user_msg = f"Question: {state['original_question']}\n\n{scenario_block}Evidence:\n{context}"
-        ans = await tk.llm.complete(load_prompt("answer"), user_msg)
-        if ans.lower().startswith("no data"):
-            return {"answer": NO_DATA_MESSAGE, "supported": False}
-        return {"answer": ans, "supported": True}
+        try:
+            ans = (await tk.llm.complete(load_prompt("answer"), user_msg)).strip()
+            if ans.lower().startswith("no data"):
+                return {"answer": NO_DATA_MESSAGE, "supported": False}
+            if ans:
+                return {"answer": ans, "supported": True}
+        except Exception:
+            logger.warning(
+                "answer_generator LLM call failed; falling back to heuristic synthesis", exc_info=True
+            )
 
     ans, supported = _synthesize_heuristic(
         state.get("original_question") or state["question"], evidence, scenario=scenario
@@ -164,4 +184,4 @@ async def answer_generator_node(state: GraphState, tk: RagToolkit) -> dict[str, 
     return {"answer": ans, "supported": supported}
 
 
-__all__ = ["answer_generator_node"]
+__all__ = ["_synthesize_heuristic", "answer_generator_node"]

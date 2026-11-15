@@ -5,11 +5,14 @@ Never rewrites more than ``RAG_MAX_REWRITES`` times; past the limit the node is 
 
 from __future__ import annotations
 
+import logging
 from typing import Any, Final
 
 from app.rag.prompts import load_prompt
 from app.rag.state import GraphState
 from app.rag.toolkit import RagToolkit
+
+logger = logging.getLogger(__name__)
 
 EXPANSIONS: Final[dict[str, str]] = {
     "fan": "forced flow velocity ventilation",
@@ -34,9 +37,13 @@ async def rewrite_query_node(state: GraphState, tk: RagToolkit) -> dict[str, Any
         return {}
 
     q = state["question"]
+    rewritten: str | None = None
     if tk.llm.name != "heuristic":
-        rewritten = await tk.llm.complete(load_prompt("rewrite"), q)
-    else:
+        try:
+            rewritten = (await tk.llm.complete(load_prompt("rewrite"), q)).strip()
+        except Exception:
+            logger.warning("rewrite LLM call failed; falling back to heuristic expansion", exc_info=True)
+    if not rewritten:
         extras = [exp for k, exp in EXPANSIONS.items() if k in q.lower()]
         rewritten = (
             f"{q} {' '.join(extras)}".strip() if extras else f"{q} microgravity combustion LOI flame spread"

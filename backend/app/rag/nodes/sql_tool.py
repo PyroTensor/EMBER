@@ -68,12 +68,19 @@ def _format_run(r: Mapping[str, Any]) -> str:
         metrics.append(f"LOI={r['limiting_oxygen_index_pct']}%")
     if r.get("peak_radiative_flux_kw_m2") is not None:
         metrics.append(f"peak_flux={r['peak_radiative_flux_kw_m2']} kW/m2")
+    src_doc = r.get("source_doc_id")
+    src_page = r.get("source_page")
+    if src_doc and src_page is not None:
+        src_suffix = f" (source: {src_doc} p.{src_page})"
+    elif src_doc and not str(src_doc).lower().endswith(".csv"):
+        src_suffix = f" (source: {src_doc})"
+    else:
+        src_suffix = ""
     return (
         f"{r['experiment_id']} ({r['program']}, {r['fuel_material']}, {r['fuel_geometry']}): "
         f"g={r['gravity_g']}g, O2={r['oxygen_pct']}%, P={r['pressure_kpa']} kPa, "
         f"flow={r['flow_velocity_cm_s']} cm/s, diluent={r['diluent_gas']} -> "
-        f"{', '.join(metrics)} "
-        f"(source: {r.get('source_doc_id')} p.{r.get('source_page')})"
+        f"{', '.join(metrics)}{src_suffix}"
     )
 
 

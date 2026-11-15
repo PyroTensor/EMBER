@@ -1,11 +1,15 @@
 "use client";
 
 import { Fragment, type ReactNode } from "react";
-import { FlaskConical, SearchX } from "lucide-react";
+import { Download, FlaskConical, SearchX } from "lucide-react";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import type { AskResponse, DocumentSummary, Route } from "@/lib/api/types";
 import { cn } from "@/lib/cn";
 import { findCitation, tokenize } from "../lib/citations";
+import {
+  getDocumentDownloadUrl,
+  isCsvOrTableDoc,
+} from "../lib/psi-publications";
 import { CitationChip } from "./citation-chip";
 import type { DocumentReaderTarget } from "./document-reader";
 
@@ -84,39 +88,57 @@ function CitedExperimentsStrip({
         Cited test runs ({expCitations.length})
       </p>
       <div className="grid gap-2 sm:grid-cols-2">
-        {expCitations.map((c) => (
-          <div
-            key={c.id}
-            className="border-border bg-bg/60 flex flex-col justify-between gap-1.5 rounded-md border p-2.5 text-xs"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <span className="border-accent/40 bg-accent/10 text-accent inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[11px] font-medium">
-                <FlaskConical aria-hidden className="size-3" />
-                {c.experiment_id}
-              </span>
-              {c.doc_id && onOpenDocument ? (
-                <button
-                  type="button"
-                  onClick={() =>
-                    onOpenDocument({
-                      docId: c.doc_id as string,
-                      page: c.page ?? undefined,
-                    })
-                  }
-                  className="font-mono text-[11px] text-sky-300 transition-colors hover:text-sky-200 hover:underline"
-                >
-                  Source: {c.doc_id}
-                  {c.page ? ` p.${c.page}` : ""} →
-                </button>
+        {expCitations.map((c) => {
+          const cleanSnippet = (c.snippet ?? "").replace(
+            /\s*\(source:\s*[^)]*\bp\.None\)/gi,
+            "",
+          );
+          const docId = c.doc_id;
+          return (
+            <div
+              key={c.id}
+              className="border-border bg-bg/60 flex flex-col justify-between gap-1.5 rounded-md border p-2.5 text-xs"
+            >
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="border-accent/40 bg-accent/10 text-accent inline-flex items-center gap-1 rounded border px-1.5 py-0.5 font-mono text-[11px] font-medium">
+                  <FlaskConical aria-hidden className="size-3" />
+                  {c.experiment_id}
+                </span>
+                {docId ? (
+                  <div className="flex items-center gap-1.5">
+                    <a
+                      href={getDocumentDownloadUrl(docId)}
+                      download
+                      className="inline-flex items-center gap-1 rounded border border-emerald-400/30 bg-emerald-400/10 px-2 py-0.5 font-mono text-[11px] text-emerald-300 transition-colors hover:bg-emerald-400/20"
+                    >
+                      <Download aria-hidden className="size-3" />
+                      {isCsvOrTableDoc(docId) ? "Download CSV" : "Download"}
+                    </a>
+                    {!isCsvOrTableDoc(docId) && onOpenDocument ? (
+                      <button
+                        type="button"
+                        onClick={() =>
+                          onOpenDocument({
+                            docId,
+                            page: c.page ?? undefined,
+                          })
+                        }
+                        className="font-mono text-[11px] text-sky-300 transition-colors hover:text-sky-200 hover:underline"
+                      >
+                        {c.page ? `p.${c.page} →` : "Preview →"}
+                      </button>
+                    ) : null}
+                  </div>
+                ) : null}
+              </div>
+              {cleanSnippet ? (
+                <p className="text-muted font-mono text-[11px] leading-relaxed">
+                  {cleanSnippet}
+                </p>
               ) : null}
             </div>
-            {c.snippet ? (
-              <p className="text-muted font-mono text-[11px] leading-relaxed">
-                {c.snippet}
-              </p>
-            ) : null}
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );
