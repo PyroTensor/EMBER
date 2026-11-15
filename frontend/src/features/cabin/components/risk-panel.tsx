@@ -27,7 +27,7 @@ function Stat({
   className?: string;
 }) {
   return (
-    <div className="border-border bg-surface-2/50 rounded-md border px-3 py-2">
+    <div className="border-border bg-surface-2/50 rounded-md border px-3.5 py-2.5">
       <dt className="text-muted text-[11px]">{label}</dt>
       <dd
         className={cn(
@@ -47,13 +47,14 @@ export function RiskPanel({ evaluation }: { evaluation: CabinEvaluation }) {
   const margin = evaluation.oxygen_margin_pct;
 
   return (
-    <div className="grid items-center gap-3 sm:grid-cols-[minmax(0,180px)_1fr]">
-      <div className="flex flex-col items-center gap-2">
+    <div className="grid items-center gap-6 sm:grid-cols-[minmax(0,280px)_1fr]">
+      <div className="flex flex-col items-center gap-2.5">
         <Gauge
           value={evaluation.risk_index}
           bands={GAUGE_BANDS}
           label="Fire risk index"
           caption={band?.label}
+          className="max-w-[280px]"
         />
         {band ? (
           <Badge
@@ -64,7 +65,7 @@ export function RiskPanel({ evaluation }: { evaluation: CabinEvaluation }) {
           </Badge>
         ) : null}
       </div>
-      <dl className="grid grid-cols-2 gap-2">
+      <dl className="grid grid-cols-2 gap-3">
         <Stat
           label="Risk index"
           value={`${fmtNum(evaluation.risk_index, 1)} / 100`}
@@ -89,7 +90,7 @@ export function RiskPanel({ evaluation }: { evaluation: CabinEvaluation }) {
                 : "text-risk-low"
           }
         />
-        <div className="border-border bg-surface-2/50 col-span-2 rounded-md border px-3 py-2">
+        <div className="border-border bg-surface-2/50 col-span-2 rounded-md border px-3.5 py-2.5">
           <dt className="text-muted text-[11px]">Predicted regime</dt>
           <dd className="text-fg mt-0.5 text-sm font-medium">
             {evaluation.predicted_regime ?? "—"}
