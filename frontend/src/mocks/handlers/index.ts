@@ -4,6 +4,7 @@ import { copilotHandlers } from "./copilot";
 import { documentHandlers } from "./documents";
 import { experimentHandlers } from "./experiments";
 import { healthHandlers } from "./health";
+import { liveTelemetryHandlers } from "./live-telemetry";
 import { presetHandlers } from "./presets";
 import { telemetryHandlers } from "./telemetry";
 
@@ -14,6 +15,7 @@ export const handlers: HttpHandler[] = [
   ...cabinHandlers,
   ...experimentHandlers,
   ...telemetryHandlers,
+  ...liveTelemetryHandlers,
   ...documentHandlers,
   ...copilotHandlers,
 ];

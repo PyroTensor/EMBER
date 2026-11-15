@@ -11,6 +11,7 @@ EMBER evaluates spacecraft material flammability, ranks microgravity combustion 
 | Flame Twin | `/twin` | WebGL2 volumetric flame: 1 g buoyant plume vs 0 g spherical flame, ventilation paradox |
 | Ranking & Telemetry | `/ranking` | NASA test runs most relevant to a scenario, score breakdown and telemetry |
 | SI Co-Pilot | `/copilot` | Grounded Q&A where every sentence cites a `[DOC-XX p.Y]` page or an `[EXP-XXXX]` run |
+| Live Telemetry | `/live-telemetry` | Streaming cabin and rig sensors, real-time fire-risk & Shapley drivers, closest NASA test runs, and in-browser simulator |
 
 ---
 
@@ -49,6 +50,24 @@ The backend container migrates the database, seeds the proxy dataset (50 runs, 3
 The frontend runs in live mode against it. On Windows, use `mingw32-make` if `make` is missing.
 
 ## Local development
+
+### Live telemetry & simulators
+
+Open `/live-telemetry` to stream and monitor cabin room atmosphere and combustion rig data in real time:
+- **In-browser simulator:** Use the **Browser Telemetry Simulator** card on `/live-telemetry` to play, pause, loop, step frame-by-frame, or hand-tune live cabin presets and sliders in both `mock` and `live` API modes.
+- **Standalone Python feeder:** `simulate_live_telemetry.py` at the repository root (excluded from Docker images via `.dockerignore`) streams synthetic scenarios using only the Python 3 standard library:
+
+```bash
+python3 simulate_live_telemetry.py --scenario sofie-ramp
+python3 simulate_live_telemetry.py --scenario eva-prebreathe --interval 1.0
+python3 simulate_live_telemetry.py --scenario ventilation-paradox --steps 45 --loop
+python3 simulate_live_telemetry.py --scenario apollo-incident --url http://localhost:8000
+python3 simulate_live_telemetry.py --scenario cool-flame-drop --steps 45
+```
+
+If no backend is listening at `--url`, `simulate_live_telemetry.py` starts a lightweight local fallback HTTP server on that port. When running the full backend (`http://localhost:8000`), frames are evaluated against the backend's current dataset (`POST /api/live-telemetry`) and retain the latest 120 samples in memory (streams without a frame for 30 s are marked stale).
+
+### Starting the apps
 
 **Backend** (Python 3.12 + [uv](https://docs.astral.sh/uv/), Docker for Postgres):
 ```bash

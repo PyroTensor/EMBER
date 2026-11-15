@@ -1,16 +1,29 @@
 import { http, HttpResponse } from "msw";
-import type { CabinConfig, CabinEvaluation } from "@/lib/api/types";
-import { MATERIAL_BASE_LOI } from "../engine/combustion";
+import type { CabinConfig, CabinEvaluation, DiluentGas, FuelMaterial } from "@/lib/api/types";
 import { evaluateCabinMock } from "../engine/risk";
 import { respond } from "../scenarios";
 
 // Same bounds as contracts/schema_v1.json and the backend CabinConfig model.
 const BOUNDS = {
-  oxygen_pct: [15, 40],
-  pressure_kpa: [40, 101.3],
+  oxygen_pct: [10, 60],
+  pressure_kpa: [20, 150],
   flow_velocity_cm_s: [0, 50],
   gravity_g: [0, 1],
 } as const satisfies Partial<Record<keyof CabinConfig, readonly [number, number]>>;
+
+const VALID_FUEL_MATERIALS = new Set<FuelMaterial>([
+  "PMMA",
+  "Cotton-Fiberglass",
+  "Nomex",
+  "Heptane",
+  "Methanol",
+  "Ethylene",
+  "Ethane",
+  "Propane",
+  "Butane",
+]);
+
+const VALID_DILUENT_GASES = new Set<DiluentGas>(["N2", "CO2", "He", "Ar"]);
 
 export interface FieldError {
   loc: string[];
@@ -48,11 +61,11 @@ export function validateCabinConfig(
       });
     }
   }
-  if (typeof cfg.fuel_material !== "string" || !(cfg.fuel_material in MATERIAL_BASE_LOI)) {
+  if (typeof cfg.fuel_material !== "string" || !VALID_FUEL_MATERIALS.has(cfg.fuel_material as FuelMaterial)) {
     errors.push({ loc: [...loc, "fuel_material"], msg: "Unknown fuel material", type: "enum" });
   }
-  if (typeof cfg.diluent_gas !== "string") {
-    errors.push({ loc: [...loc, "diluent_gas"], msg: "Input should be a valid string", type: "string_type" });
+  if (typeof cfg.diluent_gas !== "string" || !VALID_DILUENT_GASES.has(cfg.diluent_gas as DiluentGas)) {
+    errors.push({ loc: [...loc, "diluent_gas"], msg: "Unknown diluent gas", type: "enum" });
   }
   return errors.length ? { errors } : { cfg: cfg as unknown as CabinConfig };
 }

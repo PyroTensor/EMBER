@@ -84,6 +84,13 @@ class CitationKind(StrEnum):
     EXPERIMENT = "experiment"
 
 
+class LiveStreamStatus(StrEnum):
+    IDLE = "idle"
+    STREAMING = "streaming"
+    PAUSED = "paused"
+    COMPLETED = "completed"
+
+
 __all__ = [
     "CitationKind",
     "CombustionRegime",
@@ -92,6 +99,7 @@ __all__ = [
     "EvidenceSource",
     "FuelGeometry",
     "FuelMaterial",
+    "LiveStreamStatus",
     "Program",
     "RiskBand",
     "Route",

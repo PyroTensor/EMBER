@@ -8,6 +8,7 @@ const VALUE: Record<string, string> = {
   "/ranking": "Find the test runs closest to your scenario and inspect their telemetry.",
   "/copilot": "Ask questions about the experiments and get answers with citations.",
   "/resources": "Search NASA combustion papers, ISS investigations, fire incident reports, and spinoff resources by keyword.",
+  "/live-telemetry": "Stream live cabin room sensors and combustion rig telemetry with real-time fire risk, Shapley drivers, historical run matching, and an interactive browser simulator.",
 };
 
 const MODULES = NAV_ITEMS.filter((item) => item.module);

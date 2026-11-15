@@ -1,0 +1,9 @@
+# Keep standalone simulator scripts and local environment artifacts out of any root-context Docker build.
+simulate_live_telemetry.py
+.venv/
+**/.venv/
+**/node_modules/
+**/.next/
+**/__pycache__/
+*.py[cod]
+.git/

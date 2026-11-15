@@ -604,6 +604,153 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/live-telemetry": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Current live telemetry stream state, rolling history, and top matching runs */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LiveTelemetryState"];
+                    };
+                };
+                /** @description Validation error */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Internal server error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Ingest one live cabin/rig telemetry frame and return updated live dashboard state */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["LiveTelemetryIngestRequest"];
+                };
+            };
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LiveTelemetryState"];
+                    };
+                };
+                /** @description Validation error */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Internal server error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/live-telemetry/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Clear the live telemetry stream buffer and reset status to idle */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["LiveTelemetryState"];
+                    };
+                };
+                /** @description Validation error */
+                422: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+                /** @description Internal server error */
+                500: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["ErrorResponse"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -618,6 +765,8 @@ export interface components {
         CombustionRegime: "Sustained Burn" | "Self-Extinguished" | "Cool Flame" | "No Ignition";
         /** @enum {string} */
         EvidenceSource: "sql_tool" | "hybrid_retriever" | "scenario_ranker";
+        /** @enum {string} */
+        LiveStreamStatus: "idle" | "streaming" | "paused" | "completed";
         Health: {
             /** @enum {string} */
             status: "ok" | "degraded";
@@ -765,6 +914,47 @@ export interface components {
                 /** @description Optional extra context (e.g. validation error list); null when absent */
                 details?: Record<string, never> | unknown[] | null;
             };
+        };
+        LiveSensorReadings: {
+            oxygen_pct_raw?: number | null;
+            pressure_kpa_raw?: number | null;
+            flow_velocity_cm_s_raw?: number | null;
+            gravity_g_raw?: number | null;
+            flame_temp_k?: number | null;
+            radiative_heat_flux_kw_m2?: number | null;
+            flame_radius_mm?: number | null;
+        };
+        LiveTelemetryIngestRequest: {
+            session_id?: string | null;
+            experiment_name?: string | null;
+            phase?: string | null;
+            event?: string | null;
+            status?: components["schemas"]["LiveStreamStatus"] | null;
+            timestamp_s?: number | null;
+            config: components["schemas"]["CabinConfig"];
+            raw_sensors?: components["schemas"]["LiveSensorReadings"] | null;
+            reset?: boolean | null;
+        };
+        LiveTelemetrySample: {
+            seq: number;
+            timestamp_s: number;
+            recorded_at: string;
+            phase?: string | null;
+            event?: string | null;
+            config: components["schemas"]["CabinConfig"];
+            raw_sensors?: components["schemas"]["LiveSensorReadings"] | null;
+            evaluation: components["schemas"]["CabinEvaluation"];
+        };
+        LiveTelemetryState: {
+            active: boolean;
+            status: components["schemas"]["LiveStreamStatus"];
+            session_id?: string | null;
+            experiment_name?: string | null;
+            updated_at?: string | null;
+            sample_count: number;
+            latest?: components["schemas"]["LiveTelemetrySample"] | null;
+            history: components["schemas"]["LiveTelemetrySample"][];
+            top_matches: components["schemas"]["RankedExperiment"][];
         };
         /**
          * EMBER Internal Standard Schema v1 - Microgravity Combustion Test Run
